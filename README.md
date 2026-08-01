@@ -1,4 +1,4 @@
-# CodeEval
+# EvalForge
 
 Production-grade evaluation infrastructure for autonomous coding agents.
 
