@@ -1,0 +1,14 @@
+# Default owners — replace with real GitHub handles / teams before launch.
+*       @agent-eval/maintainers
+
+# Application surfaces
+/apps/api/       @agent-eval/maintainers
+/apps/web/       @agent-eval/maintainers
+/workers/        @agent-eval/maintainers
+
+# Shared libraries
+/packages/       @agent-eval/maintainers
+
+# Infrastructure & CI
+/infrastructure/ @agent-eval/maintainers
+/.github/        @agent-eval/maintainers

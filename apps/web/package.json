@@ -1,0 +1,17 @@
+{
+  "name": "@agent-eval/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web application (scaffold only)",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-eval/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@agent-eval/config": "workspace:*",
+    "typescript": "^5.7.2"
+  }
+}

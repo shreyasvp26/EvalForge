@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Tooling / caches
+.turbo/
+.cache/
+.eslintcache/
+.prettiercache/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.pytype/
+.coverage
+htmlcov/
+coverage/
+*.lcov
+.nyc_output/
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs & runtime
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# Build outputs
+apps/*/.next/
+apps/*/out/
+apps/*/dist/
+packages/*/dist/
+*.tsbuildinfo
+
+# Secrets & keys
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# Docker
+infrastructure/docker/data/
+
+# Misc
+*.tmp
+*.temp
+.direnv/

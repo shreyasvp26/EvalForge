@@ -1,0 +1,5 @@
+# Local development compose scaffold.
+# Production images and full service definitions are intentionally postponed.
+# See README.md in this directory for planned services.
+
+services: {}

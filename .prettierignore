@@ -1,0 +1,24 @@
+# Dependencies
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+uv.lock
+
+# Build / generated
+dist
+build
+coverage
+.next
+.turbo
+.venv
+node_modules
+
+# Caches
+.cache
+.ruff_cache
+.mypy_cache
+.pytest_cache
+
+# Misc
+*.min.js
+*.min.css

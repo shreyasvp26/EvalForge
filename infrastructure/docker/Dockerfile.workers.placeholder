@@ -1,0 +1,2 @@
+# Placeholder — production/dev workers image will be defined in a later phase.
+# Expected path: infrastructure/docker/Dockerfile.workers

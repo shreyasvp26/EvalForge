@@ -1,0 +1,52 @@
+[project]
+name = "agent-eval"
+version = "0.0.0"
+description = "Coding Agent Evaluation Platform — Python workspace root"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "black>=24.10.0",
+  "ruff>=0.8.0",
+]
+
+[tool.uv.workspace]
+members = ["apps/api", "workers"]
+
+[tool.uv]
+package = false
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+extend-exclude = '''
+/(
+  \.git
+  | \.venv
+  | node_modules
+  | dist
+  | build
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+extend-exclude = [
+  ".venv",
+  "node_modules",
+  "dist",
+  "build",
+]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "UP",  # pyupgrade
+]
