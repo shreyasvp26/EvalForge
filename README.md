@@ -1,52 +1,32 @@
-# Coding Agent Evaluation Platform
+# CodeEval
 
-Production platform for evaluating autonomous coding agents (Cursor, Claude Code, Codex, Gemini CLI, and others) against standardized evaluation cases.
+Production-grade evaluation infrastructure for autonomous coding agents.
 
-> **Status:** Phase 0 — engineering foundation only. No product logic yet.
+CodeEval evaluates agents such as Cursor, Claude Code, Gemini CLI, Codex, and future coding assistants using reproducible engineering benchmarks.
 
-## Repository layout
+## Current Status
 
-```
-apps/            Deployable applications (API, web)
-packages/        Shared libraries and tooling config
-workers/         Background / async job workers
-infrastructure/  Docker scaffolding and scripts
-docs/            Architecture, ADRs, API notes, diagrams
-```
+🚧 Active Development
 
-## Prerequisites
+Completed
 
-- [Node.js](https://nodejs.org/) 20+
-- [pnpm](https://pnpm.io/) 9+
-- [Python](https://www.python.org/) 3.12+
-- [uv](https://docs.astral.sh/uv/) (recommended for Python workspace)
+- ✅ Phase 0 — Repository Foundation
 
-## Quick start
+Upcoming
 
-```bash
-# JavaScript / TypeScript workspace
-pnpm install
+- Development Environment
+- Core Domain Model
+- Evaluation Engine
+- Agent Adapters
+- Graders
+- Dashboard
 
-# Python workspace
-uv sync
+## Tech Stack
 
-# Lint & format checks
-pnpm lint
-pnpm format:check
-uv run ruff check .
-uv run black --check .
-```
-
-## Documentation
-
-| Doc                                        | Purpose                           |
-| ------------------------------------------ | --------------------------------- |
-| [CONTRIBUTING.md](./CONTRIBUTING.md)       | How to contribute                 |
-| [SECURITY.md](./SECURITY.md)               | Vulnerability reporting           |
-| [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Community standards               |
-| [CHANGELOG.md](./CHANGELOG.md)             | Release history                   |
-| [docs/](./docs/)                           | Architecture, ADRs, API, diagrams |
-
-## License
-
-TBD
+- FastAPI
+- Next.js
+- PostgreSQL
+- Redis
+- Docker
+- TypeScript
+- Python
