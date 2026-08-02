@@ -37,4 +37,4 @@ Storybook is the engineering playground. The product-facing gallery lives at `/d
 
 ## Status
 
-Phase 15A — foundation in progress.
+Phase 15A — foundation complete (tokens, primitives, Storybook). Product CRUD is out of scope.

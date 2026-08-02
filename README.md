@@ -6,25 +6,25 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 
 ## Current status
 
-| Phase                                                | Status      |
-| ---------------------------------------------------- | ----------- |
-| Phase 0 — Repository foundation                      | Complete    |
-| Engineering foundation (tooling, shared libs, tests) | Complete    |
-| Domain layer                                         | Complete    |
-| Application layer                                    | Complete    |
-| Infrastructure layer                                 | Complete    |
-| Execution workers / engine                           | Complete    |
-| FastAPI Control Plane (Phase 6)                      | Complete    |
-| Sandbox Runtime (Phase 7)                            | Complete    |
-| Adapter SDK + Claude Code (Phase 8)                  | Complete    |
-| Objective Graders (Phase 9)                          | Complete    |
-| Rubric Graders (Phase 10)                            | Complete    |
-| Production Pipeline Integration (Phase 11)           | Complete    |
-| Production Judge Providers (Phase 12)                | Complete    |
-| Multi-Agent Adapter Expansion (Phase 13)             | Complete    |
-| Production Hardening (Phase 14)                      | Complete    |
-| Phase 15A — Frontend design system foundation        | In progress |
-| Additional adapters / product UI                     | Later       |
+| Phase                                                | Status   |
+| ---------------------------------------------------- | -------- |
+| Phase 0 — Repository foundation                      | Complete |
+| Engineering foundation (tooling, shared libs, tests) | Complete |
+| Domain layer                                         | Complete |
+| Application layer                                    | Complete |
+| Infrastructure layer                                 | Complete |
+| Execution workers / engine                           | Complete |
+| FastAPI Control Plane (Phase 6)                      | Complete |
+| Sandbox Runtime (Phase 7)                            | Complete |
+| Adapter SDK + Claude Code (Phase 8)                  | Complete |
+| Objective Graders (Phase 9)                          | Complete |
+| Rubric Graders (Phase 10)                            | Complete |
+| Production Pipeline Integration (Phase 11)           | Complete |
+| Production Judge Providers (Phase 12)                | Complete |
+| Multi-Agent Adapter Expansion (Phase 13)             | Complete |
+| Production Hardening (Phase 14)                      | Complete |
+| Phase 15A — Frontend design system foundation        | Complete |
+| Additional adapters / product UI                     | Later    |
 
 ## Repository layout
 

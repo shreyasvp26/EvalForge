@@ -4,7 +4,7 @@ EvalForge web application — Next.js App Router.
 
 ## Status
 
-Phase 15A — frontend foundation (design system, shell, galleries). No product CRUD yet.
+Phase 15A — frontend foundation complete (design system, shell, `/design-system` gallery). No product CRUD yet.
 
 ## Scripts
 

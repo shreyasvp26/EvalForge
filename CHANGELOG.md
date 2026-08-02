@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase 15A frontend design system foundation: `docs/design` principles + ADR-0003, `@agent-eval/ui` tokens/primitives/Storybook, Next.js `apps/web` shell (sidebar + top bar + lazy ⌘K command palette + opt-in inspector), `/design-system` gallery, light/dark theme
 - Phase 0 repository foundation (monorepo, tooling, CI scaffolding)
 - Engineering foundation: shared TS packages (`errors`, `env`, `logger`, `utils`), Python `shared/`, Vitest/pytest, Husky, root verify scripts
 - Domain Layer: pure Python aggregates, versioning, Run lifecycle, NDM, repository ports, unit tests
