@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-def _env_str(
+def env_str(
     name: str,
     default: str | None = None,
     *,
@@ -21,25 +21,25 @@ def _env_str(
     return value.strip()
 
 
-def _env_float(
+def env_float(
     name: str,
     default: float,
     *,
     environ: Mapping[str, str] | None = None,
 ) -> float:
-    raw = _env_str(name, environ=environ)
+    raw = env_str(name, environ=environ)
     if raw is None:
         return default
     return float(raw)
 
 
-def _env_int(
+def env_int(
     name: str,
     default: int,
     *,
     environ: Mapping[str, str] | None = None,
 ) -> int:
-    raw = _env_str(name, environ=environ)
+    raw = env_str(name, environ=environ)
     if raw is None:
         return default
     return int(raw)
@@ -80,7 +80,7 @@ def require_api_key(
     """Resolve an API key from an explicit value or environment variable."""
     if explicit is not None and explicit.strip():
         return explicit.strip()
-    value = _env_str(env_name, environ=environ)
+    value = env_str(env_name, environ=environ)
     if value is None:
         raise ValueError(f"Missing required API key: set {env_name}")
     return value
@@ -97,7 +97,7 @@ def load_common_knobs(
     default_max_tokens: int = 2048,
 ) -> dict[str, Any]:
     """Load shared timeout / retry / sampling knobs from env."""
-    seed_raw = _env_str(f"{prefix}_SEED", environ=environ)
+    seed_raw = env_str(f"{prefix}_SEED", environ=environ)
     seed: int | None
     if seed_raw is None:
         seed = default_seed
@@ -107,26 +107,26 @@ def load_common_knobs(
         seed = int(seed_raw)
 
     return {
-        "timeout_seconds": _env_float(
+        "timeout_seconds": env_float(
             f"{prefix}_TIMEOUT_SECONDS",
             default_timeout,
             environ=environ,
         ),
-        "retry_count": _env_int(
+        "retry_count": env_int(
             f"{prefix}_RETRY_COUNT",
             default_retry_count,
             environ=environ,
         ),
-        "temperature": _env_float(
+        "temperature": env_float(
             f"{prefix}_TEMPERATURE",
             default_temperature,
             environ=environ,
         ),
         "seed": seed,
-        "max_tokens": _env_int(
+        "max_tokens": env_int(
             f"{prefix}_MAX_TOKENS",
             default_max_tokens,
             environ=environ,
         ),
-        "base_url": _env_str(f"{prefix}_BASE_URL", environ=environ),
+        "base_url": env_str(f"{prefix}_BASE_URL", environ=environ),
     }
