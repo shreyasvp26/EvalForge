@@ -8,6 +8,8 @@ dependencies = [
   "agent-eval-shared",
   "agent-eval-domain",
   "agent-eval-application",
+  "sqlalchemy>=2.0.36",
+  "psycopg[binary]>=3.2.0",
 ]
 
 [build-system]

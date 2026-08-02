@@ -55,7 +55,26 @@ Sibling directories in this folder (ops, not Python import graph):
 
 ## Status
 
-Phase 1 — package scaffold only. No runtime behavior yet.
+Phase 2 — SQLAlchemy persistence foundation complete (engine, sessions, Base,
+naming conventions, ORM models, repository base). Repository adapters, Unit
+of Work, Redis, and Alembic revisions land in later phases.
+
+## Database package
+
+```
+database/
+  config.py       # DatabaseSettings (DATABASE_URL, pool)
+  naming.py       # Constraint/index naming conventions
+  base.py         # Declarative Base + MetaData
+  mixins.py       # UUID PK, timestamps, optimistic lock
+  engine.py       # create_db_engine / dispose_engine
+  session.py      # sessionmaker + session_scope
+  models/         # Persistence models (Schema Design logical tables)
+```
+
+**Rules:** ORM models never leave Infrastructure. Domain stays
+persistence-agnostic (Data Mapper). Sync SQLAlchemy only — architecture does
+not require async ORM for the Control Plane.
 
 ## Testing
 

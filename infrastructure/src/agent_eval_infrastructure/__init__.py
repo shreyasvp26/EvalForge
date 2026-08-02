@@ -6,4 +6,24 @@ Depends on ``agent_eval_domain``, ``agent_eval_application``, and
 §4 / §5 / §11.
 """
 
-__all__: list[str] = []
+from agent_eval_infrastructure.database import (
+    Base,
+    DatabaseSettings,
+    SessionFactory,
+    create_db_engine,
+    create_session_factory,
+    dispose_engine,
+    metadata,
+    session_scope,
+)
+
+__all__ = [
+    "Base",
+    "DatabaseSettings",
+    "SessionFactory",
+    "create_db_engine",
+    "create_session_factory",
+    "dispose_engine",
+    "metadata",
+    "session_scope",
+]
