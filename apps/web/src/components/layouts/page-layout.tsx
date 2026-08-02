@@ -36,6 +36,7 @@ export function PageLayout({
         flush ? "px-0 py-0" : "px-4 py-8 sm:px-6",
         className,
       )}
+      data-page-layout
       {...props}
     >
       {children}

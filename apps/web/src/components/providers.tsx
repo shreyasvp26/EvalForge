@@ -6,7 +6,9 @@ import { useState } from "react";
 
 import type { ReactNode } from "react";
 
+import { OfflineBanner } from "@/components/patterns/offline-banner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PreferencesProvider } from "@/features/settings/preferences-provider";
 import { AuthProvider } from "@/lib/auth/auth-provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -17,6 +19,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
+            retry: 1,
           },
         },
       }),
@@ -27,8 +30,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={200}>
           <AuthProvider>
-            {children}
-            <Toaster />
+            <PreferencesProvider>
+              <OfflineBanner />
+              {children}
+              <Toaster />
+            </PreferencesProvider>
           </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>

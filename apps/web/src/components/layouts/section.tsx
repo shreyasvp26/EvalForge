@@ -23,7 +23,7 @@ export function Section({
   const hasHeader = title !== undefined || description !== undefined || actions !== undefined;
 
   return (
-    <section className={cn("space-y-4", className)} {...props}>
+    <section className={cn("space-y-4", className)} data-section {...props}>
       {hasHeader ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <Stack gap={1} className="min-w-0">

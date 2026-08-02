@@ -74,3 +74,22 @@ body {
   outline: 2px solid var(--ef-ring);
   outline-offset: 2px;
 }
+
+/* Preferences: density + reduced motion (applied via documentElement dataset) */
+html[data-density="compact"] [data-page-layout] {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+html[data-density="compact"] [data-section] {
+  gap: 0.75rem;
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

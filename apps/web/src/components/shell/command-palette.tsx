@@ -18,6 +18,7 @@ import {
   Moon,
   Play,
   Plus,
+  Settings,
   Sun,
   Text,
 } from "@agent-eval/ui";
@@ -268,6 +269,25 @@ export function CommandPalette({
     },
   ];
 
+  const settingsActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+    {
+      id: "open-settings",
+      label: "Open Settings",
+      icon: Settings,
+      run: () => {
+        run("/settings");
+      },
+    },
+    {
+      id: "open-preferences",
+      label: "Open Preferences",
+      icon: Settings,
+      run: () => {
+        run("/settings/preferences");
+      },
+    },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -492,6 +512,27 @@ export function CommandPalette({
                 Graders
               </Text>
               {graderActions
+                .filter((action) => fuzzyScore(query, action.label) > 0)
+                .map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.label}
+                    onSelect={() => {
+                      action.run();
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--ef-radius-control)] px-2 py-2 text-[length:var(--ef-text-body)] text-popover-foreground aria-selected:bg-muted"
+                  >
+                    <Icon icon={action.icon} size="sm" aria-hidden />
+                    {action.label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
+
+            <Command.Group heading="Settings" className="mb-2">
+              <Text variant="table" className="px-2 py-1.5">
+                Settings
+              </Text>
+              {settingsActions
                 .filter((action) => fuzzyScore(query, action.label) > 0)
                 .map((action) => (
                   <Command.Item
