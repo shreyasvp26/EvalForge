@@ -18,7 +18,7 @@ from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.event_dispatcher import DomainEventDispatcher
 from agent_eval_application.ports.idempotency import IdempotencyStore
 from agent_eval_application.ports.unit_of_work import UnitOfWorkFactory
-from agent_eval_application.queries.queries import GetGraderQuery
+from agent_eval_application.queries.queries import GetGraderQuery, ListGradersQuery
 from agent_eval_application.use_cases.base import (
     collect_events,
     replay_or_begin,
@@ -175,3 +175,19 @@ class GetGrader:
         with self._uow_factory() as uow:
             grader = with_domain_errors(lambda: uow.graders.get(grader_id))
             return GraderDTO.from_domain(grader)
+
+
+class ListGraders:
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: ListGradersQuery) -> list[GraderDTO]:
+        self._auth.ensure_can_create_project(query.actor)
+        with self._uow_factory() as uow:
+            graders = with_domain_errors(uow.graders.list_all)
+            return [GraderDTO.from_domain(g) for g in graders]

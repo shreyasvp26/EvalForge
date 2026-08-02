@@ -31,7 +31,10 @@ from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.event_dispatcher import DomainEventDispatcher
 from agent_eval_application.ports.idempotency import IdempotencyStore
 from agent_eval_application.ports.unit_of_work import UnitOfWorkFactory
-from agent_eval_application.queries.queries import GetAgentQuery
+from agent_eval_application.queries.queries import (
+    GetAgentQuery,
+    ListAgentsQuery,
+)
 from agent_eval_application.use_cases.base import (
     collect_events,
     replay_or_begin,
@@ -310,3 +313,19 @@ class GetAgent:
         with self._uow_factory() as uow:
             agent = with_domain_errors(lambda: uow.agents.get(agent_id))
             return AgentDTO.from_domain(agent)
+
+
+class ListAgents:
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: ListAgentsQuery) -> list[AgentDTO]:
+        self._auth.ensure_can_create_project(query.actor)
+        with self._uow_factory() as uow:
+            agents = with_domain_errors(uow.agents.list_all)
+            return [AgentDTO.from_domain(a) for a in agents]

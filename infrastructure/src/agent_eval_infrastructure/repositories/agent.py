@@ -38,6 +38,10 @@ class SqlAlchemyAgentRepository(SqlAlchemyRepository):
             else:
                 version_row.status = version.status.value
 
+    def list_all(self) -> list[Agent]:
+        rows = list(self.session.scalars(select(AgentOrm)))
+        return [self._load_agent(row) for row in rows]
+
     def _load_agent(self, row: AgentOrm) -> Agent:
         versions = list(
             self.session.scalars(

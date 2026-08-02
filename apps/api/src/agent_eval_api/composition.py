@@ -19,6 +19,7 @@ from agent_eval_application.use_cases.agent import (
     CreateAgent,
     CreateAgentDraftVersion,
     GetAgent,
+    ListAgents,
     PublishAdapterVersion,
     PublishAgentVersion,
 )
@@ -36,12 +37,14 @@ from agent_eval_application.use_cases.grader import (
     CreateGrader,
     CreateGraderDraftVersion,
     GetGrader,
+    ListGraders,
     PublishGraderVersion,
 )
 from agent_eval_application.use_cases.project import (
     CreateProject,
     DeprecateProject,
     GetProject,
+    ListProjects,
     RenameProject,
     UpdateProjectSettings,
 )
@@ -77,6 +80,7 @@ class ApplicationServices:
     # Projects
     create_project: CreateProject
     get_project: GetProject
+    list_projects: ListProjects
     rename_project: RenameProject
     update_project_settings: UpdateProjectSettings
     deprecate_project: DeprecateProject
@@ -103,6 +107,7 @@ class ApplicationServices:
     # Agents + Adapters
     create_agent: CreateAgent
     get_agent: GetAgent
+    list_agents: ListAgents
     create_agent_draft_version: CreateAgentDraftVersion
     publish_agent_version: PublishAgentVersion
     create_adapter: CreateAdapter
@@ -112,6 +117,7 @@ class ApplicationServices:
     # Graders
     create_grader: CreateGrader
     get_grader: GetGrader
+    list_graders: ListGraders
     create_grader_draft_version: CreateGraderDraftVersion
     publish_grader_version: PublishGraderVersion
 
@@ -162,6 +168,7 @@ def build_application_services(
     return ApplicationServices(
         create_project=CreateProject(uow, ids, auth, events, idempotency),
         get_project=GetProject(uow, auth),
+        list_projects=ListProjects(uow, auth),
         rename_project=RenameProject(uow, auth, events),
         update_project_settings=UpdateProjectSettings(uow, auth, events),
         deprecate_project=DeprecateProject(uow, auth, events),
@@ -182,6 +189,7 @@ def build_application_services(
         publish_prompt_version=PublishPromptVersion(uow, auth, events),
         create_agent=CreateAgent(uow, ids, auth, events, idempotency),
         get_agent=GetAgent(uow, auth),
+        list_agents=ListAgents(uow, auth),
         create_agent_draft_version=CreateAgentDraftVersion(uow, ids, auth, events),
         publish_agent_version=PublishAgentVersion(uow, auth, events),
         create_adapter=CreateAdapter(uow, ids, auth, events, idempotency),
@@ -189,6 +197,7 @@ def build_application_services(
         publish_adapter_version=PublishAdapterVersion(uow, auth, events),
         create_grader=CreateGrader(uow, ids, auth, events, idempotency),
         get_grader=GetGrader(uow, auth),
+        list_graders=ListGraders(uow, auth),
         create_grader_draft_version=CreateGraderDraftVersion(uow, ids, auth, events),
         publish_grader_version=PublishGraderVersion(uow, auth, events),
         create_run=CreateRun(uow, ids, auth, events, run_queue, idempotency),

@@ -38,6 +38,10 @@ class SqlAlchemyGraderRepository(SqlAlchemyRepository):
             else:
                 version_row.status = version.status.value
 
+    def list_all(self) -> list[Grader]:
+        rows = list(self.session.scalars(select(GraderOrm)))
+        return [self._load_grader(row) for row in rows]
+
     def _load_grader(self, row: GraderOrm) -> Grader:
         versions = list(
             self.session.scalars(

@@ -164,6 +164,9 @@ class _ProjectRepo:
     def save(self, project: Project) -> None:
         self._data[project.id.value] = project
 
+    def list_all(self) -> list[Project]:
+        return list(self._data.values())
+
 
 class _SuiteRepo:
     def __init__(
@@ -254,6 +257,9 @@ class _AgentRepo:
     def save(self, agent: Agent) -> None:
         self._data[agent.id.value] = agent
 
+    def list_all(self) -> list[Agent]:
+        return list(self._data.values())
+
 
 class _AdapterRepo:
     def __init__(self, data: dict[str, Adapter]) -> None:
@@ -299,6 +305,9 @@ class _GraderRepo:
 
     def save(self, grader: Grader) -> None:
         self._data[grader.id.value] = grader
+
+    def list_all(self) -> list[Grader]:
+        return list(self._data.values())
 
 
 class _RunRepo:

@@ -14,6 +14,11 @@ class GetProjectQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class ListProjectsQuery:
+    actor: Actor
+
+
+@dataclass(frozen=True, slots=True)
 class GetSuiteQuery:
     actor: Actor
     suite_id: str
@@ -56,6 +61,16 @@ class GetAgentQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class ListAgentsQuery:
+    actor: Actor
+
+
+@dataclass(frozen=True, slots=True)
 class GetGraderQuery:
     actor: Actor
     grader_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListGradersQuery:
+    actor: Actor

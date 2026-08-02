@@ -25,3 +25,9 @@ class SqlAlchemyProjectRepository(SqlAlchemyRepository):
         mapped = project_to_orm(project, row)
         if row is None:
             self.session.add(mapped)
+
+    def list_all(self) -> list[Project]:
+        from sqlalchemy import select
+
+        rows = list(self.session.scalars(select(ProjectOrm)))
+        return [project_to_domain(row) for row in rows]

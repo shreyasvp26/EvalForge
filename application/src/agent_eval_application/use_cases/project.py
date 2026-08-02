@@ -16,11 +16,12 @@ from agent_eval_application.commands.project import (
 from agent_eval_application.common.id_generator import IdGenerator
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.project import ProjectDTO
+from agent_eval_application.errors import AuthorizationError
 from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.event_dispatcher import DomainEventDispatcher
 from agent_eval_application.ports.idempotency import IdempotencyStore
 from agent_eval_application.ports.unit_of_work import UnitOfWorkFactory
-from agent_eval_application.queries.queries import GetProjectQuery
+from agent_eval_application.queries.queries import GetProjectQuery, ListProjectsQuery
 from agent_eval_application.use_cases.base import (
     collect_events,
     replay_or_begin,
@@ -192,3 +193,27 @@ class GetProject:
         with self._uow_factory() as uow:
             project = with_domain_errors(lambda: uow.projects.get(project_id))
             return ProjectDTO.from_domain(project)
+
+
+class ListProjects:
+    """List Projects visible to the actor (Project-scoped authorization filter)."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: ListProjectsQuery) -> list[ProjectDTO]:
+        with self._uow_factory() as uow:
+            projects = with_domain_errors(uow.projects.list_all)
+            visible: list[ProjectDTO] = []
+            for project in projects:
+                try:
+                    self._auth.ensure_can_access_project(query.actor, project.id)
+                except AuthorizationError:
+                    continue
+                visible.append(ProjectDTO.from_domain(project))
+            return visible
