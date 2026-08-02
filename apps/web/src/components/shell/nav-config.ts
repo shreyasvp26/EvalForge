@@ -49,7 +49,7 @@ export const navSections: NavSection[] = [
         label: "Agents",
         icon: Bot,
         chord: "G A",
-        keywords: ["agent", "adapter"],
+        keywords: ["agent", "adapter", "create agent"],
       },
     ],
   },
@@ -116,6 +116,25 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
     if (rest === "settings") {
       crumbs.push({ label: "Settings" });
     }
+    return crumbs;
+  }
+
+  const agentMatch = /^\/agents(?:\/(.*))?$/.exec(pathname);
+  if (agentMatch) {
+    const rest = agentMatch[1] ?? "";
+    if (rest === "") {
+      crumbs.push({ label: "Agents" });
+      return crumbs;
+    }
+    crumbs.push({ label: "Agents", href: "/agents" });
+    const adapterMatch = /^([^/]+)\/adapters\/([^/]+)$/.exec(rest);
+    if (adapterMatch) {
+      const nestedAgentId = adapterMatch[1] ?? "";
+      crumbs.push({ label: "Agent", href: `/agents/${nestedAgentId}` });
+      crumbs.push({ label: "Adapter" });
+      return crumbs;
+    }
+    crumbs.push({ label: "Agent" });
     return crumbs;
   }
 

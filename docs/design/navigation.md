@@ -57,9 +57,10 @@ Groups:
 3. **Projects** — Open Projects, Create Project
 4. **Suites** — Open Suites, Create Suite (project-aware when already in a project)
 5. **Cases** — Open Cases, Create Case (project-aware when already in a project)
-6. **Appearance** — Light / Dark / System
-7. **Account** — Sign out
-8. **Help** — open keyboard shortcuts
+6. **Agents** — Open Agents, Create Agent
+7. **Appearance** — Light / Dark / System
+8. **Account** — Sign out
+9. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -93,6 +94,14 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Prompt and case versions: Draft → Active (publish) → Superseded (no retire endpoint for cases).
 - Authoring order: create case → prompt draft → case draft (pins a prompt) → publish.
 - Command palette: **Open Cases**, **Create Case** (uses current project when present).
+
+## Agents
+
+- Platform-scoped list: `/agents`; detail: `/agents/[agentId]`.
+- Adapter detail (1:1 with agent): `/agents/[agentId]/adapters/[adapterId]`.
+- Agent versions use `label` + `release_notes`; adapter versions use `label` + `notes`.
+- Chord shortcut: `G` then `A`.
+- Command palette: **Open Agents**, **Create Agent** (`/agents?create=1`).
 
 ## Keyboard shortcuts
 
