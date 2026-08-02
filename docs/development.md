@@ -38,12 +38,18 @@ Copy `.env.example` to `.env`. Do not read `process.env` / `os.environ` outside 
 
 Baseline keys today:
 
-| Variable                   | Purpose                                 |
-| -------------------------- | --------------------------------------- |
-| `NODE_ENV` / `ENVIRONMENT` | `development` \| `test` \| `production` |
-| `LOG_LEVEL`                | Logging verbosity                       |
+| Variable                   | Purpose                                          |
+| -------------------------- | ------------------------------------------------ |
+| `NODE_ENV` / `ENVIRONMENT` | `development` \| `test` \| `production`          |
+| `LOG_LEVEL`                | Logging verbosity                                |
+| `DATABASE_URL`             | SQLAlchemy PostgreSQL URL                        |
+| `REDIS_URL`                | Redis for run queue / idempotency                |
+| `OBJECT_STORAGE_*`         | S3-compatible Artifact store (endpoint optional) |
 
 Service-specific schemas should **extend** the baseline, not replace it.
+Load Python settings via `agent_eval_shared.config.load_settings` /
+`agent_eval_infrastructure.load_infrastructure_settings` — never ad-hoc
+`os.environ` outside those loaders.
 
 ## Testing
 
@@ -96,7 +102,9 @@ Python package: `application/` → `agent_eval_application`.
 Python package: `infrastructure/` → `agent_eval_infrastructure`
 (colocated with existing `docker/` and `scripts/` ops assets).
 
-- Implements Domain repository Protocols and Application ports.
+- Implements Domain repository Protocols and Application ports (UoW, run
+  queue, event dispatch, idempotency, ID generation) plus object storage.
+- Composition root: `build_infrastructure()` / `InfrastructureContainer`.
 - Depends on `domain`, `application`, `shared`, and concrete technologies.
 - **Must not** contain Domain rules, authorization policy, grading, adapters,
   or execution orchestration.

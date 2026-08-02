@@ -6,6 +6,10 @@ Depends on ``agent_eval_domain``, ``agent_eval_application``, and
 §4 / §5 / §11.
 """
 
+from agent_eval_infrastructure.config import (
+    InfrastructureSettings,
+    load_infrastructure_settings,
+)
 from agent_eval_infrastructure.database import (
     Base,
     DatabaseSettings,
@@ -16,6 +20,11 @@ from agent_eval_infrastructure.database import (
     metadata,
     session_scope,
 )
+from agent_eval_infrastructure.dependency_injection import (
+    InfrastructureContainer,
+    RuntimeProfile,
+    build_infrastructure,
+)
 from agent_eval_infrastructure.unit_of_work import (
     SqlAlchemyUnitOfWork,
     SqlAlchemyUnitOfWorkFactory,
@@ -24,12 +33,17 @@ from agent_eval_infrastructure.unit_of_work import (
 __all__ = [
     "Base",
     "DatabaseSettings",
+    "InfrastructureContainer",
+    "InfrastructureSettings",
+    "RuntimeProfile",
     "SessionFactory",
     "SqlAlchemyUnitOfWork",
     "SqlAlchemyUnitOfWorkFactory",
+    "build_infrastructure",
     "create_db_engine",
     "create_session_factory",
     "dispose_engine",
+    "load_infrastructure_settings",
     "metadata",
     "session_scope",
 ]

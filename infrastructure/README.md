@@ -30,23 +30,61 @@ technologies (SQLAlchemy, Alembic, PostgreSQL, Redis, object storage SDKs,
 queue clients).
 
 **Forbidden:** Domain rules, business decisions, grading/adapter/execution
-orchestration.
+orchestration, authorization policy.
 
 ## Package layout
 
 ```
 agent_eval_infrastructure/
+  config.py                 # InfrastructureSettings (env via shared config)
   database/                 # Engine, session factory, metadata, ORM models
   mappers/                  # Explicit ORM ↔ Domain mapping (Data Mapper)
   repositories/             # Domain repository Protocol adapters
   unit_of_work/             # Application UnitOfWork implementation
-  queue/                    # Run queue / messaging adapters
-  storage/                  # Object storage adapters
-  ids/                      # ID generator implementations
-  transactions/             # Transaction helpers shared by UoW / repos
-  dependency_injection/     # Composition / wiring helpers
-  migrations/               # Alembic migration package hooks (versions live below)
+  queue/                    # Redis-compatible RunQueue (+ claim/ack hooks)
+  storage/                  # S3-compatible ObjectStorage for Artifacts
+  ids/                      # UuidIdGenerator (Application IdGenerator port)
+  events/                   # In-process DomainEventDispatcher
+  idempotency/              # Redis / in-memory IdempotencyStore
+  dependency_injection/     # Composition root (build_infrastructure)
+  transactions/             # SAVEPOINT helper (not on Application UoW port)
+  migrations/               # Alembic migration package hooks
 ```
+
+## Status
+
+Phase 5 — Infrastructure Layer feature-complete for Application ports that
+Infrastructure owns: repositories, Unit of Work, run queue, object storage,
+ID generation, event dispatch, idempotency, and composition root.
+
+**Not in this package:** FastAPI, Workers, Execution Engine, Adapter/Grader
+implementations, or Authorization policy.
+
+## Composition root
+
+```python
+from agent_eval_infrastructure import (
+    RuntimeProfile,
+    build_infrastructure,
+    load_infrastructure_settings,
+)
+
+container = build_infrastructure(profile=RuntimeProfile.MEMORY)  # tests
+# container = build_infrastructure()  # production: Redis + S3-compatible
+try:
+    with container.uow_factory() as uow:
+        ...
+    container.run_queue.enqueue_run(run_id)
+finally:
+    container.dispose()
+```
+
+`RuntimeProfile.MEMORY` wires in-memory queue/storage/idempotency (deterministic
+tests). `PRODUCTION` wires Redis + S3-compatible storage from
+`InfrastructureSettings`.
+
+Configuration flows only through `agent_eval_shared.config` /
+`InfrastructureSettings` — no ad-hoc `os.environ` reads.
 
 ## Repositories
 
@@ -64,58 +102,32 @@ Domain invariants.
 | `GraderRepository`  | `SqlAlchemyGraderRepository`  |
 | `RunRepository`     | `SqlAlchemyRunRepository`     |
 
-**Mapping rules:** Version _content_ is insert-once; version _lifecycle status_
-may be updated in place to match Domain Model §7. Run children (events,
-artifacts, scores) are append-only. Run `lock_version` is SQLAlchemy-managed
-optimistic concurrency (not a Domain field). Sandbox is Domain-only and is
-reconstructed as `None`.
+## Unit of Work
+
+- One UoW per use-case invocation (ADR-0002)
+- All repositories share one Session
+- Domain events are **not** dispatched here (Application: commit → dispatch)
+
+## Run queue
+
+`RedisRunQueue` / `InMemoryRunQueue` implement Application `enqueue_run`.
+Worker-facing `claim_run` / `acknowledge_run` / `release_run` are available on
+the same adapters but contain no Worker orchestration.
+
+## Object storage
+
+`ObjectStorage` protocol: `put` / `get` / `delete` / `head`.
+`S3CompatibleObjectStorage` uses boto3 with configurable `endpoint_url`
+(MinIO, R2, AWS, … — not AWS-hardcoded). `InMemoryObjectStorage` for tests.
+
+## Testing
+
+Prefer `uv run pytest infrastructure/tests`. External services are mocked
+(`FakeRedis`, mocked S3 client) or replaced with in-memory adapters so tests
+stay deterministic.
 
 Sibling directories in this folder (ops, not Python import graph):
 
 - `docker/` — container and compose scaffolding
 - `scripts/` — operational scripts
-- `migrations/` (package root) — Alembic revision files (Phase 2+)
-
-## Status
-
-Phase 4 — SQLAlchemy Unit of Work implements the Application `UnitOfWork`
-port (session + transaction lifecycle, repository factories, commit/rollback).
-Redis, queue, object storage, DI, and Alembic revisions land in Phase 5+.
-
-## Unit of Work
-
-```
-unit_of_work/
-  sqlalchemy.py   # SqlAlchemyUnitOfWork + SqlAlchemyUnitOfWorkFactory
-```
-
-- One UoW per use-case invocation (ADR-0002); nested `__enter__` is rejected
-- All repositories from one UoW share the exact same `Session`
-- Repositories never commit/rollback — UoW owns that
-- Domain events are **not** dispatched here (Application: commit → dispatch)
-- Optimistic concurrency: `StaleDataError` propagates from flush/commit
-- Nested SAVEPOINTs are **not** on the Application port; optional helper
-  `transactions.begin_nested` exists for rare Infrastructure call sites
-
-## Database package
-
-```
-database/
-  config.py       # DatabaseSettings (DATABASE_URL, pool)
-  naming.py       # Constraint/index naming conventions
-  base.py         # Declarative Base + MetaData
-  mixins.py       # UUID PK, timestamps, optimistic lock
-  engine.py       # create_db_engine / dispose_engine
-  session.py      # sessionmaker + session_scope
-  models/         # Persistence models (Schema Design logical tables)
-```
-
-**Rules:** ORM models never leave Infrastructure. Domain stays
-persistence-agnostic (Data Mapper). Sync SQLAlchemy only — architecture does
-not require async ORM for the Control Plane.
-
-## Testing
-
-Repository unit tests use in-memory SQLite (`sqlite+pysqlite:///:memory:`).
-Prefer `uv run pytest infrastructure/tests`. PostgreSQL-specific behavior
-and testcontainers arrive with later phases.
+- `migrations/` (package root) — Alembic revision files
