@@ -1,0 +1,49 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Docs/Design System" />
+
+# Design system
+
+Source of truth: `docs/design/design-principles.md`.
+
+## Token philosophy
+
+- Neutral-first surfaces; accent (calm blue-gray) under ~10% of any viewport
+- Semantic status tokens only for meaning (`success`, `warning`, `danger`, `running`, …)
+- All values live as `--ef-*` CSS variables in `packages/ui/src/styles/tokens.css`
+- Consume via Tailwind semantic utilities (`bg-background`, `text-muted-foreground`, …) — avoid raw hex
+
+## Theme architecture
+
+- Light / dark via `.dark` class on the document root
+- `next-themes` in `apps/web` (`attribute="class"`, default `system`)
+- Theme toggle lives in the shell top bar and command palette (Appearance)
+
+## Typography
+
+- **Geist Sans** + **Geist Mono** (loaded in `apps/web` root layout)
+- Product copy uses `<Heading>` / `<Text>` only — no ad-hoc `text-lg` / raw styled headings
+- Roles: Display, Page, Section, Card, Body, Secondary, Caption, Code, Table
+
+See stories under **Typography/**.
+
+## Spacing
+
+Scale only: `4 · 8 · 12 · 16 · 24 · 32 · 48 · 64`  
+Prefer `Stack` / `Cluster` gap props over magic margins.
+
+## Motion
+
+- Prefer CSS transitions (150–250ms)
+- Framer Motion for presence / dialogs / layout only
+- Every animation must answer where-from, where-to, or what-changed
+- Honor `prefers-reduced-motion`
+
+## Accessibility
+
+WCAG AA: keyboard, `focus-visible`, labels, contrast, landmarks, reduced motion.  
+Use the **Accessibility** addon on component stories.
+
+## Icons
+
+Always `<Icon icon={Search} />` (or curated Lucide re-exports from `@agent-eval/ui`). Never import Lucide icons directly in product code.

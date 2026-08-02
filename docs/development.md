@@ -237,20 +237,37 @@ Python package: `apps/api/` → `agent_eval_api`.
 - Adapter or Grader _implementations_ (interfaces/contracts may live in Domain)
 - UI components (those live in `@agent-eval/ui` / `apps/web` — see below)
 
-## Frontend (Phase 15A+)
+## Frontend (Phases 15A–15B)
 
-| Package                          | Role                                                          |
-| -------------------------------- | ------------------------------------------------------------- |
-| `@agent-eval/ui` (`packages/ui`) | Design tokens + reusable primitives + Storybook               |
-| `@agent-eval/web` (`apps/web`)   | Next.js App Router shell, layouts, `/design-system`, features |
+| Package                          | Role                                                              |
+| -------------------------------- | ----------------------------------------------------------------- |
+| `@agent-eval/ui` (`packages/ui`) | Tokens, primitives, DataGrid, Storybook                           |
+| `@agent-eval/web` (`apps/web`)   | App Router shell, layouts, patterns, navigation, `/design-system` |
+
+**Hybrid ownership:** domain UI and product chrome stay in `apps/web`. Never put `RunCard` / `ProjectCard` / `ScorePanel` in `packages/ui`.
 
 Read first:
 
 - [docs/design/design-principles.md](./design/design-principles.md)
 - [docs/design/developer-guidelines.md](./design/developer-guidelines.md)
+- [docs/design/layouts.md](./design/layouts.md)
+- [docs/design/product-patterns.md](./design/product-patterns.md)
+- [docs/design/navigation.md](./design/navigation.md)
+- [docs/design/data-grid.md](./design/data-grid.md)
 - [docs/adr/ADR-0003-frontend-design-system.md](./adr/ADR-0003-frontend-design-system.md)
 
 ```bash
-pnpm --filter @agent-eval/web dev
-pnpm --filter @agent-eval/ui storybook
+pnpm --filter @agent-eval/web dev          # http://localhost:3000
+pnpm --filter @agent-eval/ui storybook     # engineering playground
+pnpm verify                                # required before commit
+```
+
+Web structure:
+
+```
+apps/web/src/
+  app/(shell)/          # routes inside AppShell
+  components/shell/     # sidebar, ⌘K, breadcrumbs, hotkeys
+  components/layouts/   # PageLayout, PageHeader, …
+  components/patterns/  # skeletons, ConfirmationDialog, …
 ```

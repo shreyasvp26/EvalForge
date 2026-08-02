@@ -70,15 +70,15 @@ export default function DesignSystemPage() {
         title="Design system"
         description={
           <>
-            Curated reference inside the real EvalForge shell. Exhaustive component variants live in
-            Storybook. Principles:{" "}
+            Curated reference inside the real EvalForge shell. Exhaustive variants and Docs MDX live
+            in Storybook. Canonical guides:{" "}
             <Link
-              href="https://github.com/shreyasvp26/EvalForge/blob/main/docs/design/design-principles.md"
+              href="https://github.com/shreyasvp26/EvalForge/tree/main/docs/design"
               className="text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              docs/design/design-principles.md
-            </Link>
-            .
+              docs/design/
+            </Link>{" "}
+            (principles, layouts, patterns, navigation, DataGrid, contributor guidelines).
           </>
         }
       />
@@ -86,6 +86,7 @@ export default function DesignSystemPage() {
       <nav aria-label="Design system sections" className="mt-6 mb-2 flex flex-wrap gap-3">
         {(
           [
+            ["docs", "Docs"],
             ["principles", "Principles"],
             ["layouts", "Layouts"],
             ["navigation", "Navigation"],
@@ -107,6 +108,41 @@ export default function DesignSystemPage() {
           </a>
         ))}
       </nav>
+
+      <GallerySection
+        id="docs"
+        title="Documentation map"
+        description="Start with principles, then ownership and contribution rules. Layouts / patterns / navigation / DataGrid have dedicated guides."
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              ["design-principles.md", "Philosophy, tokens, type, spacing, motion, a11y"],
+              ["developer-guidelines.md", "Imports, ownership, verify, Conventional Commits"],
+              ["layouts.md", "AppShell, PageLayout, SplitView, InspectorLayout, …"],
+              ["product-patterns.md", "Skeletons, empty/error/confirm, success"],
+              ["navigation.md", "Sidebar, ⌘K, shortcuts, breadcrumbs"],
+              ["data-grid.md", "TanStack DataGrid architecture and extensions"],
+            ] as const
+          ).map(([file, blurb]) => (
+            <div key={file} className="space-y-1">
+              <Text variant="body" className="font-medium">
+                <Link
+                  href={`https://github.com/shreyasvp26/EvalForge/blob/main/docs/design/${file}`}
+                  className="text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {file}
+                </Link>
+              </Text>
+              <Text variant="secondary">{blurb}</Text>
+            </div>
+          ))}
+        </div>
+        <Text variant="caption" className="mt-4 block">
+          Engineers: <code className="font-mono">pnpm --filter @agent-eval/ui storybook</code> →
+          Docs sidebar. Product review: this page.
+        </Text>
+      </GallerySection>
 
       <GallerySection
         id="principles"

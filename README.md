@@ -6,25 +6,26 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 
 ## Current status
 
-| Phase                                                | Status   |
-| ---------------------------------------------------- | -------- |
-| Phase 0 — Repository foundation                      | Complete |
-| Engineering foundation (tooling, shared libs, tests) | Complete |
-| Domain layer                                         | Complete |
-| Application layer                                    | Complete |
-| Infrastructure layer                                 | Complete |
-| Execution workers / engine                           | Complete |
-| FastAPI Control Plane (Phase 6)                      | Complete |
-| Sandbox Runtime (Phase 7)                            | Complete |
-| Adapter SDK + Claude Code (Phase 8)                  | Complete |
-| Objective Graders (Phase 9)                          | Complete |
-| Rubric Graders (Phase 10)                            | Complete |
-| Production Pipeline Integration (Phase 11)           | Complete |
-| Production Judge Providers (Phase 12)                | Complete |
-| Multi-Agent Adapter Expansion (Phase 13)             | Complete |
-| Production Hardening (Phase 14)                      | Complete |
-| Phase 15A — Frontend design system foundation        | Complete |
-| Additional adapters / product UI                     | Later    |
+| Phase                                                | Status      |
+| ---------------------------------------------------- | ----------- |
+| Phase 0 — Repository foundation                      | Complete    |
+| Engineering foundation (tooling, shared libs, tests) | Complete    |
+| Domain layer                                         | Complete    |
+| Application layer                                    | Complete    |
+| Infrastructure layer                                 | Complete    |
+| Execution workers / engine                           | Complete    |
+| FastAPI Control Plane (Phase 6)                      | Complete    |
+| Sandbox Runtime (Phase 7)                            | Complete    |
+| Adapter SDK + Claude Code (Phase 8)                  | Complete    |
+| Objective Graders (Phase 9)                          | Complete    |
+| Rubric Graders (Phase 10)                            | Complete    |
+| Production Pipeline Integration (Phase 11)           | Complete    |
+| Production Judge Providers (Phase 12)                | Complete    |
+| Multi-Agent Adapter Expansion (Phase 13)             | Complete    |
+| Production Hardening (Phase 14)                      | Complete    |
+| Phase 15A — Frontend design system foundation        | Complete    |
+| Phase 15B — Product UX foundation                    | In progress |
+| Additional adapters / product CRUD UI                | Later       |
 
 ## Repository layout
 
@@ -103,7 +104,8 @@ uv run pytest
 | `@agent-eval/logger` | Structured logging + correlation context              |
 | `@agent-eval/utils`  | Small cross-cutting helpers                           |
 | `@agent-eval/shared` | Barrel re-exports of the above                        |
-| `@agent-eval/ui`     | Design tokens and reusable UI primitives              |
+| `@agent-eval/ui`     | Design tokens, primitives, DataGrid, Storybook        |
+| `@agent-eval/web`    | Next.js app (shell, layouts, patterns) — see below    |
 
 **Python**
 
@@ -121,12 +123,28 @@ uv run pytest
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.
 
+## Frontend architecture
+
+EvalForge’s UI is a **renderer** over the API (backend owns the product). Phase 15A/15B established:
+
+1. **`@agent-eval/ui`** — design tokens, semantic typography/icons, primitives, DataGrid
+2. **`apps/web`** — AppShell (sidebar + top bar + ⌘K), product layouts, UX patterns, `/design-system`
+
+Hybrid ownership is locked in [ADR-0003](./docs/adr/ADR-0003-frontend-design-system.md). Domain components never live in `packages/ui`.
+
+```bash
+pnpm --filter @agent-eval/web dev
+pnpm --filter @agent-eval/ui storybook
+```
+
+Docs: [docs/design/](./docs/design/) (principles, layouts, patterns, navigation, DataGrid, contributor guidelines).
+
 ## Documentation
 
 | Doc                                          | Purpose                               |
 | -------------------------------------------- | ------------------------------------- |
 | [docs/development.md](./docs/development.md) | Engineering conventions               |
-| [docs/design/](./docs/design/)               | Frontend design principles            |
+| [docs/design/](./docs/design/)               | Frontend design + UX foundation       |
 | [docs/architecture/](./docs/architecture/)   | System architecture (source of truth) |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)         | Contribution workflow                 |
 | [SECURITY.md](./SECURITY.md)                 | Vulnerability reporting               |

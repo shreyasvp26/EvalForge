@@ -1,0 +1,39 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Docs/Layouts" />
+
+# Layout system
+
+Canonical guide: `docs/design/layouts.md`.
+
+Product layouts live in **`apps/web`** (`@/components/layouts`). Generic layout primitives (`Stack`, `Cluster`, `Container`, `Panel`, `InspectorLayout`) live in **`@agent-eval/ui`**.
+
+## When to use what
+
+| Layout                                 | Use when                                                              |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| **AppShell**                           | Every authenticated route — sidebar + top bar + main                  |
+| **PageLayout**                         | Default page canvas (width + padding). `flush` inside SplitView panes |
+| **PageHeader**                         | Title, description, actions, optional breadcrumbs                     |
+| **Section**                            | One-purpose block under a page header                                 |
+| **Toolbar**                            | Dense start/end action row above collections                          |
+| **FilterBar**                          | Search + filters + meta (`role="search"`)                             |
+| **DetailLayout**                       | Primary content + optional aside                                      |
+| **SplitView**                          | Resizable / proportional two-pane workspace                           |
+| **InspectorLayout** (`@agent-eval/ui`) | Opt-in right inspector over content — keep closed by default          |
+| **Empty / Loading / Error content**    | Page-level placeholders inside `PageLayout`                           |
+
+## Composition sketch
+
+```tsx
+<PageLayout width="lg">
+  <PageHeader title="Projects" actions={<Button>New</Button>} />
+  <Toolbar end={<Button variant="outline">Export</Button>} />
+  <FilterBar search={<DataGridSearch … />} meta={<Text variant="caption">12</Text>} />
+  <Section>
+    <DataGrid … />
+  </Section>
+</PageLayout>
+```
+
+Do not invent one-off page chrome. Prefer composing these primitives.

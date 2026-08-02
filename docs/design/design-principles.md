@@ -39,8 +39,8 @@ Whitespace is intentional. Typography does the heavy lifting. Motion is restrain
 
 | Owns                                                                                                                                                                           | Does not own                                                                 |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| **`packages/ui` (`@agent-eval/ui`)** — tokens, typography primitives, motion primitives, form controls, tables, feedback, overlays, charts, `<Icon />`                         | EvalForge domain UI (`RunCard`, `ProjectCard`, `AgentCard`, `ScorePanel`, …) |
-| **`apps/web` (`@agent-eval/web`)** — app shell, sidebar, top bar, command palette, product layouts (including opt-in inspector), feature composition, `/design-system` gallery | Low-level token definitions duplicated from ui                               |
+| **`packages/ui` (`@agent-eval/ui`)** — tokens, typography, icons, form controls, tables, **DataGrid**, feedback, overlays, generic layout (`Stack`, `InspectorLayout`), motion | EvalForge domain UI (`RunCard`, `ProjectCard`, `AgentCard`, `ScorePanel`, …) |
+| **`apps/web` (`@agent-eval/web`)** — AppShell, navigation, product layouts (`PageLayout`, …), UX patterns, feature composition, `/design-system` gallery                       | Low-level token definitions duplicated from ui                               |
 
 **Rule:** if a component names a domain concept, it belongs in `apps/web`. If it could ship in any serious product unchanged, it belongs in `packages/ui`.
 
@@ -48,7 +48,7 @@ Whitespace is intentional. Typography does the heavy lifting. Motion is restrain
 
 | Surface                           | Audience                | Purpose                                                                                    |
 | --------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
-| **Storybook** (`packages/ui`)     | Engineers               | Interactive playground for every reusable component — variants, states, a11y               |
+| **Storybook** (`packages/ui`)     | Engineers               | Docs MDX + interactive playground — variants, states, a11y                                 |
 | **`/design-system`** (`apps/web`) | Product / design review | Curated gallery of tokens, principles, and representative components inside the real shell |
 
 Do not turn `/design-system` into a second Storybook. Keep it curated. Put exhaustive variant matrices in Storybook.
@@ -319,6 +319,7 @@ Before merging UI:
 
 ## Changelog
 
-| Date       | Change                                                              |
-| ---------- | ------------------------------------------------------------------- |
-| 2026-08-02 | Initial principles accepted with Phase 15A design system foundation |
+| Date       | Change                                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-02 | Initial principles accepted with Phase 15A design system foundation                                                        |
+| 2026-08-02 | Phase 15B: product layouts, DataGrid, UX patterns, navigation shell — see layouts / patterns / navigation / data-grid docs |

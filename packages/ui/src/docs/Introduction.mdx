@@ -1,0 +1,42 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Docs/Introduction" />
+
+# EvalForge UI documentation
+
+Storybook covers **`@agent-eval/ui`** primitives and shared patterns loaded from `apps/web`.
+
+## Read these first (repo docs)
+
+Canonical prose lives in the repository — use Storybook for interactive examples:
+
+| Doc                                   | Topic                              |
+| ------------------------------------- | ---------------------------------- |
+| `docs/design/design-principles.md`    | Philosophy, tokens, motion, a11y   |
+| `docs/design/developer-guidelines.md` | Contributor guide                  |
+| `docs/design/layouts.md`              | AppShell, PageLayout, SplitView, … |
+| `docs/design/product-patterns.md`     | Skeletons, empty/error/confirm     |
+| `docs/design/navigation.md`           | Sidebar, ⌘K, shortcuts             |
+| `docs/design/data-grid.md`            | TanStack DataGrid                  |
+
+## Package ownership
+
+| `@agent-eval/ui`                      | `apps/web`                 |
+| ------------------------------------- | -------------------------- |
+| Tokens, Heading/Text/Icon, primitives | AppShell, sidebar, ⌘K      |
+| DataGrid + helpers                    | Product layouts & patterns |
+| Stack, Cluster, InspectorLayout       | Feature / domain UI        |
+| This Storybook                        | `/design-system` gallery   |
+
+**Never** put `RunCard`, `ProjectCard`, `ScorePanel`, or API-coupled UI in `packages/ui`.
+
+## Surfaces
+
+- **Storybook** — exhaustive variants + Docs pages (you are here)
+- **`/design-system`** — curated gallery inside the real product shell
+
+```bash
+pnpm --filter @agent-eval/ui storybook
+pnpm --filter @agent-eval/web dev   # then open /design-system
+pnpm verify
+```

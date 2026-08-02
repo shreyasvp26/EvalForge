@@ -18,19 +18,20 @@ EvalForge's domain is hierarchical (Projects → Suites → Cases → Runs) and 
 
 ### Hybrid package boundary
 
-- **`packages/ui` (`@agent-eval/ui`)** owns design tokens, typography primitives (`Heading`, `Text`), motion primitives, form controls, tables, feedback, overlays, charts, and the `<Icon />` wrapper.
-- **`apps/web` (`@agent-eval/web`)** owns the application shell, navigation, sidebar, top bar, command palette, product layouts (including opt-in inspector), feature composition, and the product-facing `/design-system` gallery.
+- **`packages/ui` (`@agent-eval/ui`)** owns design tokens, typography primitives (`Heading`, `Text`), motion primitives, form controls, tables, **DataGrid**, feedback, overlays, generic layout (`Stack`, `InspectorLayout`), and the `<Icon />` wrapper.
+- **`apps/web` (`@agent-eval/web`)** owns the application shell, navigation, sidebar, top bar, command palette, product layouts (`PageLayout`, `DetailLayout`, …), UX patterns, feature composition, and the product-facing `/design-system` gallery.
 
 `packages/ui` must never contain EvalForge-specific domain components (`RunCard`, `ProjectCard`, `AgentCard`, `ScorePanel`, etc.). Those belong only in `apps/web`.
 
 ### Application shell: sidebar + top bar
 
-Every authenticated product view sits inside a left sidebar + top bar shell. The sidebar represents the product hierarchy (Projects → Suites → Cases → Runs). A right **inspector** is provided as a **layout primitive** that pages opt into (e.g. Run Details, Artifact Viewer), not as permanent chrome on every route.
+Every authenticated product view sits inside a left sidebar + top bar shell. The sidebar represents the product hierarchy (Projects → Suites → Cases → Runs). A right **inspector** is provided as a **layout primitive** (`InspectorLayout` in ui; product pages typically use `DetailLayout`) that pages opt into (e.g. Run Details, Artifact Viewer), not as permanent chrome on every route.
 
 ### Dual documentation surfaces
 
-- **Storybook** in `packages/ui` is the engineering playground for reusable components (variants, states, a11y).
+- **Storybook** in `packages/ui` is the engineering playground (Docs MDX + component stories: variants, states, a11y).
 - **`/design-system`** in `apps/web` is the product-facing gallery of principles, tokens, and curated examples inside the real shell.
+- Canonical prose: `docs/design/` (principles, guidelines, layouts, patterns, navigation, DataGrid).
 
 ### Typography and icons
 

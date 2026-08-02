@@ -1,0 +1,41 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Docs/Navigation" />
+
+# Navigation
+
+Canonical guide: `docs/design/navigation.md`.
+
+Implementation: **`apps/web/src/components/shell`**. Related stories: **Product Patterns/Navigation**.
+
+## Sidebar
+
+- Sections: Workspace (Projects, Suites, Cases, Runs, Agents) and System (Design system)
+- Active: muted background + inset accent + `aria-current="page"`
+- Collapsible icon rail (`lg+`); state in `localStorage` (`evalforge.sidebar.collapsed`)
+- Section expand state: `evalforge.sidebar.sections`
+- Below `lg`: focus-trapped `MobileNavDrawer`
+
+## Command palette (⌘K)
+
+Lazy-loaded. Groups: Recent · Navigate · Appearance · Help. Fuzzy match on titles.
+
+## Keyboard shortcuts
+
+| Shortcut         | Action                   |
+| ---------------- | ------------------------ |
+| ⌘K / Ctrl+K      | Command palette          |
+| G then P / R / A | Projects / Runs / Agents |
+| ?                | Shortcuts cheatsheet     |
+| Esc              | Close overlays           |
+
+## Breadcrumbs
+
+`Breadcrumbs` from the shell — TopBar auto trail and/or `PageHeader.breadcrumbs`. Last crumb is plain text with `aria-current="page"`.
+
+## Accessibility
+
+- Landmark roles for nav / main
+- Focus trap + restore on drawers and dialogs
+- Visible focus rings; icon-only controls labeled
+- Chord shortcuts ignored while typing in inputs

@@ -4,7 +4,10 @@ EvalForge web application — Next.js App Router.
 
 ## Status
 
-Phase 15A — frontend foundation complete (design system, shell, `/design-system` gallery). No product CRUD yet.
+- **Phase 15A** — design system consumption, theme, shell foundation
+- **Phase 15B** — product layouts, UX patterns, DataGrid gallery demos, navigation polish
+
+No product CRUD or API-backed feature screens yet.
 
 ## Scripts
 
@@ -17,8 +20,30 @@ pnpm --filter @agent-eval/web typecheck
 
 ## Architecture
 
-- Consumes `@agent-eval/ui` for tokens and primitives
-- Owns app shell, navigation, command palette, product layouts, `/design-system`
-- Prefer Server Components; keep client islands small
+| Area            | Path                             |
+| --------------- | -------------------------------- |
+| App shell / nav | `src/components/shell/`          |
+| Product layouts | `src/components/layouts/`        |
+| UX patterns     | `src/components/patterns/`       |
+| Design gallery  | `src/app/(shell)/design-system/` |
+| Routes          | `src/app/(shell)/…`              |
 
-See [docs/design/design-principles.md](../../docs/design/design-principles.md) and [ADR-0003](../../docs/adr/ADR-0003-frontend-design-system.md).
+- Consumes `@agent-eval/ui` for tokens and primitives
+- Prefer Server Components; `"use client"` at the smallest leaf
+- Lazy-load command palette
+
+## Keyboard (shell)
+
+| Shortcut         | Action                   |
+| ---------------- | ------------------------ |
+| ⌘K / Ctrl+K      | Command palette          |
+| G then P / R / A | Projects / Runs / Agents |
+| ?                | Shortcuts cheatsheet     |
+| Esc              | Close overlays           |
+
+## Docs
+
+- [Design principles](../../docs/design/design-principles.md)
+- [Developer guidelines](../../docs/design/developer-guidelines.md)
+- [Layouts](../../docs/design/layouts.md) · [Patterns](../../docs/design/product-patterns.md) · [Navigation](../../docs/design/navigation.md) · [DataGrid](../../docs/design/data-grid.md)
+- [ADR-0003](../../docs/adr/ADR-0003-frontend-design-system.md)

@@ -9,6 +9,7 @@ Thank you for your interest in contributing to EvalForge.
 3. Treat [docs/architecture/](./docs/architecture/) as the source of truth — do not silently redesign boundaries.
 4. Search existing issues and pull requests to avoid duplicates.
 5. For significant changes, open an issue first to discuss the approach.
+6. Frontend work: read [docs/design/developer-guidelines.md](./docs/design/developer-guidelines.md) and [docs/design/design-principles.md](./docs/design/design-principles.md).
 
 ## Development setup
 
@@ -40,7 +41,7 @@ uv run black .
 ## Branching & commits
 
 - Create a feature branch from `main`.
-- Prefer small, focused commits with clear messages.
+- Prefer small, focused commits with [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat(web): …`, `docs(design): …`).
 - Reference related issue numbers in the PR description.
 
 ## Pull requests

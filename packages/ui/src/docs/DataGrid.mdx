@@ -1,0 +1,49 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Docs/DataGrid" />
+
+# DataGrid
+
+Canonical guide: `docs/design/data-grid.md`.  
+Component stories: **DataGrid/DataGrid**.
+
+Domain-agnostic table on **TanStack Table** + design-system table primitives. Never hardcode EvalForge resources inside the grid.
+
+```tsx
+import {
+  DataGrid,
+  DataGridSearch,
+  DataGridColumnVisibility,
+  DataGridPagination,
+} from "@agent-eval/ui";
+```
+
+## Features
+
+Sorting · global search · column filters · column visibility · loading skeletons · empty slots · keyboard row focus · row actions · controlled pagination · row selection **API** (wire your own selection column UI)
+
+## Controlled state (production)
+
+Pass `sorting`, `globalFilter`, `columnFilters`, `columnVisibility`, `pagination`, `rowSelection` (+ change handlers) from the page. Helpers:
+
+- `DataGridSearch` → `globalFilter`
+- `DataGridColumnVisibility` → visibility menu
+- `DataGridPagination` → page index / size / count
+
+## Server-side pagination readiness
+
+When data is fetched per page:
+
+1. Pass `manualPagination`
+2. Set `pageCount` from the API
+3. Keep `pagination` controlled; refetch on page change
+4. Optionally `manualSorting` / `manualFiltering` the same way
+
+## Extension points
+
+- Column `meta` for alignment / header hints
+- `renderRowActions(row)` for overflow menus
+- Empty title / description / action slots
+- Compose with product `FilterBar` / `Toolbar` / `PageLayout` in `apps/web`
+
+See `/design-system#datagrid` for a live demo inside the shell.

@@ -1,0 +1,46 @@
+import { Meta } from "@storybook/blocks";
+
+<Meta title="Docs/Product Patterns" />
+
+# Product UX patterns
+
+Canonical guide: `docs/design/product-patterns.md`.
+
+Patterns live in **`apps/web/src/components/patterns`**. They compose `@agent-eval/ui` and must stay **domain-agnostic** (no hardcoded Projects/Runs nouns beyond configurable labels).
+
+Stories: **Product Patterns/** in this Storybook.
+
+## Loading & skeletons
+
+Prefer skeletons that **preserve layout** over centered spinners.
+
+| Pattern          | Use                         |
+| ---------------- | --------------------------- |
+| `PageSkeleton`   | Full route                  |
+| `TableSkeleton`  | Collection / grid shaped    |
+| `DetailSkeleton` | Detail + optional inspector |
+| `FormSkeleton`   | Forms                       |
+| `GlobalLoading`  | Rare boot block — sparingly |
+
+## Empty & status
+
+Every empty/error/success state should answer: **what happened?** **why?** **what next?**
+
+| Pattern                 | Use                                       |
+| ----------------------- | ----------------------------------------- |
+| `SearchEmptyState`      | Query returned nothing                    |
+| `NoResultsState`        | Filters excluded everything               |
+| `NotFoundState`         | Missing resource                          |
+| `PermissionDeniedState` | Authz failure                             |
+| `ComingSoonState`       | Intentionally unfinished                  |
+| `SuccessState`          | Terminal multi-step success (not a toast) |
+
+## Errors & confirmation
+
+| Pattern              | Use                                                   |
+| -------------------- | ----------------------------------------------------- |
+| `InlineError`        | Recoverable inline failure                            |
+| `ErrorBoundary`      | Unexpected render failures                            |
+| `ConfirmationDialog` | Destructive / async confirms — pending + error states |
+
+Use Sonner toasts for lightweight success; use `SuccessState` for page-level terminal success.
