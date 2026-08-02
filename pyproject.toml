@@ -22,6 +22,7 @@ members = [
   "domain",
   "application",
   "infrastructure",
+  "sandbox",
 ]
 
 [tool.uv]
@@ -67,6 +68,7 @@ testpaths = [
   "application/tests",
   "infrastructure/tests",
   "workers/tests",
+  "sandbox/tests",
   "apps/api/tests",
 ]
 pythonpath = [
@@ -79,10 +81,15 @@ pythonpath = [
   "infrastructure/tests",
   "workers/src",
   "workers/tests",
+  "sandbox/src",
+  "sandbox/tests",
   "apps/api/src",
   "apps/api/tests",
 ]
 addopts = ["-q", "--strict-markers"]
+markers = [
+  "integration: requires a live Docker daemon",
+]
 
 [tool.coverage.run]
 source = [
@@ -91,6 +98,7 @@ source = [
   "agent_eval_application",
   "agent_eval_infrastructure",
   "agent_eval_workers",
+  "agent_eval_sandbox",
   "agent_eval_api",
 ]
 branch = true
