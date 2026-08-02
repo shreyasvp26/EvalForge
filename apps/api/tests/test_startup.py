@@ -37,3 +37,28 @@ def test_create_app_factory_builds_without_error() -> None:
     app = create_app(container=container, settings=settings)
     assert app.title
     assert app.openapi_url == "/openapi.json"
+
+
+def test_owned_container_disposed_on_shutdown(monkeypatch, settings) -> None:
+    """When create_app builds its own container, lifespan disposes it."""
+    from agent_eval_api import main as main_mod
+
+    owned = FakeContainer(services=mock_services(), settings=settings)
+    disposed = {"called": False}
+    original = owned.dispose
+
+    def tracking() -> None:
+        disposed["called"] = True
+        original()
+
+    owned.dispose = tracking  # type: ignore[method-assign]
+
+    monkeypatch.setattr(
+        main_mod,
+        "build_api_container",
+        lambda **_kwargs: owned,
+    )
+    app = create_app(settings=settings)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        assert client.app.state.container is owned
+    assert disposed["called"] is True

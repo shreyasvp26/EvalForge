@@ -1,12 +1,6 @@
-"""OpenAPI generation and dependency override tests."""
+"""OpenAPI generation tests for the Control Plane foundation."""
 
 from __future__ import annotations
-
-from agent_eval_api.dependencies import get_actor, get_services
-from agent_eval_api.main import create_app
-from agent_eval_application.common.actor import Actor
-from api_fakes import FakeContainer, mock_services, sample_project
-from fastapi.testclient import TestClient
 
 
 def test_openapi_generated(client) -> None:
@@ -14,35 +8,19 @@ def test_openapi_generated(client) -> None:
     assert response.status_code == 200
     spec = response.json()
     assert spec["info"]["title"]
+    assert (
+        "Phase 6A" in spec["info"].get("description", "")
+        or "foundation" in (spec["info"].get("description") or "").lower()
+    )
     paths = spec["paths"]
     assert "/health/live" in paths
-    assert "/v1/projects" in paths
-    assert "/v1/suites" in paths
-    assert "/v1/cases" in paths
-    assert "/v1/agents" in paths
-    assert "/v1/adapters" in paths
-    assert "/v1/graders" in paths
-    assert "/v1/runs" in paths
+    assert "/health/ready" in paths
+    assert "/v1" in paths
     assert "/v1/system/info" in paths
-
-
-def test_dependency_overrides(settings) -> None:
-    services = mock_services()
-    services.get_project.execute.return_value = sample_project(name="Overridden")
-    container = FakeContainer(services=services, settings=settings)
-    app = create_app(container=container, settings=settings)
-
-    app.dependency_overrides[get_actor] = lambda: Actor(id="override-actor")
-    app.dependency_overrides[get_services] = lambda: services
-
-    with TestClient(app, raise_server_exceptions=False) as client:
-        response = client.get("/v1/projects/proj-1")
-        assert response.status_code == 200
-        assert response.json()["name"] == "Overridden"
-        query = services.get_project.execute.call_args.args[0]
-        assert query.actor.id == "override-actor"
-
-    app.dependency_overrides.clear()
+    # Business resources are Phase 6B — must not appear yet.
+    assert "/v1/projects" not in paths
+    assert "/v1/runs" not in paths
+    assert "/v1/suites" not in paths
 
 
 def test_system_info(client, auth_headers) -> None:
@@ -52,3 +30,10 @@ def test_system_info(client, auth_headers) -> None:
     assert body["service"] == "evalforge-control-plane"
     assert body["api_version"] == "v1"
     assert body["environment"] == "test"
+
+
+def test_v1_root(client) -> None:
+    response = client.get("/v1")
+    assert response.status_code == 200
+    assert response.json()["api_version"] == "v1"
+    assert response.json()["status"] == "foundation"

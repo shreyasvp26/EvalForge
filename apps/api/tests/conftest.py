@@ -1,4 +1,4 @@
-"""Shared fixtures for Control Plane API tests."""
+"""Shared fixtures for Control Plane foundation tests."""
 
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ def container(services, settings) -> FakeContainer:
 @pytest.fixture
 def client(container) -> TestClient:
     app = create_app(container=container, settings=container.settings)
-    # ServerErrorMiddleware re-raises after invoking the Exception handler so
-    # ASGI servers can log; disable re-raise in tests to assert HTTP bodies.
+    # ServerErrorMiddleware re-raises after the Exception handler so ASGI
+    # servers can log; disable re-raise in tests to assert HTTP bodies.
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
 
