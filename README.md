@@ -6,24 +6,25 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 
 ## Current status
 
-| Phase                                                | Status   |
-| ---------------------------------------------------- | -------- |
-| Phase 0 — Repository foundation                      | Complete |
-| Engineering foundation (tooling, shared libs, tests) | Complete |
-| Domain layer                                         | Complete |
-| Application layer                                    | Complete |
-| Infrastructure layer                                 | Complete |
-| Execution workers / engine                           | Complete |
-| FastAPI Control Plane (Phase 6)                      | Complete |
-| Sandbox Runtime (Phase 7)                            | Complete |
-| Adapter SDK + Claude Code (Phase 8)                  | Complete |
-| Objective Graders (Phase 9)                          | Complete |
-| Rubric Graders (Phase 10)                            | Complete |
-| Production Pipeline Integration (Phase 11)           | Complete |
-| Production Judge Providers (Phase 12)                | Complete |
-| Multi-Agent Adapter Expansion (Phase 13)             | Complete |
-| Production Hardening (Phase 14)                      | Complete |
-| Additional adapters / Web                            | Later    |
+| Phase                                                | Status      |
+| ---------------------------------------------------- | ----------- |
+| Phase 0 — Repository foundation                      | Complete    |
+| Engineering foundation (tooling, shared libs, tests) | Complete    |
+| Domain layer                                         | Complete    |
+| Application layer                                    | Complete    |
+| Infrastructure layer                                 | Complete    |
+| Execution workers / engine                           | Complete    |
+| FastAPI Control Plane (Phase 6)                      | Complete    |
+| Sandbox Runtime (Phase 7)                            | Complete    |
+| Adapter SDK + Claude Code (Phase 8)                  | Complete    |
+| Objective Graders (Phase 9)                          | Complete    |
+| Rubric Graders (Phase 10)                            | Complete    |
+| Production Pipeline Integration (Phase 11)           | Complete    |
+| Production Judge Providers (Phase 12)                | Complete    |
+| Multi-Agent Adapter Expansion (Phase 13)             | Complete    |
+| Production Hardening (Phase 14)                      | Complete    |
+| Phase 15A — Frontend design system foundation        | In progress |
+| Additional adapters / product UI                     | Later       |
 
 ## Repository layout
 
@@ -102,6 +103,7 @@ uv run pytest
 | `@agent-eval/logger` | Structured logging + correlation context              |
 | `@agent-eval/utils`  | Small cross-cutting helpers                           |
 | `@agent-eval/shared` | Barrel re-exports of the above                        |
+| `@agent-eval/ui`     | Design tokens and reusable UI primitives              |
 
 **Python**
 
@@ -124,6 +126,7 @@ See [docs/development.md](./docs/development.md) for conventions and dependency 
 | Doc                                          | Purpose                               |
 | -------------------------------------------- | ------------------------------------- |
 | [docs/development.md](./docs/development.md) | Engineering conventions               |
+| [docs/design/](./docs/design/)               | Frontend design principles            |
 | [docs/architecture/](./docs/architecture/)   | System architecture (source of truth) |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)         | Contribution workflow                 |
 | [SECURITY.md](./SECURITY.md)                 | Vulnerability reporting               |

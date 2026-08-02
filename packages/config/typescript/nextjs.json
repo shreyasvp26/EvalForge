@@ -5,6 +5,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "preserve",
     "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "plugins": [{ "name": "next" }]
   }
 }

@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@import "@agent-eval/ui/styles.css";
+
+@source "../../../packages/ui/src";
+
+@theme inline {
+  --font-sans: var(--ef-font-sans);
+  --font-mono: var(--ef-font-mono);
+
+  --color-background: var(--ef-background);
+  --color-foreground: var(--ef-foreground);
+  --color-muted: var(--ef-muted);
+  --color-muted-foreground: var(--ef-muted-foreground);
+  --color-border: var(--ef-border);
+  --color-ring: var(--ef-ring);
+  --color-accent: var(--ef-accent);
+  --color-accent-foreground: var(--ef-accent-foreground);
+  --color-card: var(--ef-card);
+  --color-card-foreground: var(--ef-card-foreground);
+  --color-danger: var(--ef-danger);
+  --color-success: var(--ef-success);
+  --color-warning: var(--ef-warning);
+
+  --radius-control: var(--ef-radius-control);
+  --radius-panel: var(--ef-radius-panel);
+  --radius-dialog: var(--ef-radius-dialog);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--ef-background);
+  color: var(--ef-foreground);
+  font-family: var(--ef-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--ef-ring);
+  outline-offset: 2px;
+}

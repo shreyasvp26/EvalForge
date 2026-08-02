@@ -1,0 +1,74 @@
+/**
+ * EvalForge design tokens (Phase 15A bootstrap).
+ * Full semantic palette lands in the tokens milestone — this file establishes
+ * the CSS variable contract and light/dark scaffolding.
+ */
+
+:root {
+  color-scheme: light;
+
+  --ef-font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --ef-font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --ef-radius-control: 8px;
+  --ef-radius-panel: 10px;
+  --ef-radius-dialog: 12px;
+  --ef-radius-pill: 9999px;
+
+  --ef-space-1: 4px;
+  --ef-space-2: 8px;
+  --ef-space-3: 12px;
+  --ef-space-4: 16px;
+  --ef-space-5: 24px;
+  --ef-space-6: 32px;
+  --ef-space-7: 48px;
+  --ef-space-8: 64px;
+
+  --ef-duration-fast: 150ms;
+  --ef-duration-normal: 200ms;
+  --ef-duration-slow: 250ms;
+  --ef-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --ef-background: #fafafa;
+  --ef-foreground: #111113;
+  --ef-muted: #f0f0f2;
+  --ef-muted-foreground: #63636e;
+  --ef-border: #e4e4e8;
+  --ef-ring: #5b6b7c;
+  --ef-accent: #3d4f63;
+  --ef-accent-foreground: #fafafa;
+  --ef-card: #ffffff;
+  --ef-card-foreground: #111113;
+  --ef-danger: #b42318;
+  --ef-success: #0f7b4a;
+  --ef-warning: #a15c07;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --ef-background: #0a0a0b;
+  --ef-foreground: #f4f4f5;
+  --ef-muted: #161618;
+  --ef-muted-foreground: #a1a1aa;
+  --ef-border: #27272a;
+  --ef-ring: #8b9aab;
+  --ef-accent: #8b9aab;
+  --ef-accent-foreground: #0a0a0b;
+  --ef-card: #111113;
+  --ef-card-foreground: #f4f4f5;
+  --ef-danger: #f97066;
+  --ef-success: #3dd68c;
+  --ef-warning: #fdb022;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
