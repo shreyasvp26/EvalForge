@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   FlaskConical,
   FolderKanban,
+  LayoutDashboard,
   Layers,
   Play,
 } from "@agent-eval/ui";
@@ -11,7 +12,7 @@ import {
 import type { LucideIcon } from "@agent-eval/ui";
 
 export type NavHref =
-  "/projects" | "/suites" | "/cases" | "/runs" | "/agents" | "/graders" | "/design-system";
+  "/" | "/projects" | "/suites" | "/cases" | "/runs" | "/agents" | "/graders" | "/design-system";
 
 export interface NavItem {
   href: NavHref;
@@ -34,11 +35,18 @@ export const navSections: NavSection[] = [
     label: "Workspace",
     items: [
       {
+        href: "/",
+        label: "Overview",
+        icon: LayoutDashboard,
+        chord: "G H",
+        keywords: ["home", "dashboard", "overview", "workspace"],
+      },
+      {
         href: "/projects",
         label: "Projects",
         icon: FolderKanban,
         chord: "G P",
-        keywords: ["home", "workspace", "create project"],
+        keywords: ["project", "create project"],
       },
       {
         href: "/suites",
@@ -95,13 +103,19 @@ export function findNavItem(href: string): NavItem | undefined {
 }
 
 export function isNavActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function breadcrumbsForPath(pathname: string): { label: string; href?: string }[] {
-  const crumbs: { label: string; href?: string }[] = [{ label: "Workspace", href: "/projects" }];
+  const crumbs: { label: string; href?: string }[] = [{ label: "Workspace", href: "/" }];
 
-  if (pathname === "/projects" || pathname === "/") {
+  if (pathname === "/") {
+    crumbs.push({ label: "Overview" });
+    return crumbs;
+  }
+
+  if (pathname === "/projects") {
     crumbs.push({ label: "Projects" });
     return crumbs;
   }
