@@ -11,6 +11,7 @@ import {
   FlaskConical,
   FolderKanban,
   Icon,
+  LayoutDashboard,
   Layers,
   LogOut,
   Monitor,
@@ -122,6 +123,17 @@ export function CommandPalette({
       run: () => {
         setTheme("system");
         onOpenChange(false);
+      },
+    },
+  ];
+
+  const overviewActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+    {
+      id: "open-overview",
+      label: "Open Overview",
+      icon: LayoutDashboard,
+      run: () => {
+        run("/");
       },
     },
   ];
@@ -348,6 +360,27 @@ export function CommandPalette({
                 ))}
               </Command.Group>
             ) : null}
+
+            <Command.Group heading="Overview" className="mb-2">
+              <Text variant="table" className="px-2 py-1.5">
+                Overview
+              </Text>
+              {overviewActions
+                .filter((action) => fuzzyScore(query, action.label) > 0)
+                .map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.label}
+                    onSelect={() => {
+                      action.run();
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--ef-radius-control)] px-2 py-2 text-[length:var(--ef-text-body)] text-popover-foreground aria-selected:bg-muted"
+                  >
+                    <Icon icon={action.icon} size="sm" aria-hidden />
+                    {action.label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
 
             <Command.Group heading="Projects" className="mb-2">
               <Text variant="table" className="px-2 py-1.5">

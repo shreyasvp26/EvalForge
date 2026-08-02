@@ -12,6 +12,7 @@ import {
 
 const shortcuts = [
   { keys: "⌘K / Ctrl+K", action: "Open command palette" },
+  { keys: "G then H", action: "Go to Overview" },
   { keys: "G then P", action: "Go to Projects" },
   { keys: "G then R", action: "Go to Runs" },
   { keys: "G then A", action: "Go to Agents" },
