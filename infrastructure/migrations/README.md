@@ -1,6 +1,14 @@
 # Alembic migrations
 
-Revision files for the EvalForge PostgreSQL schema will live here
-(`versions/`, `env.py`, etc.) starting in Phase 2.
+Revision scripts for the EvalForge PostgreSQL schema.
 
-This directory is intentionally empty in Phase 1 (scaffold only).
+```bash
+# From repository root (or infrastructure/):
+cd infrastructure
+uv run alembic upgrade head
+uv run alembic downgrade -1
+uv run alembic revision --autogenerate -m "describe change"
+```
+
+`env.py` loads ORM models from `agent_eval_infrastructure.database.models`
+and resolves `DATABASE_URL` via `DatabaseSettings`.

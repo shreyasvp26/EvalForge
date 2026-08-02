@@ -57,6 +57,9 @@ Phase 5 — Infrastructure Layer feature-complete for Application ports that
 Infrastructure owns: repositories, Unit of Work, run queue, object storage,
 ID generation, event dispatch, idempotency, and composition root.
 
+**Migrations (Phase 14.1):** Alembic lives in `infrastructure/migrations/`.
+Apply with `cd infrastructure && uv run alembic upgrade head`.
+
 **Not in this package:** FastAPI, Workers, Execution Engine, Adapter/Grader
 implementations, or Authorization policy.
 
