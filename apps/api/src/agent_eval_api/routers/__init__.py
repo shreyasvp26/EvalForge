@@ -1,27 +1,5 @@
-"""Router registration for the Control Plane."""
+"""Router registration for the Control Plane foundation (Phase 6A)."""
 
-from agent_eval_api.routers import (
-    adapters,
-    agents,
-    cases,
-    graders,
-    health,
-    projects,
-    prompts,
-    runs,
-    suites,
-    system,
-)
+from agent_eval_api.routers import health, system, v1_root
 
-__all__ = [
-    "adapters",
-    "agents",
-    "cases",
-    "graders",
-    "health",
-    "projects",
-    "prompts",
-    "runs",
-    "suites",
-    "system",
-]
+__all__ = ["health", "system", "v1_root"]

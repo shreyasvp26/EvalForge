@@ -1,4 +1,8 @@
-"""FastAPI Control Plane application factory and process entrypoint."""
+"""FastAPI Control Plane application factory and process entrypoint.
+
+Phase 6A: foundation only — health, DI, middleware, errors, auth boundary.
+Business resource routers arrive in Phase 6B.
+"""
 
 from __future__ import annotations
 
@@ -13,18 +17,9 @@ from agent_eval_api.composition import ApiContainer, build_api_container
 from agent_eval_api.config import ApiSettings, load_api_settings
 from agent_eval_api.errors import register_exception_handlers
 from agent_eval_api.middleware.correlation import CorrelationIdMiddleware
-from agent_eval_api.routers import (
-    adapters,
-    agents,
-    cases,
-    graders,
-    health,
-    projects,
-    prompts,
-    runs,
-    suites,
-    system,
-)
+from agent_eval_api.middleware.logging import RequestLoggingMiddleware
+from agent_eval_api.middleware.timing import RequestTimingMiddleware
+from agent_eval_api.routers import health, system, v1_root
 
 
 def create_app(
@@ -70,20 +65,20 @@ def create_app(
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        description=(
+            "EvalForge Control Plane foundation (Phase 6A). "
+            "Business resource endpoints arrive in Phase 6B."
+        ),
     )
+    # Starlette applies middleware LIFO: correlation (outer) → timing → logging (inner).
+    app.add_middleware(RequestLoggingMiddleware)
+    app.add_middleware(RequestTimingMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     register_exception_handlers(app)
 
     app.include_router(health.router)
+    app.include_router(v1_root.router)
     app.include_router(system.router)
-    app.include_router(projects.router)
-    app.include_router(suites.router)
-    app.include_router(cases.router)
-    app.include_router(prompts.router)
-    app.include_router(agents.router)
-    app.include_router(adapters.router)
-    app.include_router(graders.router)
-    app.include_router(runs.router)
 
     return app
 
