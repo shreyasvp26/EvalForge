@@ -1,24 +1,16 @@
 "use client";
 
-import { Badge, Button, Cluster, FadeIn, Text, toast } from "@agent-eval/ui";
-import { useQuery } from "@tanstack/react-query";
+import { Button, FadeIn, Text, toast } from "@agent-eval/ui";
 import Link from "next/link";
 import { useState } from "react";
 
+import { ArtifactViewer } from "./artifact-viewer";
 import { CancelRunDialog } from "./cancel-run-dialog";
-import {
-  canCancelRun,
-  durationFromEvents,
-  formatRunDate,
-  runArtifactsQueryKey,
-  runEventsQueryKey,
-  runQueryKey,
-  runScoresQueryKey,
-  runStatusBadge,
-  runStatusLabel,
-  sortEventsBySequence,
-  truncateId,
-} from "./utils";
+import { ExecutionHeader } from "./execution-header";
+import { ExecutionTimeline } from "./execution-timeline";
+import { useRun, useRunArtifacts, useRunEvents, useRunPolling, useRunScores } from "./hooks";
+import { ScoreViewer } from "./score-viewer";
+import { runStatusLabel, sortEventsBySequence, truncateId } from "./utils";
 
 import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
@@ -29,48 +21,16 @@ import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
 import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
-import { getRun, listRunArtifacts, listRunEvents, listRunScores } from "@/lib/api/runs";
-import { useAuth } from "@/lib/auth/auth-provider";
 
 export function RunDetailPage({ runId }: { runId: string }) {
-  const { token } = useAuth();
   const [cancelOpen, setCancelOpen] = useState(false);
 
-  const runQuery = useQuery({
-    queryKey: runQueryKey(runId),
-    enabled: Boolean(token),
-    queryFn: async () => {
-      if (!token) throw new Error("Missing auth token");
-      return getRun(token, runId);
-    },
-  });
-
-  const eventsQuery = useQuery({
-    queryKey: runEventsQueryKey(runId),
-    enabled: Boolean(token) && runQuery.isSuccess,
-    queryFn: async () => {
-      if (!token) throw new Error("Missing auth token");
-      return listRunEvents(token, runId, { limit: 100, sort: "sequence" });
-    },
-  });
-
-  const artifactsQuery = useQuery({
-    queryKey: runArtifactsQueryKey(runId),
-    enabled: Boolean(token) && runQuery.isSuccess,
-    queryFn: async () => {
-      if (!token) throw new Error("Missing auth token");
-      return listRunArtifacts(token, runId, { limit: 100, sort: "-created_at" });
-    },
-  });
-
-  const scoresQuery = useQuery({
-    queryKey: runScoresQueryKey(runId),
-    enabled: Boolean(token) && runQuery.isSuccess,
-    queryFn: async () => {
-      if (!token) throw new Error("Missing auth token");
-      return listRunScores(token, runId, { limit: 100 });
-    },
-  });
+  const runQuery = useRun(runId);
+  const status = runQuery.data?.status;
+  const polling = useRunPolling(status);
+  const eventsQuery = useRunEvents(runId, status, runQuery.isSuccess);
+  const artifactsQuery = useRunArtifacts(runId, status, runQuery.isSuccess);
+  const scoresQuery = useRunScores(runId, status, runQuery.isSuccess);
 
   if (runQuery.isLoading) {
     return (
@@ -135,7 +95,6 @@ export function RunDetailPage({ runId }: { runId: string }) {
   const events = sortEventsBySequence(eventsQuery.data?.items ?? []);
   const artifacts = artifactsQuery.data?.items ?? [];
   const scores = scoresQuery.data?.items ?? run.scores;
-  const duration = durationFromEvents(events);
   const pins = run.pins;
 
   return (
@@ -151,51 +110,33 @@ export function RunDetailPage({ runId }: { runId: string }) {
               ]}
             />
           }
-          eyebrow="Run"
+          eyebrow="Live execution"
           title={truncateId(run.id, 18)}
-          description="Immutable pins and execution outcome for this evaluation run."
-          actions={
-            <Cluster gap={2}>
-              {canCancelRun(run.status) ? (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => {
-                    setCancelOpen(true);
-                  }}
-                >
-                  Cancel run
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  void navigator.clipboard.writeText(run.id).then(
-                    () => {
-                      toast.success("Run ID copied");
-                    },
-                    () => {
-                      toast.error("Could not copy run ID");
-                    },
-                  );
-                }}
-              >
-                Copy ID
-              </Button>
-            </Cluster>
+          description={
+            polling.isLive
+              ? "Refreshing while queued, running, or grading. Updates stop at a terminal status."
+              : "Read-only execution record. Pins are immutable; cancel is unavailable in terminal states."
           }
         />
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Badge status={runStatusBadge(run.status)}>{runStatusLabel(run.status)}</Badge>
-          <Text variant="caption" className="tabular-nums">
-            Created {formatRunDate(run.created_at)}
-          </Text>
-          <Text variant="caption" className="tabular-nums">
-            Duration {duration}
-          </Text>
-          {run.is_partially_graded ? <Badge status="warning">Partially graded</Badge> : null}
+        <div className="mt-6">
+          <ExecutionHeader
+            run={run}
+            events={events}
+            onCancel={() => {
+              setCancelOpen(true);
+            }}
+            onCopyId={() => {
+              void navigator.clipboard.writeText(run.id).then(
+                () => {
+                  toast.success("Run ID copied");
+                },
+                () => {
+                  toast.error("Could not copy run ID");
+                },
+              );
+            }}
+          />
         </div>
 
         {(run.failure_reason ?? run.cancellation_reason) && (
@@ -215,237 +156,108 @@ export function RunDetailPage({ runId }: { runId: string }) {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <Section
-            title="Pinned versions"
+            title="Timeline"
             className="lg:col-span-2"
-            description="Immutable references established at launch. These do not change after create."
+            description="Grouped execution events with expandable details."
           >
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <PinField
-                label="Project"
-                value={pins.project_id}
-                href={`/projects/${pins.project_id}`}
-              />
-              <PinField label="Case version" value={pins.case_version_id} />
-              <PinField label="Prompt version" value={pins.prompt_version_id} />
-              <PinField label="Agent version" value={pins.agent_version_id} />
-              <PinField label="Adapter version" value={pins.adapter_version_id} />
-              <PinField label="Platform version" value={pins.platform_version_id} />
-              {pins.suite_version_id ? (
-                <PinField label="Suite version" value={pins.suite_version_id} />
-              ) : null}
-              <div className="space-y-1 sm:col-span-2">
-                <Text as="div" variant="caption">
-                  Grader versions
-                </Text>
-                {pins.grader_version_ids.length === 0 ? (
-                  <Text variant="secondary">None</Text>
-                ) : (
-                  <ul className="space-y-1">
-                    {pins.grader_version_ids.map((id) => (
-                      <li key={id}>
-                        <Text
-                          as="span"
-                          variant="body"
-                          className="break-all font-mono text-[length:var(--ef-text-caption)]"
-                        >
-                          {id}
-                        </Text>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </dl>
+            <ExecutionTimeline
+              events={events}
+              status={run.status}
+              isLoading={eventsQuery.isLoading}
+              errorMessage={
+                eventsQuery.isError
+                  ? eventsQuery.error instanceof ApiError
+                    ? eventsQuery.error.message
+                    : "Couldn’t load events."
+                  : null
+              }
+              onRetry={() => {
+                void eventsQuery.refetch();
+              }}
+            />
           </Section>
 
-          <Section title="Metadata" description="Mutable run bookkeeping from the Control Plane.">
+          <Section title="Metadata" description="Mutable bookkeeping from the Control Plane.">
             <dl className="space-y-4">
               <MetaField label="Sandbox" value={run.sandbox_id ?? "—"} mono />
               <MetaField label="Expected graders" value={String(run.expected_grader_count)} />
               <MetaField label="Produced scores" value={String(run.produced_score_count)} />
+              <MetaField
+                label="Refresh"
+                value={polling.isLive ? "Polling every 2.5s" : "Idle (terminal)"}
+              />
               <MetaField label="Run ID" value={run.id} mono />
             </dl>
-          </Section>
 
-          <Section
-            title="Timeline"
-            className="lg:col-span-3"
-            description="Execution events in sequence order."
-          >
-            {eventsQuery.isLoading ? (
-              <Text variant="secondary">Loading events…</Text>
-            ) : eventsQuery.isError ? (
-              <ErrorContent
-                title="Couldn’t load events"
-                description={
-                  eventsQuery.error instanceof ApiError
-                    ? eventsQuery.error.message
-                    : "Something went wrong."
-                }
-                action={
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void eventsQuery.refetch()}
-                  >
-                    Try again
-                  </Button>
-                }
-              />
-            ) : events.length === 0 ? (
-              <Text variant="secondary">
-                No events recorded yet. Events appear as the worker progresses.
+            <div className="mt-6 space-y-1">
+              <Text as="div" variant="caption">
+                Pinned versions
               </Text>
-            ) : (
-              <ol className="relative space-y-0 border-l border-border pl-6">
-                {events.map((event) => (
-                  <li key={event.id} className="relative pb-6 last:pb-0">
-                    <span
-                      className="absolute -left-[1.625rem] top-1.5 h-2.5 w-2.5 rounded-full border border-border bg-card"
-                      aria-hidden
-                    />
-                    <Cluster gap={2} className="items-center">
-                      <Text as="span" variant="body" className="font-medium">
-                        {event.kind}
-                      </Text>
-                      <Text as="span" variant="caption" className="tabular-nums">
-                        #{String(event.sequence)}
-                      </Text>
-                      <Text as="span" variant="caption" className="tabular-nums">
-                        {formatRunDate(event.occurred_at)}
-                      </Text>
-                    </Cluster>
-                    {Object.keys(event.action).length > 0 ? (
-                      <pre className="mt-2 max-h-40 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-2 font-mono text-[length:var(--ef-text-caption)] whitespace-pre-wrap break-words">
-                        {JSON.stringify(event.action, null, 2)}
-                      </pre>
-                    ) : null}
-                  </li>
-                ))}
-              </ol>
-            )}
+              <ul className="space-y-1">
+                <PinLine
+                  label="Project"
+                  value={pins.project_id}
+                  href={`/projects/${pins.project_id}`}
+                />
+                <PinLine label="Case" value={pins.case_version_id} />
+                <PinLine label="Prompt" value={pins.prompt_version_id} />
+                <PinLine label="Agent" value={pins.agent_version_id} />
+                <PinLine label="Adapter" value={pins.adapter_version_id} />
+                <PinLine label="Platform" value={pins.platform_version_id} />
+                {pins.suite_version_id ? (
+                  <PinLine label="Suite" value={pins.suite_version_id} />
+                ) : null}
+              </ul>
+            </div>
           </Section>
 
           <Section
             title="Artifacts"
             className="lg:col-span-3"
-            description="Stored outputs associated with this run."
+            description="stdout, stderr, JSON, logs, and files — copy or download the available view."
           >
-            {artifactsQuery.isLoading ? (
-              <Text variant="secondary">Loading artifacts…</Text>
-            ) : artifactsQuery.isError ? (
-              <ErrorContent
-                title="Couldn’t load artifacts"
-                description={
-                  artifactsQuery.error instanceof ApiError
+            <ArtifactViewer
+              artifacts={artifacts}
+              events={events}
+              isLoading={artifactsQuery.isLoading}
+              errorMessage={
+                artifactsQuery.isError
+                  ? artifactsQuery.error instanceof ApiError
                     ? artifactsQuery.error.message
-                    : "Something went wrong."
-                }
-                action={
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void artifactsQuery.refetch()}
-                  >
-                    Try again
-                  </Button>
-                }
-              />
-            ) : artifacts.length === 0 ? (
-              <Text variant="secondary">No artifacts yet.</Text>
-            ) : (
-              <ul className="divide-y divide-border rounded-[var(--ef-radius-panel)] border border-border">
-                {artifacts.map((artifact) => (
-                  <li key={artifact.id} className="grid gap-1 px-4 py-3 sm:grid-cols-4">
-                    <Text as="div" variant="body" className="font-medium">
-                      {artifact.kind}
-                    </Text>
-                    <Text as="div" variant="caption" className="break-all font-mono sm:col-span-2">
-                      {artifact.storage_key}
-                    </Text>
-                    <Text as="div" variant="caption" className="tabular-nums sm:text-right">
-                      {String(artifact.size_bytes)} B · {artifact.content_type}
-                    </Text>
-                  </li>
-                ))}
-              </ul>
-            )}
+                    : "Couldn’t load artifacts."
+                  : null
+              }
+              onRetry={() => {
+                void artifactsQuery.refetch();
+              }}
+            />
           </Section>
 
           <Section
             title="Scores"
             className="lg:col-span-3"
-            description="Grader outputs for this run."
+            description="Grader results with expandable metadata. Partial grading stays visible."
           >
-            {scoresQuery.isLoading ? (
-              <Text variant="secondary">Loading scores…</Text>
-            ) : scoresQuery.isError ? (
-              <ErrorContent
-                title="Couldn’t load scores"
-                description={
-                  scoresQuery.error instanceof ApiError
+            <ScoreViewer
+              scores={scores}
+              expectedGraderCount={run.expected_grader_count}
+              isPartiallyGraded={run.is_partially_graded}
+              isLoading={scoresQuery.isLoading}
+              errorMessage={
+                scoresQuery.isError
+                  ? scoresQuery.error instanceof ApiError
                     ? scoresQuery.error.message
-                    : "Something went wrong."
-                }
-                action={
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void scoresQuery.refetch()}
-                  >
-                    Try again
-                  </Button>
-                }
-              />
-            ) : scores.length === 0 ? (
-              <Text variant="secondary">No scores yet.</Text>
-            ) : (
-              <ul className="divide-y divide-border rounded-[var(--ef-radius-panel)] border border-border">
-                {scores.map((score) => (
-                  <li key={score.id} className="grid gap-2 px-4 py-3 sm:grid-cols-3">
-                    <div>
-                      <Text as="div" variant="caption">
-                        Grader
-                      </Text>
-                      <Text
-                        as="div"
-                        variant="body"
-                        className="break-all font-mono text-[length:var(--ef-text-caption)]"
-                      >
-                        {score.grader_id}
-                      </Text>
-                    </div>
-                    <div>
-                      <Text as="div" variant="caption">
-                        Version
-                      </Text>
-                      <Text
-                        as="div"
-                        variant="body"
-                        className="break-all font-mono text-[length:var(--ef-text-caption)]"
-                      >
-                        {score.grader_version_id}
-                      </Text>
-                    </div>
-                    <div>
-                      <Text as="div" variant="caption">
-                        Value
-                      </Text>
-                      <Text as="div" variant="body">
-                        {formatScoreValue(score.value)}
-                      </Text>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+                    : "Couldn’t load scores."
+                  : null
+              }
+              onRetry={() => {
+                void scoresQuery.refetch();
+              }}
+            />
           </Section>
 
           <Section title="Quick actions">
-            <Cluster gap={2} className="flex-col items-stretch sm:items-start">
+            <div className="flex flex-col items-stretch gap-2 sm:items-start">
               <Button asChild variant="outline" className="justify-start">
                 <Link href="/runs">Back to runs</Link>
               </Button>
@@ -457,7 +269,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
                   Launch another run
                 </Link>
               </Button>
-            </Cluster>
+            </div>
           </Section>
         </div>
       </FadeIn>
@@ -470,32 +282,6 @@ export function RunDetailPage({ runId }: { runId: string }) {
         statusLabel={runStatusLabel(run.status)}
       />
     </PageLayout>
-  );
-}
-
-function PinField({ label, value, href }: { label: string; value: string; href?: string }) {
-  return (
-    <div className="space-y-1">
-      <Text as="div" variant="caption">
-        {label}
-      </Text>
-      {href ? (
-        <Link
-          href={href}
-          className="break-all font-mono text-[length:var(--ef-text-caption)] text-accent underline-offset-2 hover:underline"
-        >
-          {value}
-        </Link>
-      ) : (
-        <Text
-          as="div"
-          variant="body"
-          className="break-all font-mono text-[length:var(--ef-text-caption)]"
-        >
-          {value}
-        </Text>
-      )}
-    </div>
   );
 }
 
@@ -524,14 +310,28 @@ function MetaField({
   );
 }
 
-function formatScoreValue(value: {
-  numeric: number | null;
-  categorical: string | null;
-  passed: boolean | null;
-}): string {
-  const parts: string[] = [];
-  if (value.numeric !== null) parts.push(String(value.numeric));
-  if (value.categorical) parts.push(value.categorical);
-  if (value.passed !== null) parts.push(value.passed ? "passed" : "failed");
-  return parts.length > 0 ? parts.join(" · ") : "—";
+function PinLine({ label, value, href }: { label: string; value: string; href?: string }) {
+  return (
+    <li className="flex flex-wrap gap-2">
+      <Text as="span" variant="caption">
+        {label}
+      </Text>
+      {href ? (
+        <Link
+          href={href}
+          className="break-all font-mono text-[length:var(--ef-text-caption)] text-accent underline-offset-2 hover:underline"
+        >
+          {value}
+        </Link>
+      ) : (
+        <Text
+          as="span"
+          variant="body"
+          className="break-all font-mono text-[length:var(--ef-text-caption)]"
+        >
+          {value}
+        </Text>
+      )}
+    </li>
+  );
 }
