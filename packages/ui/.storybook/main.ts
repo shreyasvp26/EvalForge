@@ -6,7 +6,11 @@ import type { StorybookConfig } from "@storybook/react-vite";
 const dir = dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(ts|tsx)"],
+  stories: [
+    "../src/**/*.mdx",
+    "../src/**/*.stories.@(ts|tsx)",
+    "../../../apps/web/src/components/patterns/**/*.stories.@(ts|tsx)",
+  ],
   addons: ["@storybook/addon-essentials", "@storybook/addon-a11y"],
   framework: {
     name: "@storybook/react-vite",
@@ -14,7 +18,8 @@ const config: StorybookConfig = {
   },
   async viteFinal(config) {
     const { default: react } = await import("@vitejs/plugin-react");
-    config.plugins = [...(config.plugins ?? []), react()];
+    const { default: tailwindcss } = await import("@tailwindcss/vite");
+    config.plugins = [...(config.plugins ?? []), react(), tailwindcss()];
     config.resolve = {
       ...config.resolve,
       alias: {

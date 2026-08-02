@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { DataGridGalleryDemo } from "@/components/design-system/data-grid-gallery-demo";
+import { ProductPatternsGallery } from "@/components/design-system/product-patterns-gallery";
 import { FilterBar } from "@/components/layouts/filter-bar";
 import { LoadingContent } from "@/components/layouts/loading-content";
 import { PageHeader } from "@/components/layouts/page-header";
@@ -86,6 +87,7 @@ export default function DesignSystemPage() {
           [
             ["principles", "Principles"],
             ["layouts", "Layouts"],
+            ["patterns", "UX patterns"],
             ["datagrid", "DataGrid"],
             ["color", "Color"],
             ["type", "Typography"],
@@ -160,6 +162,14 @@ export default function DesignSystemPage() {
           />
           <LoadingContent variant="skeleton" fill={false} label="Skeleton loading example" />
         </Stack>
+      </GallerySection>
+
+      <GallerySection
+        id="patterns"
+        title="Product UX patterns"
+        description="Reusable apps/web patterns for loading, empty, confirmation, and errors. Full Storybook coverage under Product Patterns."
+      >
+        <ProductPatternsGallery />
       </GallerySection>
 
       <GallerySection
@@ -286,6 +296,8 @@ export default function DesignSystemPage() {
           <li>Domain components (RunCard, ScorePanel, …) inside packages/ui</li>
           <li>Decorative charts or springy motion with no spatial meaning</li>
           <li>One-off page chrome instead of PageLayout / PageHeader / Section</li>
+          <li>Centered spinners for page loads instead of PageSkeleton / TableSkeleton</li>
+          <li>Generic “No data found” without explaining why or what to do next</li>
         </ul>
       </GallerySection>
     </PageLayout>
