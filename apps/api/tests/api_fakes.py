@@ -166,6 +166,7 @@ class FakeContainer:
         self.services = services
         self.settings = settings
         self.auth = MagicMock()
+        self.memberships = MagicMock()
         self.infrastructure = MagicMock()
         self._ready = True
 

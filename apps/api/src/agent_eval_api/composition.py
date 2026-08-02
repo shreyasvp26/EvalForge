@@ -73,8 +73,13 @@ from agent_eval_infrastructure import (
     RuntimeProfile,
     build_infrastructure,
 )
+from agent_eval_infrastructure.auth import (
+    InMemoryMembershipStore,
+    MembershipStore,
+    SqlAlchemyMembershipStore,
+)
 
-from agent_eval_api.auth.authorization import AllowAllAuthorization
+from agent_eval_api.auth.rbac import ProjectRbacAuthorization
 from agent_eval_api.config import ApiSettings, load_api_settings
 
 
@@ -146,6 +151,7 @@ class ApiContainer:
     infrastructure: InfrastructureContainer
     auth: AuthorizationPort
     services: ApplicationServices
+    memberships: MembershipStore
 
     def dispose(self) -> None:
         self.infrastructure.dispose()
@@ -162,6 +168,14 @@ class ApiContainer:
         except Exception:  # noqa: BLE001 — readiness must never raise
             checks["database"] = "unavailable"
         return checks
+
+
+def build_membership_store(
+    infrastructure: InfrastructureContainer,
+) -> MembershipStore:
+    if infrastructure.profile is RuntimeProfile.MEMORY:
+        return InMemoryMembershipStore()
+    return SqlAlchemyMembershipStore(infrastructure.session_factory)
 
 
 def build_application_services(
@@ -227,16 +241,19 @@ def build_api_container(
     settings: ApiSettings | None = None,
     infrastructure: InfrastructureContainer | None = None,
     auth: AuthorizationPort | None = None,
+    memberships: MembershipStore | None = None,
     profile: RuntimeProfile | None = None,
 ) -> ApiContainer:
     """Assemble the Control Plane composition root."""
     api_settings = settings or load_api_settings()
     infra = infrastructure or build_infrastructure(profile=profile)
-    authorization = auth or AllowAllAuthorization()
+    store = memberships or build_membership_store(infra)
+    authorization = auth or ProjectRbacAuthorization(store)
     services = build_application_services(infra, authorization)
     return ApiContainer(
         settings=api_settings,
         infrastructure=infra,
         auth=authorization,
         services=services,
+        memberships=store,
     )

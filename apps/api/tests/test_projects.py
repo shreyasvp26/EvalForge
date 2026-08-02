@@ -7,7 +7,7 @@ from agent_eval_application.queries.queries import GetProjectQuery
 from api_fakes import NotFoundApplicationError
 
 
-def test_create_project(client, services, auth_headers) -> None:
+def test_create_project(client, services, auth_headers, container) -> None:
     response = client.post(
         "/v1/projects",
         json={"name": "Demo", "description": "d"},
@@ -23,6 +23,10 @@ def test_create_project(client, services, auth_headers) -> None:
     assert cmd.name == "Demo"
     assert cmd.idempotency_key == "key-1"
     assert cmd.actor.id == "actor-1"
+    container.auth.grant.assert_called_once_with(
+        actor_id="actor-1",
+        project_id="proj-1",
+    )
 
 
 def test_get_project(client, services, auth_headers) -> None:

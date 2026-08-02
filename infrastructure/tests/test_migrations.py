@@ -14,6 +14,7 @@ ALEMBIC_INI = INFRA_ROOT / "alembic.ini"
 
 EXPECTED_TABLES = {
     "projects",
+    "project_memberships",
     "suites",
     "suite_versions",
     "cases",
@@ -60,7 +61,7 @@ def test_upgrade_head_creates_schema(alembic_cfg: Config) -> None:
             version = conn.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar()
-        assert version == "b281bc762a8d"
+        assert version == "c4e8f1a29b07"
     finally:
         engine.dispose()
 

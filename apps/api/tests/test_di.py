@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from agent_eval_api.auth.authorization import AllowAllAuthorization
+from agent_eval_api.auth.rbac import ProjectRbacAuthorization
 from agent_eval_api.composition import (
     ApplicationServices,
     build_api_container,
@@ -13,6 +14,7 @@ from agent_eval_api.main import create_app
 from agent_eval_application.common.actor import Actor
 from agent_eval_domain.common.ids import ProjectId
 from agent_eval_infrastructure import RuntimeProfile, build_infrastructure
+from agent_eval_infrastructure.auth import InMemoryMembershipStore
 from api_fakes import FakeContainer, mock_services
 from fastapi.testclient import TestClient
 
@@ -49,7 +51,8 @@ def test_build_api_container_wires_services(settings) -> None:
     try:
         assert container.settings is settings
         assert isinstance(container.services, ApplicationServices)
-        assert isinstance(container.auth, AllowAllAuthorization)
+        assert isinstance(container.auth, ProjectRbacAuthorization)
+        assert isinstance(container.memberships, InMemoryMembershipStore)
         checks = container.readiness_checks()
         assert checks["composition"] == "ok"
         assert checks["database"] == "ok"

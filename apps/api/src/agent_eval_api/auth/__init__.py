@@ -9,11 +9,13 @@ from agent_eval_api.auth.jwt import (
     issue_access_token,
     parse_access_token,
 )
+from agent_eval_api.auth.rbac import ProjectRbacAuthorization
 
 __all__ = [
     "AllowAllAuthorization",
     "JwtAuthenticationError",
     "ParsedAccessToken",
+    "ProjectRbacAuthorization",
     "actor_from_access_token",
     "authenticate_bearer",
     "issue_access_token",
