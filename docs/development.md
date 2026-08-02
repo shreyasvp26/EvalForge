@@ -121,6 +121,9 @@ Python package: `workers/` → `agent_eval_workers`.
   orchestration sequencing and illegal-transition rejection. Ports for
   Sandbox / Adapter / events / grading / status are interfaces only.
   Domain `RunStatus` remains the persisted projection.
+- **Worker runtime (Phase 3):** `WorkerRuntime` owns queue leases, retries,
+  heartbeats, and shutdown; `ExecutionEngine` owns lifecycle sequencing with
+  cancel/timeout propagation; checkpoints via `CheckpointStore` ports only.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
 - Prefer `uv run pytest workers/tests` for worker-only feedback.

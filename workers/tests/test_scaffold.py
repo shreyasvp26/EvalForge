@@ -32,13 +32,6 @@ def test_runtime_subpackages_importable() -> None:
 
 
 def test_unfinished_packages_remain_phase1_scaffold() -> None:
-    """Phase 2 implemented lifecycle; remaining packages stay structure-only."""
-    for package in (
-        worker,
-        execution_engine,
-        scheduler,
-        cancellation,
-        checkpoints,
-        event_pipeline,
-    ):
+    """Phase 3 implemented worker/engine/cancel/checkpoints; pipeline/scheduler TBD."""
+    for package in (scheduler, event_pipeline):
         assert "Phase 1" in (package.__doc__ or "")
