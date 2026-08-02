@@ -17,6 +17,11 @@ Must NOT:
 from agent_eval_workers.execution_engine.engine import ExecutionEngine
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.execution_engine.lifecycle_driver import LifecycleDriver
+from agent_eval_workers.execution_engine.orchestration import (
+    OrchestrationHarness,
+    build_orchestration_harness,
+    rebuild_worker,
+)
 from agent_eval_workers.execution_engine.results import EngineOutcomeKind, EngineResult
 from agent_eval_workers.execution_engine.sequence import (
     happy_path_triggers_from,
@@ -28,7 +33,10 @@ __all__ = [
     "EngineResult",
     "ExecutionEngine",
     "LifecycleDriver",
+    "OrchestrationHarness",
     "RecoverableExecutionError",
+    "build_orchestration_harness",
     "happy_path_triggers_from",
     "next_happy_path_trigger",
+    "rebuild_worker",
 ]

@@ -22,9 +22,13 @@ class SandboxPort(Protocol):
 
 
 class AdapterPort(Protocol):
-    """Adapter start / finish boundary — translation lives inside Adapters."""
+    """Adapter boundary — translation + streaming live inside Adapters."""
 
     def start(self, run_id: RunId) -> None: ...
+
+    def run(self, run_id: RunId) -> None:
+        """Execute inside the Sandbox and stream events/artifacts continuously."""
+        ...
 
     def finish(self, run_id: RunId) -> None: ...
 

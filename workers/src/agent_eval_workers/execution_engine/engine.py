@@ -103,9 +103,11 @@ class ExecutionEngine:
                     self.before_step(trigger)
                 self.lifecycle.apply(trigger)
             except RecoverableExecutionError as exc:
+                # ``phase`` is where finalize should apply; ``resume_phase`` is
+                # the durable restart point for Worker retries.
                 return EngineResult(
                     kind=EngineOutcomeKind.RECOVERABLE_FAILURE,
-                    phase=resume_before,
+                    phase=self.lifecycle.phase,
                     failure_cause=exc.cause,
                     resume_phase=resume_before,
                 )

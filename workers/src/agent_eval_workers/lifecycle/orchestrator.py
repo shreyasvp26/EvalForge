@@ -32,6 +32,14 @@ class LifecycleOrchestrator:
     grading: GradingSchedulerPort
     status: RunStatusPort
 
+    @property
+    def phase(self) -> OrchestrationPhase:
+        return self.lifecycle.phase
+
+    @property
+    def is_terminal(self) -> bool:
+        return self.lifecycle.is_terminal
+
     def apply(self, trigger: LifecycleTrigger) -> LifecycleTransition:
         """Validate transition, then invoke the port appropriate to the trigger."""
         run_id = self.lifecycle.run_id
@@ -43,6 +51,9 @@ class LifecycleOrchestrator:
             self.sandbox.provision(run_id)
         elif trigger is LifecycleTrigger.START_ADAPTER:
             self.adapter.start(run_id)
+        elif trigger is LifecycleTrigger.ADAPTER_STARTED:
+            # Enter Execution Streaming: Adapter runs and streams continuously.
+            self.adapter.run(run_id)
         elif trigger is LifecycleTrigger.ADAPTER_FINISHED:
             self.adapter.finish(run_id)
         elif trigger is LifecycleTrigger.PERSIST_FINAL_EVENTS:

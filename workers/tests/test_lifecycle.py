@@ -23,6 +23,7 @@ class RecordingPorts:
     provisions: list[RunId] = field(default_factory=list)
     destroys: list[RunId] = field(default_factory=list)
     adapter_starts: list[RunId] = field(default_factory=list)
+    adapter_runs: list[RunId] = field(default_factory=list)
     adapter_finishes: list[RunId] = field(default_factory=list)
     finals: list[RunId] = field(default_factory=list)
     scheduled: list[RunId] = field(default_factory=list)
@@ -40,6 +41,9 @@ class RecordingPorts:
 
     def start(self, run_id: RunId) -> None:
         self.adapter_starts.append(run_id)
+
+    def run(self, run_id: RunId) -> None:
+        self.adapter_runs.append(run_id)
 
     def finish(self, run_id: RunId) -> None:
         self.adapter_finishes.append(run_id)
@@ -90,6 +94,7 @@ def test_happy_path_reaches_completed() -> None:
     assert ports.running == [RunId("run-1")]
     assert ports.provisions == [RunId("run-1")]
     assert ports.adapter_starts == [RunId("run-1")]
+    assert ports.adapter_runs == [RunId("run-1")]
     assert ports.adapter_finishes == [RunId("run-1")]
     assert ports.finals == [RunId("run-1")]
     assert ports.scheduled == [RunId("run-1")]
