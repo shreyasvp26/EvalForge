@@ -25,10 +25,20 @@ def create_db_engine(
     engine_url = url if url is not None else cfg.database_url
 
     if engine_url.startswith("sqlite"):
+        # ``:memory:`` needs StaticPool so all sessions share the same DB.
+        # File-backed SQLite uses the default pool so concurrent sessions
+        # (optimistic locking tests / real workloads) get distinct connections.
+        if ":memory:" in engine_url:
+            return create_engine(
+                engine_url,
+                connect_args={"check_same_thread": False},
+                poolclass=StaticPool,
+                echo=cfg.echo_sql,
+                future=True,
+            )
         return create_engine(
             engine_url,
             connect_args={"check_same_thread": False},
-            poolclass=StaticPool,
             echo=cfg.echo_sql,
             future=True,
         )

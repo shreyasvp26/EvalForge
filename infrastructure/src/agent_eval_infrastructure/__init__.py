@@ -16,11 +16,17 @@ from agent_eval_infrastructure.database import (
     metadata,
     session_scope,
 )
+from agent_eval_infrastructure.unit_of_work import (
+    SqlAlchemyUnitOfWork,
+    SqlAlchemyUnitOfWorkFactory,
+)
 
 __all__ = [
     "Base",
     "DatabaseSettings",
     "SessionFactory",
+    "SqlAlchemyUnitOfWork",
+    "SqlAlchemyUnitOfWorkFactory",
     "create_db_engine",
     "create_session_factory",
     "dispose_engine",

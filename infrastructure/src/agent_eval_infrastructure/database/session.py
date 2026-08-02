@@ -19,13 +19,19 @@ def create_session_factory(engine: Engine) -> SessionFactory:
     """Bind a ``sessionmaker`` to ``engine`` with expire-on-commit disabled.
 
     ``expire_on_commit=False`` keeps loaded attributes usable after commit
-    inside Application orchestration without implicit refreshes. Unit of Work
-    (Phase 4) still controls commit/rollback explicitly.
+    inside Application orchestration without implicit refreshes.
+
+    ``autoflush=True`` (SQLAlchemy default) ensures ``Session.get`` / queries
+    see pending inserts within the Unit of Work — required for repository
+    save paths that get-or-create aggregate roots and then attach children.
+
+    Unit of Work still controls commit/rollback explicitly; autoflush only
+    flushes to the DB transaction, never commits.
     """
     return sessionmaker(
         bind=engine,
         class_=Session,
-        autoflush=False,
+        autoflush=True,
         autocommit=False,
         expire_on_commit=False,
     )

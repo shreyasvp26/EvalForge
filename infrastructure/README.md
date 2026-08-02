@@ -51,8 +51,8 @@ agent_eval_infrastructure/
 ## Repositories
 
 Thin persistence adapters: load ORM → map to Domain → map Domain → ORM →
-persist. They never commit (Unit of Work owns transactions in Phase 4) and
-never enforce Domain invariants.
+persist. They never commit (Unit of Work owns transactions) and never enforce
+Domain invariants.
 
 | Protocol            | Adapter                       |
 | ------------------- | ----------------------------- |
@@ -78,10 +78,24 @@ Sibling directories in this folder (ops, not Python import graph):
 
 ## Status
 
-Phase 3 — SQLAlchemy repository adapters implement every Domain repository
-Protocol (`Project`, `Suite`, `Case`, `Agent`, `Adapter`, `Grader`, `Run`).
-Explicit ORM ↔ Domain mappers live under `mappers/`. Unit of Work, Redis,
-queue, object storage, DI, and Alembic revisions land in later phases.
+Phase 4 — SQLAlchemy Unit of Work implements the Application `UnitOfWork`
+port (session + transaction lifecycle, repository factories, commit/rollback).
+Redis, queue, object storage, DI, and Alembic revisions land in Phase 5+.
+
+## Unit of Work
+
+```
+unit_of_work/
+  sqlalchemy.py   # SqlAlchemyUnitOfWork + SqlAlchemyUnitOfWorkFactory
+```
+
+- One UoW per use-case invocation (ADR-0002); nested `__enter__` is rejected
+- All repositories from one UoW share the exact same `Session`
+- Repositories never commit/rollback — UoW owns that
+- Domain events are **not** dispatched here (Application: commit → dispatch)
+- Optimistic concurrency: `StaleDataError` propagates from flush/commit
+- Nested SAVEPOINTs are **not** on the Application port; optional helper
+  `transactions.begin_nested` exists for rare Infrastructure call sites
 
 ## Database package
 

@@ -1,6 +1,9 @@
-"""Low-level transaction helpers shared by sessions and (later) Unit of Work.
+"""Low-level transaction helpers.
 
-Application decides transaction *boundaries*; Infrastructure executes them.
+Application owns transaction *boundaries* via Unit of Work. Nested SAVEPOINTs
+are not part of the Application ``UnitOfWork`` port (Backend Architecture /
+ADR-0002 open one UoW per use case). This helper remains for rare Infrastructure
+call sites that need a SAVEPOINT inside an already-open session.
 """
 
 from __future__ import annotations
