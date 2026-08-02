@@ -110,6 +110,17 @@ Python package: `infrastructure/` → `agent_eval_infrastructure`
   or execution orchestration.
 - Prefer `uv run pytest infrastructure/tests` for infrastructure-only feedback.
 
+## Workers / Execution Runtime
+
+Python package: `workers/` → `agent_eval_workers`.
+
+- Thin chassis hosting the Execution Engine (Backend Architecture §4 / §7).
+- Subpackages: `worker`, `execution_engine`, `scheduler`, `lifecycle`,
+  `cancellation`, `checkpoints`, `event_pipeline`.
+- **Must not** contain Adapter translation, Grader scoring, or Domain
+  invariants; must not bypass Application for business writes.
+- Prefer `uv run pytest workers/tests` for worker-only feedback.
+
 ## What does not belong in foundation packages
 
 - HTTP handlers, SQL/ORM, queue consumers

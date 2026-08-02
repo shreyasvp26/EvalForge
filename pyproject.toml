@@ -66,6 +66,7 @@ testpaths = [
   "domain/tests",
   "application/tests",
   "infrastructure/tests",
+  "workers/tests",
 ]
 pythonpath = [
   "shared/src",
@@ -75,6 +76,8 @@ pythonpath = [
   "application/tests",
   "infrastructure/src",
   "infrastructure/tests",
+  "workers/src",
+  "workers/tests",
 ]
 addopts = ["-q", "--strict-markers"]
 
@@ -84,6 +87,7 @@ source = [
   "agent_eval_domain",
   "agent_eval_application",
   "agent_eval_infrastructure",
+  "agent_eval_workers",
 ]
 branch = true
 
