@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 members = [
     "agent-eval",
     "agent-eval-api",
+    "agent-eval-application",
     "agent-eval-domain",
     "agent-eval-shared",
     "agent-eval-workers",
@@ -39,14 +40,43 @@ name = "agent-eval-api"
 version = "0.0.0"
 source = { editable = "apps/api" }
 dependencies = [
+    { name = "agent-eval-application" },
     { name = "agent-eval-domain" },
     { name = "agent-eval-shared" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-eval-application", editable = "application" },
     { name = "agent-eval-domain", editable = "domain" },
     { name = "agent-eval-shared", editable = "shared" },
+]
+
+[[package]]
+name = "agent-eval-application"
+version = "0.0.0"
+source = { editable = "application" }
+dependencies = [
+    { name = "agent-eval-domain" },
+    { name = "agent-eval-shared" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "agent-eval-domain", editable = "domain" },
+    { name = "agent-eval-shared", editable = "shared" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.3.0" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
 ]
 
 [[package]]
@@ -106,12 +136,14 @@ name = "agent-eval-workers"
 version = "0.0.0"
 source = { editable = "workers" }
 dependencies = [
+    { name = "agent-eval-application" },
     { name = "agent-eval-domain" },
     { name = "agent-eval-shared" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-eval-application", editable = "application" },
     { name = "agent-eval-domain", editable = "domain" },
     { name = "agent-eval-shared", editable = "shared" },
 ]
