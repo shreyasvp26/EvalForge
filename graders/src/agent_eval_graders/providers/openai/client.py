@@ -24,13 +24,13 @@ class OpenAIClient:
         self._config = config
         self._owns_client = http_client is None
         self._client = http_client or httpx.Client(
-            base_url=config.base_url.rstrip("/"),
             timeout=config.timeout_seconds,
             headers={
                 "Authorization": f"Bearer {config.api_key}",
                 "content-type": "application/json",
             },
         )
+        self._completions_url = f"{config.base_url.rstrip('/')}/chat/completions"
 
     def close(self) -> None:
         if self._owns_client:
@@ -70,9 +70,13 @@ class OpenAIClient:
         started = time.monotonic()
         try:
             response = self._client.post(
-                "/chat/completions",
+                self._completions_url,
                 json=payload,
                 timeout=timeout_seconds,
+                headers={
+                    "Authorization": f"Bearer {self._config.api_key}",
+                    "content-type": "application/json",
+                },
             )
         except httpx.HTTPError as exc:
             map_httpx_transport_error(

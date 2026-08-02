@@ -25,10 +25,10 @@ class GeminiClient:
         self._config = config
         self._owns_client = http_client is None
         self._client = http_client or httpx.Client(
-            base_url=config.base_url.rstrip("/"),
             timeout=config.timeout_seconds,
             headers={"content-type": "application/json"},
         )
+        self._base_url = config.base_url.rstrip("/")
 
     def close(self) -> None:
         if self._owns_client:
@@ -65,7 +65,7 @@ class GeminiClient:
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": generation_config,
         }
-        path = f"/models/{quote(model, safe='')}:generateContent"
+        path = f"{self._base_url}/models/{quote(model, safe='')}:generateContent"
 
         started = time.monotonic()
         try:
@@ -74,6 +74,7 @@ class GeminiClient:
                 params={"key": self._config.api_key},
                 json=payload,
                 timeout=timeout_seconds,
+                headers={"content-type": "application/json"},
             )
         except httpx.HTTPError as exc:
             map_httpx_transport_error(

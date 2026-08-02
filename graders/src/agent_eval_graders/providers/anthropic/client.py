@@ -24,7 +24,6 @@ class AnthropicClient:
         self._config = config
         self._owns_client = http_client is None
         self._client = http_client or httpx.Client(
-            base_url=config.base_url.rstrip("/"),
             timeout=config.timeout_seconds,
             headers={
                 "x-api-key": config.api_key,
@@ -32,6 +31,7 @@ class AnthropicClient:
                 "content-type": "application/json",
             },
         )
+        self._messages_url = f"{config.base_url.rstrip('/')}/v1/messages"
 
     def close(self) -> None:
         if self._owns_client:
@@ -65,9 +65,14 @@ class AnthropicClient:
         started = time.monotonic()
         try:
             response = self._client.post(
-                "/v1/messages",
+                self._messages_url,
                 json=payload,
                 timeout=timeout_seconds,
+                headers={
+                    "x-api-key": self._config.api_key,
+                    "anthropic-version": self._config.api_version,
+                    "content-type": "application/json",
+                },
             )
         except httpx.HTTPError as exc:
             map_httpx_transport_error(

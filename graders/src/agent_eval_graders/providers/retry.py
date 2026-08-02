@@ -27,7 +27,7 @@ def call_with_retry[T](
     retry_count: int,
     base_seconds: float = 0.5,
     max_seconds: float = 8.0,
-    sleep: Callable[[float], None] = time.sleep,
+    sleep: Callable[[float], None] | None = None,
     is_retryable: Callable[[BaseException], bool] = is_retryable_provider_error,
 ) -> T:
     """Invoke ``operation``, retrying retryable failures with exponential backoff.
@@ -39,6 +39,7 @@ def call_with_retry[T](
     if retry_count < 0:
         raise ValueError("retry_count must be >= 0")
 
+    sleeper = sleep if sleep is not None else time.sleep
     attempt = 0
     while True:
         try:
@@ -46,7 +47,7 @@ def call_with_retry[T](
         except BaseException as exc:
             if not is_retryable(exc) or attempt >= retry_count:
                 raise
-            sleep(
+            sleeper(
                 exponential_delay_seconds(
                     attempt,
                     base_seconds=base_seconds,
