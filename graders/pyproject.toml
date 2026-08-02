@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
   "agent-eval-shared",
   "agent-eval-domain",
+  "httpx>=0.28.0",
 ]
 
 [build-system]
