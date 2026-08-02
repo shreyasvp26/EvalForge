@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.agent import (
     CreateAdapterCommand,
     CreateAdapterDraftVersionCommand,
     PublishAdapterVersionCommand,
 )
 from agent_eval_application.queries.queries import GetAdapterQuery, ListAdaptersQuery
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, Depends, Header, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.agent import (
     AdapterResponse,
     AdapterVersionResponse,
@@ -53,10 +56,11 @@ def create_adapter(
 def list_adapters(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[AdapterResponse]:
     items = services.list_adapters.execute(ListAdaptersQuery(actor=actor))
     responses = [AdapterResponse.from_dto(a) for a in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get(

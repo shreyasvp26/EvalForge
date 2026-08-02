@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.grader import (
     CreateGraderCommand,
     CreateGraderDraftVersionCommand,
     PublishGraderVersionCommand,
 )
 from agent_eval_application.queries.queries import GetGraderQuery, ListGradersQuery
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, Depends, Header, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.grader import (
     CreateGraderDraftVersionRequest,
@@ -54,10 +57,11 @@ def create_grader(
 def list_graders(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[GraderResponse]:
     items = services.list_graders.execute(ListGradersQuery(actor=actor))
     responses = [GraderResponse.from_dto(g) for g in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get("/{grader_id}", response_model=GraderResponse, summary="Get Grader")

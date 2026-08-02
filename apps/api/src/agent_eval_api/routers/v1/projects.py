@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.project import (
     CreateProjectCommand,
     DeprecateProjectCommand,
@@ -9,9 +11,10 @@ from agent_eval_application.commands.project import (
     UpdateProjectSettingsCommand,
 )
 from agent_eval_application.queries.queries import GetProjectQuery, ListProjectsQuery
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, Depends, Header, status
 
 from agent_eval_api.dependencies import ActorDep, ContainerDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.project import (
     CreateProjectRequest,
@@ -62,10 +65,11 @@ def create_project(
 def list_projects(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[ProjectResponse]:
     items = services.list_projects.execute(ListProjectsQuery(actor=actor))
     responses = [ProjectResponse.from_dto(p) for p in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get(

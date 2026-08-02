@@ -55,6 +55,25 @@ class ApiSettings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("OTEL_EXPORTER_OTLP_ENDPOINT"),
     )
+    rate_limit_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("RATE_LIMIT_ENABLED"),
+    )
+    rate_limit_per_minute: int = Field(
+        default=120,
+        ge=1,
+        validation_alias=AliasChoices("RATE_LIMIT_PER_MINUTE"),
+    )
+    max_request_body_bytes: int = Field(
+        default=1_048_576,
+        ge=64,
+        validation_alias=AliasChoices("MAX_REQUEST_BODY_BYTES"),
+    )
+    gzip_minimum_size: int = Field(
+        default=500,
+        ge=0,
+        validation_alias=AliasChoices("GZIP_MINIMUM_SIZE"),
+    )
 
     @model_validator(mode="after")
     def _require_jwt_or_dev_bypass(self) -> ApiSettings:

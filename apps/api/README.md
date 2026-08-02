@@ -63,7 +63,15 @@ Client
 | Runs            | `GET/POST /v1/runs`            | cancel; nested `events`, `artifacts`, `scores`   |
 
 Creates return **201**. State transitions (deprecate / publish / cancel) use
-**POST**. Lists return `{ items, count }`.
+**POST**. Lists return `{ items, count, next_cursor, has_more }` with query
+params `cursor`, `limit`, `sort`, `status`, and `q`.
+
+## Transport hardening
+
+- Rate limiting (`RATE_LIMIT_PER_MINUTE`, disable with `RATE_LIMIT_ENABLED=false`)
+- Request body size limit (`MAX_REQUEST_BODY_BYTES`)
+- GZip compression
+- Security headers (`X-Content-Type-Options`, `X-Frame-Options`, …)
 
 ## Idempotency
 

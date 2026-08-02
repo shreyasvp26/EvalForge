@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.case import (
     CreateCaseCommand,
     CreateCaseDraftVersionCommand,
@@ -9,9 +11,10 @@ from agent_eval_application.commands.case import (
     PublishCaseVersionCommand,
 )
 from agent_eval_application.queries.queries import GetCaseQuery, ListCasesByProjectQuery
-from fastapi import APIRouter, Header, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.case import (
     CaseResponse,
     CaseVersionResponse,
@@ -46,13 +49,14 @@ def create_case(
 def list_cases(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
     project_id: str = Query(min_length=1),
 ) -> CollectionResponse[CaseResponse]:
     items = services.list_cases_by_project.execute(
         ListCasesByProjectQuery(actor=actor, project_id=project_id)
     )
     responses = [CaseResponse.from_dto(c) for c in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get("/{case_id}", response_model=CaseResponse)

@@ -23,6 +23,7 @@ def settings() -> ApiSettings:
         log_level="critical",
         jwt_secret_key="test-jwt-secret-key-for-evalforge",
         auth_dev_accept_bearer_as_actor_id=False,
+        rate_limit_enabled=False,
     )
 
 

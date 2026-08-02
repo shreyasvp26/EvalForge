@@ -23,12 +23,14 @@ class ErrorResponse(BaseModel):
 
 
 class CollectionResponse[T](BaseModel):
-    """List wrapper — cursor pagination metadata can be added later."""
+    """List wrapper with optional cursor pagination metadata."""
 
     model_config = ConfigDict(extra="forbid")
 
     items: list[T]
     count: int
+    next_cursor: str | None = None
+    has_more: bool = False
 
 
 def idempotency_header_field() -> Any:

@@ -6,6 +6,8 @@ Worker lifecycle use cases (StartRun, Record*, etc.) are not exposed here.
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.run import CancelRunCommand, CreateRunCommand
 from agent_eval_application.queries.queries import (
     GetRunArtifactsQuery,
@@ -14,9 +16,10 @@ from agent_eval_application.queries.queries import (
     GetRunScoresQuery,
     ListRunsByProjectQuery,
 )
-from fastapi import APIRouter, Header, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.run import (
     ArtifactResponse,
@@ -77,13 +80,14 @@ def create_run(
 def list_runs(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
     project_id: str = Query(min_length=1),
 ) -> CollectionResponse[RunResponse]:
     items = services.list_runs_by_project.execute(
         ListRunsByProjectQuery(actor=actor, project_id=project_id)
     )
     responses = [RunResponse.from_dto(r) for r in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get("/{run_id}", response_model=RunResponse, summary="Get Run")
@@ -124,12 +128,13 @@ def list_run_events(
     run_id: str,
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[ExecutionEventResponse]:
     items = services.get_run_events.execute(
         GetRunEventsQuery(actor=actor, run_id=run_id)
     )
     responses = [ExecutionEventResponse.from_dto(e) for e in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get(
@@ -142,12 +147,13 @@ def list_run_artifacts(
     run_id: str,
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[ArtifactResponse]:
     items = services.get_run_artifacts.execute(
         GetRunArtifactsQuery(actor=actor, run_id=run_id)
     )
     responses = [ArtifactResponse.from_dto(a) for a in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get(
@@ -160,9 +166,10 @@ def list_run_scores(
     run_id: str,
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[ScoreResponse]:
     items = services.get_run_scores.execute(
         GetRunScoresQuery(actor=actor, run_id=run_id)
     )
     responses = [ScoreResponse.from_dto(s) for s in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)

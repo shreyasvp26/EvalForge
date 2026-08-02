@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.suite import (
     CreateSuiteCommand,
     CreateSuiteDraftVersionCommand,
@@ -14,9 +16,10 @@ from agent_eval_application.queries.queries import (
     GetSuiteQuery,
     ListSuitesByProjectQuery,
 )
-from fastapi import APIRouter, Header, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.suite import (
     CreateSuiteDraftVersionRequest,
@@ -51,13 +54,14 @@ def create_suite(
 def list_suites(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
     project_id: str = Query(min_length=1),
 ) -> CollectionResponse[SuiteResponse]:
     items = services.list_suites_by_project.execute(
         ListSuitesByProjectQuery(actor=actor, project_id=project_id)
     )
     responses = [SuiteResponse.from_dto(s) for s in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get("/{suite_id}", response_model=SuiteResponse)

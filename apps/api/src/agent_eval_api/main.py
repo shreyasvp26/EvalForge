@@ -14,12 +14,18 @@ from agent_eval_shared.log import configure_logging
 from agent_eval_shared.metrics import configure_metrics
 from agent_eval_shared.tracing import configure_tracing, shutdown_tracing
 from fastapi import FastAPI
+from starlette.middleware.gzip import GZipMiddleware
 
 from agent_eval_api.composition import ApiContainer, build_api_container
 from agent_eval_api.config import ApiSettings, load_api_settings
 from agent_eval_api.errors import register_exception_handlers
 from agent_eval_api.middleware.authentication import AuthenticationMiddleware
 from agent_eval_api.middleware.correlation import CorrelationIdMiddleware
+from agent_eval_api.middleware.hardening import (
+    RateLimitMiddleware,
+    RequestSizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
 from agent_eval_api.middleware.logging import RequestLoggingMiddleware
 from agent_eval_api.middleware.metrics import RequestMetricsMiddleware
 from agent_eval_api.middleware.timing import RequestTimingMiddleware
@@ -93,12 +99,24 @@ def create_app(
             "never repositories or Domain entities."
         ),
     )
-    # Starlette applies middleware LIFO:
-    # correlation → auth → timing → logging → metrics (inner).
+    # Starlette applies middleware LIFO (last added = outermost):
+    # correlation → body limit → rate limit → auth → security → gzip
+    # → timing → logging → metrics (inner).
     app.add_middleware(RequestMetricsMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(RequestTimingMiddleware)
+    app.add_middleware(GZipMiddleware, minimum_size=api_settings.gzip_minimum_size)
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(AuthenticationMiddleware)
+    app.add_middleware(
+        RateLimitMiddleware,
+        requests_per_minute=api_settings.rate_limit_per_minute,
+        enabled=api_settings.rate_limit_enabled,
+    )
+    app.add_middleware(
+        RequestSizeLimitMiddleware,
+        max_body_bytes=api_settings.max_request_body_bytes,
+    )
     app.add_middleware(CorrelationIdMiddleware)
     register_exception_handlers(app)
 

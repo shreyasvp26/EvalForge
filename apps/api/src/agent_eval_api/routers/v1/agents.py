@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from agent_eval_application.commands.agent import (
     CreateAgentCommand,
     CreateAgentDraftVersionCommand,
     PublishAgentVersionCommand,
 )
 from agent_eval_application.queries.queries import GetAgentQuery, ListAgentsQuery
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, Depends, Header, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.agent import (
     AgentResponse,
     AgentVersionResponse,
@@ -53,10 +56,11 @@ def create_agent(
 def list_agents(
     actor: ActorDep,
     services: ServicesDep,
+    params: Annotated[ListParams, Depends()],
 ) -> CollectionResponse[AgentResponse]:
     items = services.list_agents.execute(ListAgentsQuery(actor=actor))
     responses = [AgentResponse.from_dto(a) for a in items]
-    return CollectionResponse(items=responses, count=len(responses))
+    return params.apply(responses)
 
 
 @router.get("/{agent_id}", response_model=AgentResponse, summary="Get Agent")
