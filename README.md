@@ -14,8 +14,8 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | Application layer                                    | Complete |
 | Infrastructure layer                                 | Complete |
 | Execution workers / engine                           | Complete |
-| FastAPI Control Plane foundation (Phase 6A)          | Complete |
-| FastAPI business resources (Phase 6B)                | Next     |
+| FastAPI Control Plane (Phase 6)                      | Complete |
+| Sandbox Runtime (Phase 7)                            | Complete |
 | Adapters / Graders / Web                             | Later    |
 
 ## Repository layout
@@ -27,7 +27,8 @@ shared/          Python cross-cutting foundation (logging, config, errors)
 domain/          Python Domain Layer (business model — source of truth)
 application/     Python Application Layer (use cases, UoW, ports)
 infrastructure/  Python Infrastructure adapters + Docker/ops scaffolding
-workers/         Background / async job workers
+workers/         Background / async job workers (Execution Engine host)
+sandbox/         Sandbox Runtime — isolated Docker execution only
 docs/            Architecture, ADRs, API notes, diagrams
 ```
 
@@ -44,7 +45,7 @@ Backend module layout follows [Backend Architecture §11](./docs/architecture/ba
 
 ```bash
 pnpm install
-uv sync
+uv sync --all-packages
 
 # Full verification (lint, format, types, tests, build)
 pnpm verify
@@ -92,6 +93,7 @@ uv run pytest
 | `agent-eval-application` (`application/`)       | Use cases, UoW, auth/queue/event ports, DTOs            |
 | `agent-eval-infrastructure` (`infrastructure/`) | Adapters for Domain/Application ports + composition     |
 | `agent-eval-workers` (`workers/`)               | Execution Engine host, lifecycle, event pipeline        |
+| `agent-eval-sandbox` (`sandbox/`)               | Isolated Docker sandbox runtime (no orchestration)      |
 | `agent-eval-api` (`apps/api`)                   | FastAPI Control Plane over Application use cases        |
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.

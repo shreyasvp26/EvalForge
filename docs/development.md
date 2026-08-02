@@ -53,10 +53,10 @@ Load Python settings via `agent_eval_shared.config.load_settings` /
 
 ## Testing
 
-| Layer           | Tool   | Location                                                                                                             |
-| --------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                         |
-| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `apps/api/tests/` |
+| Layer           | Tool   | Location                                                                                                                               |
+| --------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                                           |
+| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `sandbox/tests/`, `apps/api/tests/` |
 
 Run everything with `pnpm test`. Coverage: `pnpm test:coverage`.
 
@@ -139,6 +139,22 @@ Python package: `workers/` → `agent_eval_workers`.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
 - Prefer `uv run pytest workers/tests` for worker-only feedback.
+
+## Sandbox Runtime
+
+Python package: `sandbox/` → `agent_eval_sandbox`.
+
+- First production execution component: isolated Docker execution only.
+- Interfaces: `create` / `start` / `execute` / `copy_out` / `stop` / `destroy`.
+- Enforces CPU, memory, disk (best-effort), timeout, working directory, and
+  readonly mounts; default network is deny-all (`NetworkMode.NONE`).
+- `SandboxManager.session` and `docker.cleanup.ensure_destroyed` always tear
+  down containers after timeout, failure, or worker interruption.
+- **Must not** import Domain, Application, Workers, Adapters, or Graders.
+- Depends on `agent-eval-shared` + `docker` only.
+- Prefer `uv run pytest sandbox/tests` (mocked Docker). Optional live Docker:
+  `uv run pytest sandbox/tests -m integration`.
+- See `sandbox/README.md`.
 
 ## API Layer / Control Plane
 
