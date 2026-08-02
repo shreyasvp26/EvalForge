@@ -46,9 +46,13 @@ class LifecycleOrchestrator:
         transition = self.lifecycle.apply(trigger)
 
         if trigger is LifecycleTrigger.CLAIM:
-            self.status.project_running(run_id)
+            # Domain Running projection waits until a Sandbox id exists
+            # (StartRun requires sandbox_id). Engine phase is still CLAIMED.
+            pass
         elif trigger is LifecycleTrigger.BEGIN_SANDBOX_PROVISIONING:
             self.sandbox.provision(run_id)
+        elif trigger is LifecycleTrigger.SANDBOX_READY:
+            self.status.project_running(run_id)
         elif trigger is LifecycleTrigger.START_ADAPTER:
             self.adapter.start(run_id)
         elif trigger is LifecycleTrigger.ADAPTER_STARTED:
@@ -59,8 +63,9 @@ class LifecycleOrchestrator:
         elif trigger is LifecycleTrigger.PERSIST_FINAL_EVENTS:
             self.events.persist_final(run_id)
         elif trigger is LifecycleTrigger.FINALS_PERSISTED:
-            self.grading.schedule(run_id)
+            # Domain must be Grading before Scores can be recorded.
             self.status.project_grading(run_id)
+            self.grading.schedule(run_id)
         elif trigger is LifecycleTrigger.GRADING_FINISHED:
             self.status.project_completed(run_id)
         elif transition.to_phase is OrchestrationPhase.FAILED:

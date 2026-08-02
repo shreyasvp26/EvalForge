@@ -8,6 +8,9 @@ dependencies = [
   "agent-eval-shared",
   "agent-eval-domain",
   "agent-eval-application",
+  "agent-eval-sandbox",
+  "agent-eval-adapters",
+  "agent-eval-graders",
 ]
 
 [build-system]
@@ -24,14 +27,22 @@ only-include = ["agent_eval_workers"]
 agent-eval-shared = { workspace = true }
 agent-eval-domain = { workspace = true }
 agent-eval-application = { workspace = true }
+agent-eval-sandbox = { workspace = true }
+agent-eval-adapters = { workspace = true }
+agent-eval-graders = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [
   "src",
   "../application/src",
+  "../application/tests",
   "../domain/src",
   "../shared/src",
+  "../sandbox/src",
+  "../sandbox/tests",
+  "../adapters/src",
+  "../graders/src",
   "tests",
 ]
 addopts = ["-q", "--strict-markers"]

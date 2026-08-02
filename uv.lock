@@ -268,8 +268,11 @@ name = "agent-eval-workers"
 version = "0.0.0"
 source = { editable = "workers" }
 dependencies = [
+    { name = "agent-eval-adapters" },
     { name = "agent-eval-application" },
     { name = "agent-eval-domain" },
+    { name = "agent-eval-graders" },
+    { name = "agent-eval-sandbox" },
     { name = "agent-eval-shared" },
 ]
 
@@ -281,8 +284,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-eval-adapters", editable = "adapters" },
     { name = "agent-eval-application", editable = "application" },
     { name = "agent-eval-domain", editable = "domain" },
+    { name = "agent-eval-graders", editable = "graders" },
+    { name = "agent-eval-sandbox", editable = "sandbox" },
     { name = "agent-eval-shared", editable = "shared" },
 ]
 
