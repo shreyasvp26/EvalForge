@@ -9,6 +9,7 @@ from agent_eval_domain.common.ids import (
     ArtifactId,
     CaseId,
     CaseVersionId,
+    ExecutionEventId,
     GraderId,
     GraderVersionId,
     PlatformVersionId,
@@ -21,6 +22,8 @@ from agent_eval_domain.common.ids import (
     SuiteVersionId,
 )
 from agent_eval_domain.execution.entities import ArtifactKind, ScoreValue
+from agent_eval_domain.execution.ndm_codec import action_from_payload
+from agent_eval_domain.execution.normalized_model import action_kind_of
 from agent_eval_domain.execution.run_factory import RunCreationCommand, RunFactory
 
 from agent_eval_application.commands.run import (
@@ -29,13 +32,18 @@ from agent_eval_application.commands.run import (
     CreateRunCommand,
     FailRunCommand,
     RecordArtifactCommand,
+    RecordExecutionEventCommand,
     RecordScoreCommand,
     StartGradingCommand,
     StartRunCommand,
 )
 from agent_eval_application.common.id_generator import IdGenerator
 from agent_eval_application.common.validation import require_non_empty
-from agent_eval_application.dto.run import RunDTO
+from agent_eval_application.dto.run import (
+    ArtifactRecordDTO,
+    ExecutionEventRecordDTO,
+    RunDTO,
+)
 from agent_eval_application.errors import ApplicationValidationError
 from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.event_dispatcher import DomainEventDispatcher
@@ -430,7 +438,7 @@ class RecordArtifact:
         self._auth = auth
         self._events = events
 
-    def execute(self, command: RecordArtifactCommand) -> RunDTO:
+    def execute(self, command: RecordArtifactCommand) -> ArtifactRecordDTO:
         run_id = RunId(require_non_empty(command.run_id, field="run_id"))
         try:
             kind = ArtifactKind(require_non_empty(command.kind, field="kind"))
@@ -442,6 +450,12 @@ class RecordArtifact:
                 cause=exc,
             ) from exc
 
+        artifact_id = ArtifactId(
+            require_non_empty(command.artifact_id, field="artifact_id")
+            if command.artifact_id
+            else self._ids.new_id()
+        )
+
         def work(uow):
             run = uow.runs.get(run_id)
             self._auth.ensure_can_manage_project(command.actor, run.pins.project_id)
@@ -450,9 +464,10 @@ class RecordArtifact:
                 if command.produced_by_grader_version_id
                 else None
             )
-            with_domain_errors(
+            before_ids = {a.id.value for a in run.artifacts}
+            artifact = with_domain_errors(
                 lambda: run.store_artifact(
-                    artifact_id=ArtifactId(self._ids.new_id()),
+                    artifact_id=artifact_id,
                     kind=kind,
                     storage_key=require_non_empty(
                         command.storage_key, field="storage_key"
@@ -465,8 +480,79 @@ class RecordArtifact:
                     produced_by_grader_version_id=produced_by,
                 )
             )
+            already = artifact.id.value in before_ids
             uow.runs.save(run)
-            return RunDTO.from_domain(run), collect_events(run)
+            dto = ArtifactRecordDTO(
+                id=artifact.id.value,
+                run_id=run.id.value,
+                kind=artifact.kind.value,
+                storage_key=artifact.storage_key,
+                content_type=artifact.content_type,
+                size_bytes=artifact.size_bytes,
+                checksum=artifact.checksum,
+                already_recorded=already,
+            )
+            return dto, collect_events(run)
+
+        return run_in_uow(self._uow_factory, self._events, work)
+
+
+class RecordExecutionEvent:
+    """Persist one append-only Execution Event through the Application Layer."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+        events: DomainEventDispatcher,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+        self._events = events
+
+    def execute(self, command: RecordExecutionEventCommand) -> ExecutionEventRecordDTO:
+        run_id = RunId(require_non_empty(command.run_id, field="run_id"))
+        event_id = ExecutionEventId(
+            require_non_empty(command.execution_event_id, field="execution_event_id")
+        )
+        try:
+            action = action_from_payload(dict(command.action))
+        except (KeyError, ValueError, TypeError) as exc:
+            raise ApplicationValidationError(
+                "Invalid Normalized Domain Model action payload",
+                code="INVALID_ACTION_PAYLOAD",
+                details={"error": str(exc)},
+                cause=exc,
+            ) from exc
+
+        def work(uow):
+            run = uow.runs.get(run_id)
+            self._auth.ensure_can_manage_project(command.actor, run.pins.project_id)
+            before_ids = {e.id.value for e in run.execution_events}
+            event = with_domain_errors(
+                lambda: run.record_execution_event(
+                    event_id=event_id,
+                    action=action,
+                    occurred_at=command.occurred_at,
+                    artifact_ids=[
+                        ArtifactId(require_non_empty(a, field="artifact_id"))
+                        for a in command.artifact_ids
+                    ],
+                    metadata=dict(command.metadata),
+                )
+            )
+            already = event.id.value in before_ids
+            uow.runs.save(run)
+            dto = ExecutionEventRecordDTO(
+                id=event.id.value,
+                run_id=run.id.value,
+                sequence=event.sequence,
+                kind=action_kind_of(event.action).value,
+                artifact_ids=tuple(a.value for a in event.artifact_ids),
+                occurred_at=event.occurred_at,
+                already_recorded=already,
+            )
+            return dto, collect_events(run)
 
         return run_in_uow(self._uow_factory, self._events, work)
 

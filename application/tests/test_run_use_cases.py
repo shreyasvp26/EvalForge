@@ -29,6 +29,8 @@ from agent_eval_application.commands.run import (
     CompleteRunCommand,
     CreateRunCommand,
     FailRunCommand,
+    RecordArtifactCommand,
+    RecordExecutionEventCommand,
     RecordScoreCommand,
     StartGradingCommand,
     StartRunCommand,
@@ -61,6 +63,8 @@ from agent_eval_application.use_cases.run import (
     CompleteRun,
     CreateRun,
     FailRun,
+    RecordArtifact,
+    RecordExecutionEvent,
     RecordScore,
     StartGrading,
     StartRun,
@@ -279,6 +283,90 @@ def test_invalid_transition_translated(world):
             CompleteRunCommand(actor=world["actor"], run_id=run.id)
         )
     assert exc_info.value.code == "INVALID_STATE_TRANSITION"
+
+
+def test_record_execution_event_ordered_and_idempotent(world):
+    run = _create_run(world)
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run.id, sandbox_id="sb-1")
+    )
+    uc = RecordExecutionEvent(world["uow"], world["auth"], world["events"])
+    first = uc.execute(
+        RecordExecutionEventCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            execution_event_id="evt-1",
+            action={
+                "kind": "message",
+                "role": "assistant",
+                "content_summary": "hello",
+            },
+        )
+    )
+    assert first.sequence == 0
+    assert first.already_recorded is False
+    second = uc.execute(
+        RecordExecutionEventCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            execution_event_id="evt-2",
+            action={
+                "kind": "tool_call",
+                "tool_name": "read",
+                "arguments": {"path": "a.py"},
+            },
+        )
+    )
+    assert second.sequence == 1
+    replay = uc.execute(
+        RecordExecutionEventCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            execution_event_id="evt-1",
+            action={
+                "kind": "message",
+                "role": "assistant",
+                "content_summary": "hello",
+            },
+        )
+    )
+    assert replay.already_recorded is True
+    assert replay.sequence == 0
+
+
+def test_record_artifact_idempotent(world):
+    run = _create_run(world)
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run.id, sandbox_id="sb-1")
+    )
+    uc = RecordArtifact(world["uow"], world["ids"], world["auth"], world["events"])
+    first = uc.execute(
+        RecordArtifactCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            kind="diff",
+            storage_key="s3://b/a",
+            content_type="text/plain",
+            size_bytes=10,
+            checksum="abc",
+            artifact_id="art-1",
+        )
+    )
+    assert first.already_recorded is False
+    again = uc.execute(
+        RecordArtifactCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            kind="diff",
+            storage_key="s3://b/a",
+            content_type="text/plain",
+            size_bytes=10,
+            checksum="abc",
+            artifact_id="art-1",
+        )
+    )
+    assert again.already_recorded is True
+    assert again.id == first.id
 
 
 def test_error_translation(world):

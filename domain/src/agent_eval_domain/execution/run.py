@@ -205,6 +205,10 @@ class EvaluationRun(AggregateRoot):
         metadata: dict[str, str] | None = None,
     ) -> ExecutionEvent:
         self._assert_accepts_execution_events()
+        for existing in self._execution_events:
+            if existing.id == event_id:
+                # Idempotent replay / duplicate delivery — append-only, no mutate.
+                return existing
         if self.sandbox is not None:
             self.sandbox.assert_usable()
         refs = tuple(artifact_ids or ())
@@ -248,6 +252,23 @@ class EvaluationRun(AggregateRoot):
         produced_by_grader_version_id: GraderVersionId | None = None,
         created_at: datetime | None = None,
     ) -> Artifact:
+        for existing in self._artifacts:
+            if existing.id == artifact_id:
+                if (
+                    existing.kind == kind
+                    and existing.storage_key == storage_key
+                    and existing.checksum == checksum
+                    and existing.content_type == content_type
+                    and existing.size_bytes == size_bytes
+                    and existing.produced_by_grader_version_id
+                    == produced_by_grader_version_id
+                ):
+                    return existing
+                raise InvariantViolation(
+                    "Artifact id already recorded with different content",
+                    code="ARTIFACT_ID_CONFLICT",
+                    details={"artifact_id": artifact_id.value},
+                )
         if self.is_terminal():
             raise InvariantViolation(
                 "Cannot store Artifacts on a terminal Run",

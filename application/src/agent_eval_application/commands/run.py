@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from agent_eval_application.common.actor import Actor
@@ -90,3 +91,21 @@ class RecordArtifactCommand:
     size_bytes: int
     checksum: str
     produced_by_grader_version_id: str | None = None
+    artifact_id: str | None = None
+    """Stable client id for idempotent retries; generated when omitted."""
+
+
+@dataclass(frozen=True, slots=True)
+class RecordExecutionEventCommand:
+    """Append one Execution Event via Application (Worker / Engine path)."""
+
+    actor: Actor
+    run_id: str
+    execution_event_id: str
+    """Stable id — duplicate deliveries with the same id are no-ops."""
+    action: dict[str, Any]
+    """NDM action payload including ``kind`` (see Domain ``ndm_codec``)."""
+    artifact_ids: tuple[str, ...] = ()
+    metadata: dict[str, str] = field(default_factory=dict)
+    occurred_at: datetime | None = None
+    """Optional timestamp; ``None`` lets Domain assign ``utc_now``."""

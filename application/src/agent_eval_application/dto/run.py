@@ -94,3 +94,30 @@ class RunDTO:
                 for score in run.scores
             ),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionEventRecordDTO:
+    """Result of persisting one Execution Event (including idempotent replay)."""
+
+    id: str
+    run_id: str
+    sequence: int
+    kind: str
+    artifact_ids: tuple[str, ...]
+    occurred_at: datetime
+    already_recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactRecordDTO:
+    """Result of persisting one Artifact metadata row."""
+
+    id: str
+    run_id: str
+    kind: str
+    storage_key: str
+    content_type: str
+    size_bytes: int
+    checksum: str
+    already_recorded: bool
