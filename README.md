@@ -17,7 +17,10 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | FastAPI Control Plane (Phase 6)                      | Complete |
 | Sandbox Runtime (Phase 7)                            | Complete |
 | Adapter SDK + Claude Code (Phase 8)                  | Complete |
-| Graders / Web                                        | Later    |
+| Objective Graders (Phase 9)                          | Complete |
+| Rubric Graders (Phase 10)                            | Complete |
+| Production Pipeline Integration (Phase 11)           | Complete |
+| Additional adapters / Web                            | Later    |
 
 ## Repository layout
 

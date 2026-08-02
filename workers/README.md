@@ -21,34 +21,41 @@ judgment.
 | Retry policy / lease ack-release                             | Domain invariants (Domain owns those)  |
 | Failure classification into Application-mediated transitions | Mutate Domain Run status directly      |
 
-**Allowed dependencies (target):** `application`, `domain`, `shared`, and
-(at composition) `infrastructure`, plus Adapter/Grader **ports** invoked by
-the Engine — never API.
+**Allowed dependencies:** `application`, `domain`, `shared`, and (at
+composition) `sandbox`, `adapters`, `graders`, plus Infrastructure ports —
+never API.
 
 ## Package layout
 
 ```
 agent_eval_workers/
   worker/              # Process chassis — claim, retry, heartbeat, shutdown
-  execution_engine/    # Orchestration authority + Phase 5 composition harness
+  execution_engine/    # Orchestration authority + Phase 5 mock harness
+  integration/         # Phase 11 production bridges (Sandbox/Adapter/Graders)
   scheduler/           # Queue → worker delivery policy (scaffold)
   lifecycle/           # Named Run stages / transition contracts
   cancellation/        # Cooperative cancel observation
   checkpoints/         # Crash-recovery progress markers
   event_pipeline/      # Durable Event/Artifact recording + projection hooks
-  mocks/               # Deterministic Sandbox / Adapter / Grader stubs
+  mocks/               # Deterministic stubs (Phase 5 harness only)
   clock.py             # Monotonic clock port (timeouts)
 ```
 
 ## Status
 
-**Phases 2–5** are implemented. Phase 5 wires the complete mocked end-to-end
-orchestration path via `build_orchestration_harness()`.
+**Phases 2–5** — mocked end-to-end orchestration via
+`build_orchestration_harness()`.
 
-Still deferred: real Adapter/Sandbox/Grader packages, scheduler delivery
-policy, Redis worker-queue adapter, live SSE networking.
+**Phase 11** — production pipeline via `build_production_harness()`:
 
-## Complete orchestration sequence (Phase 5)
+Worker → Execution Engine → Docker Sandbox → Claude Code Adapter →
+Event Persistence → Objective + Rubric Graders → Application scores →
+Run Completed.
+
+Still deferred: additional vendor adapters, Redis worker-queue adapter,
+live SSE networking, frontend.
+
+## Production execution pipeline (Phase 11)
 
 ```
 Queue claim (Worker)
@@ -57,31 +64,51 @@ Checkpoint restore (Worker)
         ↓
 ExecutionEngine.execute
         ↓
-Lifecycle: CLAIM → status.project_running
+Lifecycle: CLAIM
         ↓
-BEGIN_SANDBOX_PROVISIONING → MockSandbox.provision
+BEGIN_SANDBOX_PROVISIONING → SandboxPort (ManagedSandboxAdapter
+                              → SandboxManager / DockerSandbox)
         ↓
-SANDBOX_READY
+SANDBOX_READY → Application StartRun (sandbox_id)
         ↓
-START_ADAPTER → MockAdapter.start
+START_ADAPTER → AdapterPort (SdkAdapterBridge → Adapter SDK)
         ↓
-ADAPTER_STARTED → MockAdapter.run  (streams events/artifacts continuously
-                                     into EventPersistencePipeline)
+ADAPTER_STARTED → Adapter.run (ClaudeCodeAdapter streams NDM into
+                  PipelineEventSink → EventPersistencePipeline)
         ↓
-ADAPTER_FINISHED → MockAdapter.finish
+ADAPTER_FINISHED → Adapter.finish
         ↓
 PERSIST_FINAL_EVENTS → pipeline.persist_final
         ↓
-FINALS_PERSISTED → MockGradingScheduler.schedule (isolated MockGraders)
-                 → status.project_grading
+FINALS_PERSISTED → Application StartGrading
+                 → GraderSdkScheduler (run_graders_isolated)
+                 → Application RecordScore per ProducedScore
         ↓
-GRADING_FINISHED → status.project_completed
+GRADING_FINISHED → Application CompleteRun
         ↓
 Worker ack
 ```
 
+Composition: `agent_eval_workers.integration.build_production_harness`.
+
+Boundaries held:
+
+| Layer            | Unaware of                                     |
+| ---------------- | ---------------------------------------------- |
+| Execution Engine | Docker (SandboxPort only)                      |
+| Worker chassis   | Claude / vendor APIs (Adapter factory at root) |
+| Graders          | Each other + Application repositories          |
+| Adapters         | Repositories / Application                     |
+| Sandbox          | Domain / Application / Workers / Graders       |
+
+Scores are recorded only through Application `RecordScore` while Domain
+status is `Grading`. Judge LLM calls use injectable `JudgeProvider`
+(`MockJudgeProvider` in tests).
+
+## Mock orchestration (Phase 5)
+
 Use `agent_eval_workers.execution_engine.build_orchestration_harness` for
-deterministic verification without Redis, Postgres, S3, or vendor code.
+deterministic verification without Docker, Claude CLI, or real Graders.
 
 ## Event pipeline (Phase 4)
 
