@@ -15,8 +15,10 @@ This document explains how the EvalForge engineering foundation is meant to be u
 From Backend Architecture §5 / §11:
 
 - `domain` → `shared` only (and nothing else)
+- `application` → `domain` + `shared` only (never Infrastructure, FastAPI, SQLAlchemy, Redis, …)
 - `shared` → nothing else in the backend tree
 - Domain **must not** import config or logging modules
+- Application **must not** contain domain invariants or transport/persistence details
 - Adapters / Graders → Domain + shared only
 
 TypeScript foundation packages mirror the same idea for the Presentation / SDK plane:
@@ -44,10 +46,10 @@ Service-specific schemas should **extend** the baseline, not replace it.
 
 ## Testing
 
-| Layer           | Tool   | Location                                     |
-| --------------- | ------ | -------------------------------------------- |
-| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/` |
-| Python unit     | pytest | `shared/tests/` (more packages later)        |
+| Layer           | Tool   | Location                                               |
+| --------------- | ------ | ------------------------------------------------------ |
+| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`           |
+| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/` |
 
 Run everything with `pnpm test`. Coverage: `pnpm test:coverage`.
 
@@ -72,6 +74,21 @@ Python package: `domain/` → `agent_eval_domain`.
 - Repository interfaces live in `agent_eval_domain.repositories`; Infrastructure
   implements them in a later phase.
 - Prefer `uv run pytest domain/tests` for domain-only feedback.
+
+## Application Layer
+
+Python package: `application/` → `agent_eval_application`.
+
+- Owns use-case orchestration, Project-scoped authorization, Unit of Work
+  boundaries, idempotency of use-case invocation, and Domain error translation.
+- Depends on `agent_eval_domain` + `agent_eval_shared` only.
+- Defines Application ports (Unit of Work, event dispatcher, run queue,
+  authorization, idempotency) that Infrastructure implements later.
+- **Must not** import FastAPI, SQLAlchemy, Redis, Celery, HTTP, or JSON
+  transport concerns.
+- Business rules stay in Domain; Application coordinates aggregates and commits.
+- Prefer `uv run pytest application/tests` for application-only feedback
+  (ports are mocked — never a real database or broker).
 
 ## What does not belong in foundation packages
 
