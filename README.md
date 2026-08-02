@@ -20,6 +20,7 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | Objective Graders (Phase 9)                          | Complete |
 | Rubric Graders (Phase 10)                            | Complete |
 | Production Pipeline Integration (Phase 11)           | Complete |
+| Production Judge Providers (Phase 12)                | Complete |
 | Additional adapters / Web                            | Later    |
 
 ## Repository layout

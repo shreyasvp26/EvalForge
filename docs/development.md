@@ -45,6 +45,9 @@ Baseline keys today:
 | `DATABASE_URL`             | SQLAlchemy PostgreSQL URL                        |
 | `REDIS_URL`                | Redis for run queue / idempotency                |
 | `OBJECT_STORAGE_*`         | S3-compatible Artifact store (endpoint optional) |
+| `ANTHROPIC_API_KEY`        | Anthropic judge provider (optional)              |
+| `OPENAI_API_KEY`           | OpenAI judge provider (optional)                 |
+| `GEMINI_API_KEY`           | Gemini judge provider (optional)                 |
 
 Service-specific schemas should **extend** the baseline, not replace it.
 Load Python settings via `agent_eval_shared.config.load_settings` /
@@ -193,12 +196,15 @@ Python package: `graders/` → `agent_eval_graders`.
 - **Rubric graders:** `RubricGrader` + injectable `JudgeProvider` /
   `MockJudgeProvider`; prompt builder (Run record + pinned rubric only);
   strict response parser; rubric wording immutable per Grader Version.
-  No external LLM providers yet.
+  Production providers: Anthropic / OpenAI / Gemini under
+  `agent_eval_graders.providers` (same `JudgeProvider` port; mocked HTTP
+  tests only — no live LLM calls in CI).
 - Produces immutable Domain `Score` / `ScoreValue` (pass/fail, numeric,
   reason, metadata, grader version, timestamps).
 - Sibling grader failures never affect each other (`run_graders_isolated`).
-- Depends on `domain` + `shared` only (rubric family uses the shared Grader
-  SDK; does not modify objective graders).
+- Depends on `domain` + `shared` (+ `httpx` for judge providers) only.
+  Rubric family uses the shared Grader SDK; does not modify objective
+  graders or the Grader lifecycle.
 - **Must not** import Application, Infrastructure, Workers, Execution
   Engine, Sandbox, Adapters, or FastAPI.
 - Prefer `uv run pytest graders/tests`.

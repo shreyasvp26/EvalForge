@@ -1,7 +1,8 @@
 # EvalForge Grader Layer
 
 Reads a completed Run's Execution Events and Artifacts and produces immutable
-Scores. Depends only on Domain + Shared.
+Scores. Depends only on Domain + Shared (+ `httpx` for production judge
+providers).
 
 This package does **not** execute code, orchestrate Runs, or persist Scores.
 
@@ -26,6 +27,15 @@ graders/
       runner.py          # RubricGrader + JudgeRunner
       response_parser.py # Strict JSON schema validation
       exceptions.py / registry.py
+    providers/           # Production JudgeProvider plugins (Phase 12)
+      errors.py          # Auth / rate-limit / network / invalid-response
+      retry.py           # Exponential backoff (retryable only)
+      config.py          # Shared knobs + env loading
+      http.py            # HTTP status → platform failure mapping
+      selection.py       # create_judge_provider("anthropic"|"openai"|"gemini")
+      anthropic/         # Messages API
+      openai/            # Chat Completions API
+      gemini/            # generateContent API
 ```
 
 ## Lifecycle
@@ -54,8 +64,8 @@ affect each other (`run_graders_isolated`).
 ## Rubric graders
 
 `RubricGrader` performs structured qualitative evaluation via an injectable
-`JudgeProvider`. Phase 10 ships `MockJudgeProvider` only — no OpenAI /
-Anthropic integration yet.
+`JudgeProvider`. Production providers (Anthropic, OpenAI, Gemini) implement
+the same port as `MockJudgeProvider` — the Grader lifecycle is unchanged.
 
 ### Prompt construction
 
@@ -75,6 +85,29 @@ treated as untrusted data (instruction-injection posture).
 `DeterminismControls` (temperature / seed / model_hint) minimize variance;
 rubric grading remains bounded-variance, not bit-identical.
 
+### Production judge providers
+
+| Provider  | Env key             | Default model              | Seed |
+| --------- | ------------------- | -------------------------- | ---- |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-sonnet-4-20250514` | no   |
+| OpenAI    | `OPENAI_API_KEY`    | `gpt-4o`                   | yes  |
+| Gemini    | `GEMINI_API_KEY`    | `gemini-2.0-flash`         | yes  |
+
+Shared knobs (per-vendor prefix, e.g. `ANTHROPIC_TIMEOUT_SECONDS`):
+
+- timeout, retry count, temperature, seed, max tokens, optional base URL
+
+```python
+from agent_eval_graders.providers import create_judge_provider
+from agent_eval_graders.rubric import RubricGrader
+
+provider = create_judge_provider("anthropic")  # reads ANTHROPIC_API_KEY
+grader = RubricGrader(rubric=rubric, provider=provider)
+```
+
+Effective temperature / seed / model are recorded on `JudgeRawResponse.metadata`
+and flow into Score detail via the existing parser / `produce_scores` path.
+
 ### Response parsing
 
 Strict JSON schema: `numeric` and/or `passed`, required `reason`, optional
@@ -87,8 +120,15 @@ judgment failure (`RubricParseError` / `RubricSchemaError`), not a Score.
 | ------------------------- | --------------------------- | --------- |
 | Judge timeout             | `JudgeTimeout`              | yes       |
 | Provider unavailable      | `JudgeProviderUnavailable`  | yes       |
+| Rate limited (HTTP 429)   | `JudgeRateLimitError`       | yes       |
+| Network / transport       | `JudgeNetworkError`         | yes       |
+| Authentication            | `JudgeAuthenticationError`  | no        |
+| Invalid vendor payload    | `JudgeInvalidResponseError` | no        |
 | Invalid JSON / schema     | `RubricParseError` / Schema | no        |
 | Prompt construction error | `RubricPromptError`         | no        |
+
+Vendor exceptions never leave the provider package. Retry uses exponential
+backoff and skips non-retryable failures (auth, invalid response, schema).
 
 Failures stay isolated to that Grader Version; siblings still produce Scores
 (partial grading).
@@ -106,4 +146,5 @@ determinism controls in detail/metadata.
 uv run pytest graders/tests
 ```
 
-Rubric tests use `MockJudgeProvider` only — they never call an external LLM.
+Rubric unit tests use `MockJudgeProvider`. Provider integration tests use
+mocked HTTP (`httpx.MockTransport`) only — they never call an external LLM.
