@@ -32,6 +32,5 @@ def test_runtime_subpackages_importable() -> None:
 
 
 def test_unfinished_packages_remain_phase1_scaffold() -> None:
-    """Phase 3 implemented worker/engine/cancel/checkpoints; pipeline/scheduler TBD."""
-    for package in (scheduler, event_pipeline):
-        assert "Phase 1" in (package.__doc__ or "")
+    """Phase 4 implemented event pipeline; scheduler delivery policy still TBD."""
+    assert "Phase 1" in (scheduler.__doc__ or "")
