@@ -40,7 +40,7 @@ export function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-[6px] px-2 py-1.5 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-default select-none items-center rounded-[var(--ef-radius-control)] px-2 py-1.5 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         inset === true && "pl-8",
         className,
       )}
@@ -85,7 +85,7 @@ export function DropdownMenuCheckboxItem({
   return (
     <DropdownMenuPrimitive.CheckboxItem
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-[6px] py-1.5 pr-2 pl-8 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-default select-none items-center rounded-[var(--ef-radius-control)] py-1.5 pr-2 pl-8 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...(checked !== undefined ? { checked } : {})}

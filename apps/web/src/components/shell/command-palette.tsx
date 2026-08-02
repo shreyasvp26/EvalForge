@@ -1,11 +1,21 @@
 "use client";
 
-import { BookOpen, Command as CommandIcon, Icon, Monitor, Moon, Sun, Text } from "@agent-eval/ui";
+import {
+  BookOpen,
+  Command as CommandIcon,
+  Dialog,
+  DialogContent,
+  DialogTitleHidden,
+  Icon,
+  Monitor,
+  Moon,
+  Sun,
+  Text,
+} from "@agent-eval/ui";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { RecentPage } from "@/components/shell/use-recent-pages";
 import type { LucideIcon } from "@agent-eval/ui";
@@ -39,12 +49,8 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const router = useRouter();
   const { setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) setQuery("");
@@ -73,10 +79,6 @@ export function CommandPalette({
       .map((page) => ({ page, score: fuzzyScore(query, `${page.label} ${page.href}`) }))
       .filter((entry) => entry.score > 0);
   }, [query, recent]);
-
-  if (!mounted || !open) {
-    return null;
-  }
 
   const appearanceActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
     {
@@ -108,28 +110,26 @@ export function CommandPalette({
     },
   ];
 
-  return createPortal(
-    <div className="fixed inset-0 z-[var(--ef-z-command)]">
-      <button
-        type="button"
-        className="absolute inset-0 bg-foreground/40"
-        aria-label="Close command palette"
-        onClick={() => {
-          onOpenChange(false);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showClose={false}
+        aria-describedby={undefined}
+        overlayClassName="z-[var(--ef-z-command)]"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          inputRef.current?.focus();
         }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        className="relative mx-auto mt-[12vh] w-[min(100%-1.5rem,560px)] overflow-hidden rounded-[var(--ef-radius-dialog)] border border-border bg-popover shadow-ef-md"
+        className="fixed left-1/2 top-[12vh] z-[var(--ef-z-command)] grid w-[min(100%-1.5rem,560px)] max-w-[560px] -translate-x-1/2 translate-y-0 gap-0 overflow-hidden rounded-[var(--ef-radius-dialog)] border border-border bg-popover p-0 text-popover-foreground shadow-ef-md"
       >
+        <DialogTitleHidden>Command palette</DialogTitleHidden>
         <Command
           label="Command palette"
           shouldFilter={false}
           className="flex flex-col"
           onKeyDown={(event) => {
             if (event.key === "Escape") {
+              event.preventDefault();
               onOpenChange(false);
             }
           }}
@@ -137,10 +137,11 @@ export function CommandPalette({
           <div className="flex items-center gap-2 border-b border-border px-3">
             <Icon icon={CommandIcon} size="sm" className="text-muted-foreground" aria-hidden />
             <Command.Input
+              ref={inputRef}
               value={query}
               onValueChange={setQuery}
               placeholder="Jump to a page, switch theme…"
-              className="h-11 w-full bg-transparent text-[length:var(--ef-text-body)] text-popover-foreground outline-none placeholder:text-muted-foreground"
+              className="h-11 w-full bg-transparent text-[length:var(--ef-text-body)] text-popover-foreground outline-none placeholder:text-muted-foreground focus-visible:outline-none"
             />
           </div>
           <Command.List className="max-h-80 overflow-auto p-2">
@@ -193,7 +194,7 @@ export function CommandPalette({
                     <Icon icon={item.icon} size="sm" aria-hidden />
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.chord ? (
-                      <kbd className="font-mono text-[10px] text-muted-foreground">
+                      <kbd className="font-mono text-[length:var(--ef-text-caption)] leading-none text-muted-foreground">
                         {item.chord}
                       </kbd>
                     ) : null}
@@ -238,14 +239,15 @@ export function CommandPalette({
                 >
                   <Icon icon={CommandIcon} size="sm" aria-hidden />
                   Keyboard shortcuts
-                  <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">?</kbd>
+                  <kbd className="ml-auto font-mono text-[length:var(--ef-text-caption)] leading-none text-muted-foreground">
+                    ?
+                  </kbd>
                 </Command.Item>
               ) : null}
             </Command.Group>
           </Command.List>
         </Command>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }

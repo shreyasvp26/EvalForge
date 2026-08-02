@@ -3,7 +3,7 @@
 import { cn } from "@agent-eval/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export interface SplitViewProps {
   primary: ReactNode;
@@ -60,9 +60,13 @@ export function SplitView({
       <div
         className={cn(
           "min-h-0 w-full shrink-0 overflow-auto border-border md:border-r",
-          secondaryOpen ? "md:w-auto" : "w-full",
+          secondaryOpen ? "md:w-[var(--ef-split-primary-width)] md:shrink-0" : "w-full",
         )}
-        style={secondaryOpen ? { width } : undefined}
+        style={
+          secondaryOpen
+            ? ({ "--ef-split-primary-width": `${String(width)}px` } as CSSProperties)
+            : undefined
+        }
       >
         {primary}
       </div>

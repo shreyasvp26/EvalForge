@@ -44,6 +44,7 @@
   --ef-space-8: 64px;
 
   /* Radii */
+  --ef-radius-tight: 4px;
   --ef-radius-control: 8px;
   --ef-radius-panel: 10px;
   --ef-radius-dialog: 12px;

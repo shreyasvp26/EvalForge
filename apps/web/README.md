@@ -4,8 +4,8 @@ EvalForge web application — Next.js App Router.
 
 ## Status
 
-- **Phase 15A** — design system consumption, theme, shell foundation
-- **Phase 15B** — product layouts, UX patterns, DataGrid gallery demos, navigation polish
+- **Phase 15A** — design system foundation — **complete**
+- **Phase 15B** — product UX foundation — **complete**
 
 No product CRUD or API-backed feature screens yet.
 

@@ -9,7 +9,6 @@ import {
   Separator,
   SimpleTooltip,
   Text,
-  TooltipProvider,
 } from "@agent-eval/ui";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -35,6 +34,7 @@ function NavLink({
     <Link
       href={item.href}
       {...(onNavigate !== undefined ? { onClick: onNavigate } : {})}
+      {...(collapsed ? { "aria-label": item.label } : {})}
       title={collapsed ? item.label : undefined}
       className={cn(
         "group flex items-center gap-2 rounded-[var(--ef-radius-control)] text-[length:var(--ef-text-body)] transition-[background-color,color,padding] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -50,7 +50,7 @@ function NavLink({
         <>
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           {item.chord ? (
-            <kbd className="hidden font-mono text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 xl:inline">
+            <kbd className="hidden font-mono text-[length:var(--ef-text-caption)] leading-none text-muted-foreground opacity-0 transition-opacity motion-reduce:transition-none group-hover:opacity-100 xl:inline">
               {item.chord}
             </kbd>
           ) : null}
@@ -90,96 +90,94 @@ export function Sidebar({
   showCollapseControl = true,
 }: SidebarProps) {
   return (
-    <TooltipProvider delayDuration={200}>
-      <aside
+    <aside
+      className={cn(
+        "flex h-full shrink-0 flex-col border-r border-border bg-card transition-[width] duration-[var(--ef-duration-normal)] ease-[var(--ef-ease-standard)]",
+        collapsed ? "w-[52px]" : "w-60",
+        className,
+      )}
+      aria-label="Application"
+    >
+      <div
         className={cn(
-          "flex h-full shrink-0 flex-col border-r border-border bg-card transition-[width] duration-[var(--ef-duration-normal)] ease-[var(--ef-ease-standard)]",
-          collapsed ? "w-[52px]" : "w-60",
-          className,
+          "flex h-12 items-center gap-2 border-b border-border",
+          collapsed ? "justify-center px-1" : "px-3",
         )}
-        aria-label="Application"
       >
-        <div
-          className={cn(
-            "flex h-12 items-center gap-2 border-b border-border",
-            collapsed ? "justify-center px-1" : "px-3",
-          )}
-        >
-          {!collapsed ? (
-            <Text
-              as="span"
-              variant="caption"
-              className="min-w-0 flex-1 truncate font-mono uppercase tracking-[0.14em] text-foreground"
-            >
-              EvalForge
-            </Text>
-          ) : (
-            <Text as="span" variant="caption" className="font-mono text-foreground" aria-hidden>
-              EF
-            </Text>
-          )}
-          {showCollapseControl && onToggleCollapsed ? (
-            <IconButton
-              icon={PanelLeft}
-              label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              size="sm"
-              onClick={onToggleCollapsed}
-              className={collapsed ? undefined : "ml-auto"}
-            />
-          ) : null}
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-2 overflow-y-auto p-2" aria-label="Primary">
-          {navSections.map((section) => {
-            const open = sectionOpen[section.id] ?? true;
-            return (
-              <div key={section.id} className="space-y-1">
-                {!collapsed ? (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-1 rounded-[var(--ef-radius-control)] px-2.5 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-expanded={open}
-                    onClick={() => {
-                      onToggleSection?.(section.id);
-                    }}
-                  >
-                    <Text variant="table" className="flex-1">
-                      {section.label}
-                    </Text>
-                    <Icon
-                      icon={ChevronDown}
-                      size="xs"
-                      className={cn(
-                        "text-muted-foreground transition-transform duration-[var(--ef-duration-fast)]",
-                        open ? "rotate-0" : "-rotate-90",
-                      )}
-                      aria-hidden
-                    />
-                  </button>
-                ) : (
-                  <Separator className="my-1" />
-                )}
-                {collapsed || open
-                  ? section.items.map((item) => (
-                      <NavLink
-                        key={item.href}
-                        item={item}
-                        collapsed={collapsed}
-                        {...(onNavigate !== undefined ? { onNavigate } : {})}
-                      />
-                    ))
-                  : null}
-              </div>
-            );
-          })}
-        </nav>
-
         {!collapsed ? (
-          <div className="border-t border-border p-3">
-            <Text variant="caption">Press ? for shortcuts</Text>
-          </div>
+          <Text
+            as="span"
+            variant="caption"
+            className="min-w-0 flex-1 truncate font-mono uppercase tracking-[0.14em] text-foreground"
+          >
+            EvalForge
+          </Text>
+        ) : (
+          <Text as="span" variant="caption" className="font-mono text-foreground" aria-hidden>
+            EF
+          </Text>
+        )}
+        {showCollapseControl && onToggleCollapsed ? (
+          <IconButton
+            icon={PanelLeft}
+            label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            size="sm"
+            onClick={onToggleCollapsed}
+            className={collapsed ? undefined : "ml-auto"}
+          />
         ) : null}
-      </aside>
-    </TooltipProvider>
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-2 overflow-y-auto p-2" aria-label="Primary">
+        {navSections.map((section) => {
+          const open = sectionOpen[section.id] ?? true;
+          return (
+            <div key={section.id} className="space-y-1">
+              {!collapsed ? (
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1 rounded-[var(--ef-radius-control)] px-2.5 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-expanded={open}
+                  onClick={() => {
+                    onToggleSection?.(section.id);
+                  }}
+                >
+                  <Text variant="table" className="flex-1">
+                    {section.label}
+                  </Text>
+                  <Icon
+                    icon={ChevronDown}
+                    size="xs"
+                    className={cn(
+                      "text-muted-foreground transition-transform duration-[var(--ef-duration-fast)]",
+                      open ? "rotate-0" : "-rotate-90",
+                    )}
+                    aria-hidden
+                  />
+                </button>
+              ) : (
+                <Separator className="my-1" />
+              )}
+              {collapsed || open
+                ? section.items.map((item) => (
+                    <NavLink
+                      key={item.href}
+                      item={item}
+                      collapsed={collapsed}
+                      {...(onNavigate !== undefined ? { onNavigate } : {})}
+                    />
+                  ))
+                : null}
+            </div>
+          );
+        })}
+      </nav>
+
+      {!collapsed ? (
+        <div className="border-t border-border p-3">
+          <Text variant="caption">Press ? for shortcuts</Text>
+        </div>
+      ) : null}
+    </aside>
   );
 }

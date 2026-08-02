@@ -15,7 +15,7 @@ export function Checkbox({ className, disabled, ...props }: CheckboxProps) {
     <CheckboxPrimitive.Root
       disabled={disabled}
       className={cn(
-        "peer h-4 w-4 shrink-0 rounded-[4px] border border-border-strong bg-input transition-[background-color,border-color] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground",
+        "peer h-4 w-4 shrink-0 rounded-[var(--ef-radius-tight)] border border-border-strong bg-input transition-[background-color,border-color] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground",
         className,
       )}
       {...props}

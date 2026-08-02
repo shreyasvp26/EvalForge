@@ -68,6 +68,12 @@ Keep column defs stable (`useMemo`) to avoid unnecessary re-renders.
 
 ---
 
+## Mobile
+
+Wide tables use horizontal scroll (`overflow-x-auto`). Prefer fewer visible columns on small screens via controlled `columnVisibility` (hide low-priority columns below `md`). A card/list alternate layout is deferred until product CRUD.
+
+---
+
 ## Extension points
 
 - Custom cells via TanStack `columnDef.cell`

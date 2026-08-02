@@ -2,6 +2,8 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 
+import { motionDuration, motionEase } from "./tokens";
+
 import type { HTMLMotionProps } from "framer-motion";
 import type { ReactNode } from "react";
 
@@ -33,7 +35,7 @@ export function FadeIn({
       className={className}
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+      transition={{ duration: motionDuration.normal, ease: motionEase.standard }}
       {...props}
     >
       {children}

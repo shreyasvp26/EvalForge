@@ -30,17 +30,19 @@ export function DialogOverlay({
 
 export type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   showClose?: boolean;
+  overlayClassName?: string;
 };
 
 export function DialogContent({
   className,
   children,
   showClose = true,
+  overlayClassName,
   ...props
 }: DialogContentProps) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         className={cn(
           "fixed left-1/2 top-1/2 z-[var(--ef-z-modal)] grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-[var(--ef-radius-dialog)] border border-border bg-card p-5 text-card-foreground shadow-ef-md focus:outline-none",

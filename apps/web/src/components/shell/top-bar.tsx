@@ -1,6 +1,6 @@
 "use client";
 
-import { Command, Icon, IconButton, Menu, Text } from "@agent-eval/ui";
+import { IconButton, Menu, Search, Text } from "@agent-eval/ui";
 
 import type { ReactNode } from "react";
 
@@ -28,23 +28,28 @@ export function TopBar({
       <div className="min-w-0 flex-1">
         {breadcrumbs ?? <Text variant="caption">Workspace</Text>}
       </div>
+      <IconButton
+        icon={Search}
+        label="Open command palette"
+        className="sm:hidden"
+        onClick={onOpenCommand}
+      />
       <button
         type="button"
         onClick={onOpenCommand}
-        className="hidden h-8 items-center gap-2 rounded-[var(--ef-radius-control)] border border-border bg-card px-2.5 text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+        className="hidden h-8 items-center gap-2 rounded-[var(--ef-radius-control)] border border-border bg-card px-2.5 text-muted-foreground transition-colors duration-[var(--ef-duration-fast)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
       >
-        <Icon icon={Command} size="xs" aria-hidden />
         <Text as="span" variant="caption">
           Search
         </Text>
-        <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
+        <kbd className="rounded-[var(--ef-radius-control)] border border-border bg-muted px-1.5 font-mono text-[length:var(--ef-text-caption)] leading-none text-muted-foreground">
           ⌘K
         </kbd>
       </button>
       <button
         type="button"
         onClick={onOpenShortcuts}
-        className="inline-flex h-8 items-center rounded-[var(--ef-radius-control)] border border-border px-2 font-mono text-[length:var(--ef-text-caption)] text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex h-8 min-w-8 items-center justify-center rounded-[var(--ef-radius-control)] border border-border px-2 font-mono text-[length:var(--ef-text-caption)] text-muted-foreground transition-colors duration-[var(--ef-duration-fast)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Keyboard shortcuts"
       >
         ?

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { cn } from "../../lib/cn";
 
-import type { HTMLAttributes, ReactNode } from "react";
+import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 export type InspectorLayoutProps = HTMLAttributes<HTMLDivElement> & {
   main: ReactNode;
@@ -70,7 +70,7 @@ export function InspectorLayout({
             aria-orientation="vertical"
             aria-labelledby={labelId}
             tabIndex={0}
-            className="group relative w-px shrink-0 cursor-col-resize bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="group relative hidden w-px shrink-0 cursor-col-resize bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:block"
             onPointerDown={() => {
               dragging.current = true;
               document.body.style.cursor = "col-resize";
@@ -93,8 +93,8 @@ export function InspectorLayout({
             <span className="absolute inset-y-0 -left-1 -right-1" aria-hidden />
           </div>
           <aside
-            className="hidden shrink-0 overflow-auto border-l border-border bg-card md:block"
-            style={{ width }}
+            className="w-full shrink-0 overflow-auto border-t border-border bg-card md:w-[var(--ef-inspector-width)] md:border-l md:border-t-0"
+            style={{ "--ef-inspector-width": `${String(width)}px` } as CSSProperties}
           >
             {inspector}
           </aside>

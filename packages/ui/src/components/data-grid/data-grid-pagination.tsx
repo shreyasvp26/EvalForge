@@ -33,12 +33,15 @@ export function DataGridPagination({
 
   return (
     <div className={className}>
-      <Cluster gap={3} className="justify-between">
+      <Cluster
+        gap={3}
+        className="flex-col items-stretch justify-between sm:flex-row sm:items-center"
+      >
         <Text variant="caption">
           Page {String(pageIndex + 1)} of {String(Math.max(pageCount, 1))}
           {totalRows !== undefined ? ` · ${String(totalRows)} rows` : null}
         </Text>
-        <Cluster gap={2}>
+        <Cluster gap={2} className="justify-end">
           <Button
             type="button"
             size="sm"

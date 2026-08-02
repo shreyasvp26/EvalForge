@@ -319,7 +319,7 @@ Before merging UI:
 
 ## Changelog
 
-| Date       | Change                                                                                                                     |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 2026-08-02 | Initial principles accepted with Phase 15A design system foundation                                                        |
-| 2026-08-02 | Phase 15B: product layouts, DataGrid, UX patterns, navigation shell — see layouts / patterns / navigation / data-grid docs |
+| Date       | Change                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| 2026-08-02 | Initial principles accepted with Phase 15A design system foundation                        |
+| 2026-08-02 | Phase 15B complete: product layouts, DataGrid, UX patterns, navigation, docs, final polish |

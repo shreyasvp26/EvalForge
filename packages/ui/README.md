@@ -45,4 +45,4 @@ Includes documentation pages under **Docs/** and component stories. Product gall
 
 ## Status
 
-Phases 15A–15B foundation. Product CRUD is out of scope for this package.
+Phases 15A–15B complete. Product CRUD is out of scope for this package.

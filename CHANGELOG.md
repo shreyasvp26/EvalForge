@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Phase 15B final polish: command palette focus trap (Radix Dialog), collapsed sidebar accessible names, skip link, mobile search affordance, lazy shortcuts dialog, Coming Soon route alignment, `NotFoundState` on 404, shell `loading.tsx`, tokenized radii (`--ef-radius-tight`), motion helpers wired to shared duration tokens, responsive SplitView / InspectorLayout / DataGridPagination
+
 ### Added
 
+- Phase 15B product UX foundation: product layouts (`PageLayout`, `PageHeader`, `Section`, `Toolbar`, `FilterBar`, `DetailLayout`, `SplitView`), domain-agnostic `DataGrid`, UX patterns (skeletons, empty/error/confirm), navigation polish (collapsible sidebar, ⌘K, shortcuts, breadcrumbs, mobile drawer), design docs + Storybook Docs MDX
 - Phase 15A frontend design system foundation: `docs/design` principles + ADR-0003, `@agent-eval/ui` tokens/primitives/Storybook, Next.js `apps/web` shell (sidebar + top bar + lazy ⌘K command palette + opt-in inspector), `/design-system` gallery, light/dark theme
 - Phase 0 repository foundation (monorepo, tooling, CI scaffolding)
 - Engineering foundation: shared TS packages (`errors`, `env`, `logger`, `utils`), Python `shared/`, Vitest/pytest, Husky, root verify scripts

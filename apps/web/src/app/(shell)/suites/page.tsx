@@ -1,9 +1,7 @@
-import { Layers } from "@agent-eval/ui";
-
-import { EmptyContent } from "@/components/layouts/empty-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
+import { ComingSoonState } from "@/components/patterns/coming-soon-state";
 import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 
 export default function SuitesPage() {
@@ -14,14 +12,12 @@ export default function SuitesPage() {
           <Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Suites" }]} />
         }
         title="Suites"
-        description="Placeholder route for the product hierarchy shell."
+        description="Suite management arrives with product CRUD."
       />
       <Section className="mt-8">
-        <EmptyContent
-          fill
-          icon={Layers}
-          title="Suites come next"
-          description="No CRUD in Phase 15B — this route uses the shared product layout system."
+        <ComingSoonState
+          featureLabel="Suites"
+          description="Navigation is live. Creating and managing suites is out of scope for Phase 15B."
         />
       </Section>
     </PageLayout>

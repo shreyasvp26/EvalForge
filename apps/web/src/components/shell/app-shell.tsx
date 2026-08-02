@@ -7,7 +7,6 @@ import { useCallback, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Breadcrumbs } from "@/components/shell/breadcrumbs";
-import { KeyboardShortcutsDialog } from "@/components/shell/keyboard-shortcuts-dialog";
 import { MobileNavDrawer } from "@/components/shell/mobile-nav-drawer";
 import { breadcrumbsForPath } from "@/components/shell/nav-config";
 import { Sidebar } from "@/components/shell/sidebar";
@@ -18,6 +17,14 @@ import { useUiPreferences } from "@/components/shell/use-ui-preferences";
 
 const CommandPalette = dynamic(
   () => import("@/components/shell/command-palette").then((mod) => mod.CommandPalette),
+  { ssr: false },
+);
+
+const KeyboardShortcutsDialog = dynamic(
+  () =>
+    import("@/components/shell/keyboard-shortcuts-dialog").then(
+      (mod) => mod.KeyboardShortcutsDialog,
+    ),
   { ssr: false },
 );
 
@@ -59,6 +66,12 @@ export function AppShell({
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[var(--ef-z-toast)] focus:rounded-[var(--ef-radius-control)] focus:border focus:border-border focus:bg-card focus:px-3 focus:py-2 focus:text-[length:var(--ef-text-body)] focus:text-foreground focus:shadow-ef-md focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       <div className="hidden lg:flex">
         <Sidebar
           collapsed={collapsed}
@@ -86,7 +99,7 @@ export function AppShell({
           }}
           onOpenShortcuts={openShortcuts}
         />
-        <main id="main-content" className="min-h-0 flex-1 overflow-auto">
+        <main id="main-content" className="min-h-0 flex-1 overflow-auto" tabIndex={-1}>
           {children}
         </main>
       </div>
