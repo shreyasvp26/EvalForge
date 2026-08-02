@@ -121,3 +121,32 @@ class ArtifactRecordDTO:
     size_bytes: int
     checksum: str
     already_recorded: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionEventDTO:
+    """Read-model Execution Event for API / query responses."""
+
+    id: str
+    run_id: str
+    sequence: int
+    kind: str
+    action: dict[str, object]
+    artifact_ids: tuple[str, ...]
+    occurred_at: datetime
+    metadata: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactDTO:
+    """Read-model Artifact metadata for API / query responses."""
+
+    id: str
+    run_id: str
+    kind: str
+    storage_key: str
+    content_type: str
+    size_bytes: int
+    checksum: str
+    created_at: datetime
+    produced_by_grader_version_id: str | None

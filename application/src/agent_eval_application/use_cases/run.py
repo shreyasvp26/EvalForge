@@ -22,7 +22,7 @@ from agent_eval_domain.common.ids import (
     SuiteVersionId,
 )
 from agent_eval_domain.execution.entities import ArtifactKind, ScoreValue
-from agent_eval_domain.execution.ndm_codec import action_from_payload
+from agent_eval_domain.execution.ndm_codec import action_from_payload, action_to_payload
 from agent_eval_domain.execution.normalized_model import action_kind_of
 from agent_eval_domain.execution.run_factory import RunCreationCommand, RunFactory
 
@@ -40,9 +40,12 @@ from agent_eval_application.commands.run import (
 from agent_eval_application.common.id_generator import IdGenerator
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.run import (
+    ArtifactDTO,
     ArtifactRecordDTO,
+    ExecutionEventDTO,
     ExecutionEventRecordDTO,
     RunDTO,
+    ScoreDTO,
 )
 from agent_eval_application.errors import ApplicationValidationError
 from agent_eval_application.ports.authorization import AuthorizationPort
@@ -50,7 +53,13 @@ from agent_eval_application.ports.event_dispatcher import DomainEventDispatcher
 from agent_eval_application.ports.idempotency import IdempotencyStore
 from agent_eval_application.ports.run_queue import RunQueue
 from agent_eval_application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
-from agent_eval_application.queries.queries import GetRunQuery, ListRunsByProjectQuery
+from agent_eval_application.queries.queries import (
+    GetRunArtifactsQuery,
+    GetRunEventsQuery,
+    GetRunQuery,
+    GetRunScoresQuery,
+    ListRunsByProjectQuery,
+)
 from agent_eval_application.use_cases.base import (
     collect_events,
     replay_or_begin,
@@ -589,3 +598,90 @@ class ListRunsByProject:
         with self._uow_factory() as uow:
             runs = with_domain_errors(lambda: uow.runs.list_by_project(project_id))
             return [RunDTO.from_domain(r) for r in runs]
+
+
+class GetRunEvents:
+    """Return ordered Execution Events for a Run (owned nested read)."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: GetRunEventsQuery) -> list[ExecutionEventDTO]:
+        run_id = RunId(require_non_empty(query.run_id, field="run_id"))
+        with self._uow_factory() as uow:
+            run = with_domain_errors(lambda: uow.runs.get(run_id))
+            self._auth.ensure_can_access_project(query.actor, run.pins.project_id)
+            return [
+                ExecutionEventDTO(
+                    id=event.id.value,
+                    run_id=run.id.value,
+                    sequence=event.sequence,
+                    kind=event.kind.value,
+                    action=action_to_payload(event.action),
+                    artifact_ids=tuple(a.value for a in event.artifact_ids),
+                    occurred_at=event.occurred_at,
+                    metadata=dict(event.metadata),
+                )
+                for event in run.execution_events
+            ]
+
+
+class GetRunArtifacts:
+    """Return Artifact metadata for a Run (owned nested read)."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: GetRunArtifactsQuery) -> list[ArtifactDTO]:
+        run_id = RunId(require_non_empty(query.run_id, field="run_id"))
+        with self._uow_factory() as uow:
+            run = with_domain_errors(lambda: uow.runs.get(run_id))
+            self._auth.ensure_can_access_project(query.actor, run.pins.project_id)
+            return [
+                ArtifactDTO(
+                    id=artifact.id.value,
+                    run_id=run.id.value,
+                    kind=artifact.kind.value,
+                    storage_key=artifact.storage_key,
+                    content_type=artifact.content_type,
+                    size_bytes=artifact.size_bytes,
+                    checksum=artifact.checksum,
+                    created_at=artifact.created_at,
+                    produced_by_grader_version_id=(
+                        artifact.produced_by_grader_version_id.value
+                        if artifact.produced_by_grader_version_id
+                        else None
+                    ),
+                )
+                for artifact in run.artifacts
+            ]
+
+
+class GetRunScores:
+    """Return Scores for a Run (owned nested read)."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: GetRunScoresQuery) -> list[ScoreDTO]:
+        run_id = RunId(require_non_empty(query.run_id, field="run_id"))
+        with self._uow_factory() as uow:
+            run = with_domain_errors(lambda: uow.runs.get(run_id))
+            self._auth.ensure_can_access_project(query.actor, run.pins.project_id)
+            dto = RunDTO.from_domain(run)
+            return list(dto.scores)

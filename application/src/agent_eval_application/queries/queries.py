@@ -55,6 +55,24 @@ class ListRunsByProjectQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class GetRunEventsQuery:
+    actor: Actor
+    run_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class GetRunArtifactsQuery:
+    actor: Actor
+    run_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class GetRunScoresQuery:
+    actor: Actor
+    run_id: str
+
+
+@dataclass(frozen=True, slots=True)
 class GetAgentQuery:
     actor: Actor
     agent_id: str

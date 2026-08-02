@@ -54,6 +54,9 @@ from agent_eval_application.use_cases.run import (
     CancelRun,
     CreateRun,
     GetRun,
+    GetRunArtifacts,
+    GetRunEvents,
+    GetRunScores,
     ListRunsByProject,
 )
 from agent_eval_application.use_cases.suite import (
@@ -129,6 +132,9 @@ class ApplicationServices:
     create_run: CreateRun
     get_run: GetRun
     list_runs_by_project: ListRunsByProject
+    get_run_events: GetRunEvents
+    get_run_artifacts: GetRunArtifacts
+    get_run_scores: GetRunScores
     cancel_run: CancelRun
 
 
@@ -209,6 +215,9 @@ def build_application_services(
         create_run=CreateRun(uow, ids, auth, events, run_queue, idempotency),
         get_run=GetRun(uow, auth),
         list_runs_by_project=ListRunsByProject(uow, auth),
+        get_run_events=GetRunEvents(uow, auth),
+        get_run_artifacts=GetRunArtifacts(uow, auth),
+        get_run_scores=GetRunScores(uow, auth),
         cancel_run=CancelRun(uow, auth, events),
     )
 
