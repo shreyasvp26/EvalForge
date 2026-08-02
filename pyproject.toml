@@ -23,6 +23,7 @@ members = [
   "application",
   "infrastructure",
   "sandbox",
+  "adapters",
 ]
 
 [tool.uv]
@@ -69,6 +70,7 @@ testpaths = [
   "infrastructure/tests",
   "workers/tests",
   "sandbox/tests",
+  "adapters/tests",
   "apps/api/tests",
 ]
 pythonpath = [
@@ -83,6 +85,8 @@ pythonpath = [
   "workers/tests",
   "sandbox/src",
   "sandbox/tests",
+  "adapters/src",
+  "adapters/tests",
   "apps/api/src",
   "apps/api/tests",
 ]
@@ -99,6 +103,7 @@ source = [
   "agent_eval_infrastructure",
   "agent_eval_workers",
   "agent_eval_sandbox",
+  "agent_eval_adapters",
   "agent_eval_api",
 ]
 branch = true
