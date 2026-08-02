@@ -8,7 +8,7 @@ Implementation: `apps/web/src/components/shell/`.
 
 ## Sidebar
 
-- Sections: **Workspace** (Projects, Suites, Cases, Runs, Agents) and **System** (Design system).
+- Sections: **Workspace** (Projects, Suites, Cases, Runs, Agents, Graders) and **System** (Design system).
 - Active item: muted background + inset accent bar + `aria-current="page"`.
 - Collapsible to icon rail (`lg+`); state persisted in `localStorage` (`evalforge.sidebar.collapsed`).
 - Section expand/collapse persisted (`evalforge.sidebar.sections`).
@@ -58,9 +58,10 @@ Groups:
 4. **Suites** — Open Suites, Create Suite (project-aware when already in a project)
 5. **Cases** — Open Cases, Create Case (project-aware when already in a project)
 6. **Agents** — Open Agents, Create Agent
-7. **Appearance** — Light / Dark / System
-8. **Account** — Sign out
-9. **Help** — open keyboard shortcuts
+7. **Graders** — Open Graders, Create Grader
+8. **Appearance** — Light / Dark / System
+9. **Account** — Sign out
+10. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -102,6 +103,13 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Agent versions use `label` + `release_notes`; adapter versions use `label` + `notes`.
 - Chord shortcut: `G` then `A`.
 - Command palette: **Open Agents**, **Create Agent** (`/agents?create=1`).
+
+## Graders
+
+- Platform-scoped list: `/graders`; detail: `/graders/[graderId]`.
+- Families: `objective` and `rubric` (Badge statuses `completed` / `grading`).
+- Draft versions carry opaque `specification` text shown in a monospace block.
+- Command palette: **Open Graders**, **Create Grader** (`/graders?create=1`).
 
 ## Keyboard shortcuts
 
