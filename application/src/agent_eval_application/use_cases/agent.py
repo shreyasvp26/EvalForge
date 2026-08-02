@@ -32,7 +32,9 @@ from agent_eval_application.ports.event_dispatcher import DomainEventDispatcher
 from agent_eval_application.ports.idempotency import IdempotencyStore
 from agent_eval_application.ports.unit_of_work import UnitOfWorkFactory
 from agent_eval_application.queries.queries import (
+    GetAdapterQuery,
     GetAgentQuery,
+    ListAdaptersQuery,
     ListAgentsQuery,
 )
 from agent_eval_application.use_cases.base import (
@@ -329,3 +331,36 @@ class ListAgents:
         with self._uow_factory() as uow:
             agents = with_domain_errors(uow.agents.list_all)
             return [AgentDTO.from_domain(a) for a in agents]
+
+
+class GetAdapter:
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: GetAdapterQuery) -> AdapterDTO:
+        adapter_id = AdapterId(require_non_empty(query.adapter_id, field="adapter_id"))
+        self._auth.ensure_can_create_project(query.actor)
+        with self._uow_factory() as uow:
+            adapter = with_domain_errors(lambda: uow.adapters.get(adapter_id))
+            return AdapterDTO.from_domain(adapter)
+
+
+class ListAdapters:
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(self, query: ListAdaptersQuery) -> list[AdapterDTO]:
+        self._auth.ensure_can_create_project(query.actor)
+        with self._uow_factory() as uow:
+            adapters = with_domain_errors(uow.adapters.list_all)
+            return [AdapterDTO.from_domain(a) for a in adapters]

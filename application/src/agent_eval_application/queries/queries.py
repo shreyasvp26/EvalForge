@@ -66,6 +66,17 @@ class ListAgentsQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class GetAdapterQuery:
+    actor: Actor
+    adapter_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListAdaptersQuery:
+    actor: Actor
+
+
+@dataclass(frozen=True, slots=True)
 class GetGraderQuery:
     actor: Actor
     grader_id: str

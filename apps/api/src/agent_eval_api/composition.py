@@ -18,7 +18,9 @@ from agent_eval_application.use_cases.agent import (
     CreateAdapterDraftVersion,
     CreateAgent,
     CreateAgentDraftVersion,
+    GetAdapter,
     GetAgent,
+    ListAdapters,
     ListAgents,
     PublishAdapterVersion,
     PublishAgentVersion,
@@ -111,6 +113,8 @@ class ApplicationServices:
     create_agent_draft_version: CreateAgentDraftVersion
     publish_agent_version: PublishAgentVersion
     create_adapter: CreateAdapter
+    get_adapter: GetAdapter
+    list_adapters: ListAdapters
     create_adapter_draft_version: CreateAdapterDraftVersion
     publish_adapter_version: PublishAdapterVersion
 
@@ -193,6 +197,8 @@ def build_application_services(
         create_agent_draft_version=CreateAgentDraftVersion(uow, ids, auth, events),
         publish_agent_version=PublishAgentVersion(uow, auth, events),
         create_adapter=CreateAdapter(uow, ids, auth, events, idempotency),
+        get_adapter=GetAdapter(uow, auth),
+        list_adapters=ListAdapters(uow, auth),
         create_adapter_draft_version=CreateAdapterDraftVersion(uow, ids, auth, events),
         publish_adapter_version=PublishAdapterVersion(uow, auth, events),
         create_grader=CreateGrader(uow, ids, auth, events, idempotency),

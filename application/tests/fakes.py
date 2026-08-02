@@ -288,6 +288,9 @@ class _AdapterRepo:
     def save(self, adapter: Adapter) -> None:
         self._data[adapter.id.value] = adapter
 
+    def list_all(self) -> list[Adapter]:
+        return list(self._data.values())
+
 
 class _GraderRepo:
     def __init__(self, data: dict[str, Grader]) -> None:

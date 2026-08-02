@@ -49,6 +49,10 @@ class SqlAlchemyAdapterRepository(SqlAlchemyRepository):
             else:
                 version_row.status = version.status.value
 
+    def list_all(self) -> list[Adapter]:
+        rows = list(self.session.scalars(select(AdapterOrm)))
+        return [self._load_adapter(row) for row in rows]
+
     def _load_adapter(self, row: AdapterOrm) -> Adapter:
         versions = list(
             self.session.scalars(
