@@ -2,14 +2,20 @@
 
 Responsibility (Execution Engine Architecture — cancellation / terminal paths):
 - Observe cancellation requests for a claimed Run
-- Propagate cancellation into Engine lifecycle so Sandbox / Adapter work
-  stops cleanly and the Run reaches ``Cancelled`` via Application
+- Propagate cancellation into Engine lifecycle so the Run reaches Cancelled
 - Distinguish cancellation from infrastructure failure and Agent task failure
 
 Must NOT:
 - Silently drop Execution Events already recorded
 - Bypass Application when recording the terminal Cancelled transition
 - Own Adapter-internal interrupt mechanisms (Adapter port may expose a hook)
-
-Phase 1: structure only — no cancellation handling.
+- Mutate Domain Run status directly
 """
+
+from agent_eval_workers.cancellation.ports import CancellationPort
+from agent_eval_workers.cancellation.registry import InMemoryCancellationRegistry
+
+__all__ = [
+    "CancellationPort",
+    "InMemoryCancellationRegistry",
+]
