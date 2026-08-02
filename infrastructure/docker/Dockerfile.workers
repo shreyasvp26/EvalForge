@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1
+# EvalForge Background Worker image.
+
+FROM python:3.12-slim-bookworm AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.7.12 /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock README.md ./
+COPY shared/pyproject.toml shared/README.md shared/
+COPY domain/pyproject.toml domain/README.md domain/
+COPY application/pyproject.toml application/README.md application/
+COPY infrastructure/pyproject.toml infrastructure/README.md infrastructure/
+COPY workers/pyproject.toml workers/README.md workers/
+COPY sandbox/pyproject.toml sandbox/README.md sandbox/
+COPY adapters/pyproject.toml adapters/README.md adapters/
+COPY graders/pyproject.toml graders/README.md graders/
+COPY apps/api/pyproject.toml apps/api/README.md apps/api/
+
+COPY shared/src shared/src
+COPY domain/src domain/src
+COPY application/src application/src
+COPY infrastructure/src infrastructure/src
+COPY workers/src workers/src
+COPY sandbox/src sandbox/src
+COPY adapters/src adapters/src
+COPY graders/src graders/src
+COPY apps/api/src apps/api/src
+
+RUN uv sync --frozen --package agent-eval-workers --no-dev
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+CMD ["evalforge-worker"]

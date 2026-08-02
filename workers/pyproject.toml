@@ -8,10 +8,14 @@ dependencies = [
   "agent-eval-shared",
   "agent-eval-domain",
   "agent-eval-application",
+  "agent-eval-infrastructure",
   "agent-eval-sandbox",
   "agent-eval-adapters",
   "agent-eval-graders",
 ]
+
+[project.scripts]
+evalforge-worker = "agent_eval_workers.main:run"
 
 [build-system]
 requires = ["hatchling"]
@@ -27,6 +31,7 @@ only-include = ["agent_eval_workers"]
 agent-eval-shared = { workspace = true }
 agent-eval-domain = { workspace = true }
 agent-eval-application = { workspace = true }
+agent-eval-infrastructure = { workspace = true }
 agent-eval-sandbox = { workspace = true }
 agent-eval-adapters = { workspace = true }
 agent-eval-graders = { workspace = true }

@@ -22,6 +22,7 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | Production Pipeline Integration (Phase 11)           | Complete |
 | Production Judge Providers (Phase 12)                | Complete |
 | Multi-Agent Adapter Expansion (Phase 13)             | Complete |
+| Production Hardening (Phase 14)                      | Complete |
 | Additional adapters / Web                            | Later    |
 
 ## Repository layout
@@ -58,6 +59,16 @@ uv sync --all-packages
 # Full verification (lint, format, types, tests, build)
 pnpm verify
 ```
+
+### Docker (production-shaped local stack)
+
+```bash
+cp .env.example .env   # set JWT_SECRET_KEY
+docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up --build
+```
+
+See [infrastructure/docker/README.md](./infrastructure/docker/README.md) for services,
+healthchecks, volumes, and startup order.
 
 ## Common scripts
 
