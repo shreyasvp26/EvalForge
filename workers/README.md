@@ -35,23 +35,42 @@ agent_eval_workers/
   lifecycle/           # Named Run stages / transition contracts
   cancellation/        # Cooperative cancel observation
   checkpoints/         # Crash-recovery progress markers
-  event_pipeline/      # Event/Artifact stream → persistence (Phase 1)
+  event_pipeline/      # Durable Event/Artifact recording + projection hooks
   clock.py             # Monotonic clock port (timeouts)
 ```
 
 ## Status
 
-**Phase 3 — Worker runtime orchestration** is implemented:
+**Phases 2–4** are implemented (lifecycle, worker runtime, event pipeline).
 
-- `WorkerRuntime` — claim → checkpoint restore → host Engine → ack/release
-- `WorkerQueuePort` — claim / ack / release / heartbeat / extend_visibility
-- `RetryPolicy` — Worker-owned retryable vs terminal classification
-- `ExecutionEngine` — drives lifecycle with cancel / timeout / interrupt checks
-- `CheckpointManager` + `CheckpointStore` — resumable phase markers
-- `CancellationPort` — cooperative cancel observation
+**Phase 4 — Event persistence pipeline:**
 
-Still deferred: event pipeline persistence, concrete Adapter/Sandbox/Grader
-wiring, scheduler delivery policy, Redis-backed worker queue adapter.
+- `EventPersistencePipeline` — ordered buffer, Application-mediated writes,
+  batching, `persist_final` (lifecycle port)
+- Application `RecordExecutionEvent` + idempotent `RecordArtifact`
+- Domain idempotent replay by event/artifact id (append-only, no mutate)
+- `EventProjector` / `ProjectionHub` hooks for future SSE/WebSocket consumers
+- `PersistenceFailure` classified for Worker retry policy
+
+Still deferred: concrete Adapter/Sandbox/Grader wiring, scheduler delivery
+policy, Redis-backed worker queue adapter, live SSE networking.
+
+## Event pipeline (Phase 4)
+
+```
+Engine emits NDM actions / artifacts
+        ↓
+EventPersistencePipeline (ordered buffer, optional batch)
+        ↓
+Application RecordArtifact / RecordExecutionEvent
+        ↓
+Domain EvaluationRun append-only history
+        ↓
+ProjectionHub → EventProjector subscribers (no networking yet)
+```
+
+Rules: never bypass Application; never mutate past events; duplicates are
+safe; flush stops on first failure without skipping remaining items.
 
 ## Lifecycle (Phase 2)
 

@@ -124,6 +124,10 @@ Python package: `workers/` → `agent_eval_workers`.
 - **Worker runtime (Phase 3):** `WorkerRuntime` owns queue leases, retries,
   heartbeats, and shutdown; `ExecutionEngine` owns lifecycle sequencing with
   cancel/timeout propagation; checkpoints via `CheckpointStore` ports only.
+- **Event pipeline (Phase 4):** `EventPersistencePipeline` writes Execution
+  Events and Artifacts only through Application use cases
+  (`RecordExecutionEvent`, `RecordArtifact`); ordered, idempotent, with
+  projection hooks for future live consumers.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
 - Prefer `uv run pytest workers/tests` for worker-only feedback.

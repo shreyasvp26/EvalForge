@@ -21,3 +21,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Execution Worker runtime scaffold: `worker`, `execution_engine`, `scheduler`, `lifecycle`, `cancellation`, `checkpoints`, `event_pipeline` packages (structure only)
 - Execution Worker Run lifecycle orchestration: explicit phase machine, validated transitions, failure/cancel/timeout paths, subsystem ports, Domain `RunStatus` projection mapping, lifecycle unit tests
 - Execution Worker runtime orchestration: `WorkerRuntime` claim/ack/release loop, retry policy, cooperative cancellation, execution timeouts, checkpoint create/restore, `ExecutionEngine` host, worker unit tests (mocked queue + lifecycle)
+- Event persistence pipeline: Application `RecordExecutionEvent` / idempotent `RecordArtifact`, Domain append-only idempotent replay, worker `EventPersistencePipeline` with ordered batching, projection hooks, and `PersistenceFailure` reporting
