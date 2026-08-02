@@ -53,10 +53,10 @@ Load Python settings via `agent_eval_shared.config.load_settings` /
 
 ## Testing
 
-| Layer           | Tool   | Location                                                                                                                                                  |
-| --------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                                                              |
-| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `sandbox/tests/`, `adapters/tests/`, `apps/api/tests/` |
+| Layer           | Tool   | Location                                                                                                                                                                    |
+| --------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                                                                                |
+| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `sandbox/tests/`, `adapters/tests/`, `graders/tests/`, `apps/api/tests/` |
 
 Run everything with `pnpm test`. Coverage: `pnpm test:coverage`.
 
@@ -172,6 +172,26 @@ Python package: `adapters/` → `agent_eval_adapters`.
   Graders, or FastAPI.
 - Prefer `uv run pytest adapters/tests` (mocked Sandbox only).
 - See `adapters/README.md`.
+
+## Grader Layer
+
+Python package: `graders/` → `agent_eval_graders`.
+
+- **SDK:** `Grader` contract, immutable `GradingContext`, `LifecycleDriver`
+  (`initialize` → `read_run` → `grade` → `produce_scores` → `cleanup`),
+  `RunReader` / `ScoreSink` ports, `run_grader` / `run_graders_isolated`.
+- **Objective graders:** BuildSuccess, ExitCode, TestPass, Lint,
+  ExpectedFile, DiffValidation, JSONOutput — deterministic reads of
+  recorded Execution Events / Artifacts only.
+- Produces immutable Domain `Score` / `ScoreValue` (pass/fail, numeric,
+  reason, metadata, grader version, timestamps).
+- Sibling grader failures never affect each other (`run_graders_isolated`).
+- Depends on `domain` + `shared` only.
+- **Must not** import Application, Infrastructure, Workers, Execution
+  Engine, Sandbox, Adapters, or FastAPI.
+- Prefer `uv run pytest graders/tests`.
+- See `graders/README.md` and
+  `docs/architecture/grader-architecture.md`.
 
 ## API Layer / Control Plane
 

@@ -31,10 +31,11 @@ infrastructure/  Python Infrastructure adapters + Docker/ops scaffolding
 workers/         Background / async job workers (Execution Engine host)
 sandbox/         Sandbox Runtime — isolated Docker execution only
 adapters/        Adapter SDK + vendor adapters (Claude Code first)
+graders/         Grader SDK + objective graders (measurement only)
 docs/            Architecture, ADRs, API notes, diagrams
 ```
 
-Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md). Graders packages land in later phases.
+Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md).
 
 ## Prerequisites
 
@@ -97,6 +98,7 @@ uv run pytest
 | `agent-eval-workers` (`workers/`)               | Execution Engine host, lifecycle, event pipeline        |
 | `agent-eval-sandbox` (`sandbox/`)               | Isolated Docker sandbox runtime (no orchestration)      |
 | `agent-eval-adapters` (`adapters/`)             | Adapter SDK + Claude Code (NDM translation only)        |
+| `agent-eval-graders` (`graders/`)               | Grader SDK + objective graders (Domain Scores only)     |
 | `agent-eval-api` (`apps/api`)                   | FastAPI Control Plane over Application use cases        |
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.
