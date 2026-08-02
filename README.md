@@ -14,8 +14,9 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | Application layer                                    | Complete |
 | Infrastructure layer                                 | Complete |
 | Execution workers / engine                           | Complete |
-| FastAPI Control Plane (`apps/api`)                   | Complete |
-| Adapters / Graders / Web                             | Next     |
+| FastAPI Control Plane foundation (Phase 6A)          | Complete |
+| FastAPI business resources (Phase 6B)                | Next     |
+| Adapters / Graders / Web                             | Later    |
 
 ## Repository layout
 

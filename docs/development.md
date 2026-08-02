@@ -140,16 +140,14 @@ Python package: `workers/` → `agent_eval_workers`.
 
 Python package: `apps/api/` → `agent_eval_api`.
 
-- FastAPI Control Plane: authenticate, validate request shape, invoke
-  Application use cases, serialize DTOs, map errors to HTTP.
-- Composition root: `build_api_container()` wires Application ← Infrastructure
-  ← Configuration. Routers consume `ApplicationServices` only.
+- **Phase 6A (foundation):** FastAPI factory, lifespan, composition root,
+  Bearer auth boundary, correlation/timing/request-logging middleware,
+  centralized error mapping, OpenAPI, health/readiness, `/v1` root.
+- **Phase 6B (next):** business resource routers over Application use cases.
+- Composition root: `build_api_container()` / `build_application_services()`.
 - **Must not** import Domain entities into routers, open SQLAlchemy sessions,
   touch Redis/S3, or contain business rules.
-- Auth boundary: Bearer → `Actor`; authorization policy remains Application
-  (`AllowAllAuthorization` stub until real policies land).
-- Prefer `uv run pytest apps/api/tests` for API-only feedback (Application
-  services are mocked — never a live database).
+- Prefer `uv run pytest apps/api/tests` for API-only feedback.
 
 ## What does not belong in foundation packages
 

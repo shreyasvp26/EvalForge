@@ -1,28 +1,38 @@
 # API documentation
 
-## Control Plane
+## Control Plane foundation (Phase 6A)
 
 The public HTTP API for EvalForge lives in `apps/api` (`agent_eval_api`).
 
+**Phase 6A** delivers the Control Plane foundation only:
+
+- Application factory + lifespan
+- Composition root / DI
+- Middleware (correlation, timing, structured request logging)
+- Exception mapping
+- Authentication boundary
+- OpenAPI
+- Health / readiness
+- Versioned `/v1` root
+
+**Phase 6B** adds business resource endpoints (Projects, Suites, Cases, Agents,
+Graders, Runs).
+
 Architecture authorities:
 
-- [Backend Architecture](../architecture/backend-architecture.md) — API Layer responsibilities and dependency rules
-- [REST API Design](../architecture/rest-api-design.md) — resource model, auth split, error model, idempotency
+- [Backend Architecture](../architecture/backend-architecture.md)
+- [REST API Design](../architecture/rest-api-design.md)
 
 Implementation README: [`apps/api/README.md`](../../apps/api/README.md)
 
 ## Request flow
 
-1. **Transport** — HTTP request hits FastAPI; correlation id bound/echoed.
-2. **Authenticate** — Bearer credential verified at the API boundary → `Actor`.
-3. **Validate shape** — Pydantic models reject malformed bodies (422).
-4. **Translate** — Router builds an Application Command/Query and calls `execute`.
-5. **Authorize + orchestrate** — Application Layer (not the API) enforces Project scope and Domain rules.
-6. **Respond** — DTOs serialize to response schemas; Application errors map to a single error envelope.
-
-```
-Client → API (auth + shape) → Application (authz + UoW) → Domain → Infrastructure ports
-```
+1. Correlation ID bound/echoed (`X-Correlation-ID`)
+2. Timing recorded (`X-Request-Duration-Ms`)
+3. Structured request log (method, path, status, duration)
+4. Bearer authentication → `Actor` (except health probes)
+5. Router → Application use case (from Phase 6B)
+6. Error envelope on failure (no stack traces)
 
 ## Error envelope
 
@@ -37,16 +47,10 @@ Client → API (auth + shape) → Application (authz + UoW) → Domain → Infra
 }
 ```
 
-No stack traces are returned. Unexpected failures use `INTERNAL_ERROR` (500).
+## Out of scope until later
 
-## OpenAPI
-
-Generated at runtime: `GET /openapi.json`, interactive docs at `/docs`.
-
-## Out of scope (later)
-
-- Real JWT / OAuth token verification
-- Project-scoped authorization policies (beyond AllowAll stub)
-- SSE run progress streams
-- Cursor pagination metadata
-- Dedicated list/get queries for Execution Events / Artifacts / Audit Logs
+- Business CRUD routes (Phase 6B)
+- Real JWT / OAuth verification
+- Project-scoped authorization policies
+- SSE run progress
+- Cursor pagination
