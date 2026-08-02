@@ -2,10 +2,10 @@
 
 Frontend design documentation for EvalForge. This is the source of truth for visual language, interaction quality, and component ownership.
 
-| Document                                       | Purpose                                                                  |
-| ---------------------------------------------- | ------------------------------------------------------------------------ |
-| [design-principles.md](./design-principles.md) | Philosophy, tokens, motion, a11y, anti-patterns — **read this first**    |
-| developer-guidelines.md                        | Implementation rules for the monorepo (added with the gallery milestone) |
+| Document                                             | Purpose                                                               |
+| ---------------------------------------------------- | --------------------------------------------------------------------- |
+| [design-principles.md](./design-principles.md)       | Philosophy, tokens, motion, a11y, anti-patterns — **read this first** |
+| [developer-guidelines.md](./developer-guidelines.md) | How to implement UI in this monorepo                                  |
 
 Related:
 

@@ -235,4 +235,22 @@ Python package: `apps/api/` → `agent_eval_api`.
 
 - HTTP handlers, SQL/ORM, queue consumers
 - Adapter or Grader _implementations_ (interfaces/contracts may live in Domain)
-- UI components
+- UI components (those live in `@agent-eval/ui` / `apps/web` — see below)
+
+## Frontend (Phase 15A+)
+
+| Package                          | Role                                                          |
+| -------------------------------- | ------------------------------------------------------------- |
+| `@agent-eval/ui` (`packages/ui`) | Design tokens + reusable primitives + Storybook               |
+| `@agent-eval/web` (`apps/web`)   | Next.js App Router shell, layouts, `/design-system`, features |
+
+Read first:
+
+- [docs/design/design-principles.md](./design/design-principles.md)
+- [docs/design/developer-guidelines.md](./design/developer-guidelines.md)
+- [docs/adr/ADR-0003-frontend-design-system.md](./adr/ADR-0003-frontend-design-system.md)
+
+```bash
+pnpm --filter @agent-eval/web dev
+pnpm --filter @agent-eval/ui storybook
+```
