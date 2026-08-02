@@ -133,6 +133,9 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
                 <Link href={`/projects/${project.id}/suites`}>Suites</Link>
               </Button>
               <Button asChild variant="outline">
+                <Link href={`/projects/${project.id}/cases`}>Cases</Link>
+              </Button>
+              <Button asChild variant="outline">
                 <Link href={`/projects/${project.id}/settings`}>Settings</Link>
               </Button>
               {!isDeprecated ? (
@@ -269,6 +272,9 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
             <Cluster gap={2} className="flex-col items-stretch sm:items-start">
               <Button asChild variant="outline" className="justify-start">
                 <Link href={`/projects/${project.id}/suites`}>Open suites</Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-start">
+                <Link href={`/projects/${project.id}/cases`}>Open cases</Link>
               </Button>
               <Button asChild variant="outline" className="justify-start">
                 <Link href={`/projects/${project.id}/settings`}>Open settings</Link>

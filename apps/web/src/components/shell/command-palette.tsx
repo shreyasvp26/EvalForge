@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitleHidden,
+  FlaskConical,
   FolderKanban,
   Icon,
   Layers,
@@ -168,6 +169,33 @@ export function CommandPalette({
     },
   ];
 
+  const caseActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+    {
+      id: "open-cases",
+      label: "Open Cases",
+      icon: FlaskConical,
+      run: () => {
+        if (projectIdFromPath) {
+          run(`/projects/${projectIdFromPath}/cases`);
+        } else {
+          run("/cases");
+        }
+      },
+    },
+    {
+      id: "create-case",
+      label: "Create Case",
+      icon: Plus,
+      run: () => {
+        if (projectIdFromPath) {
+          run(`/projects/${projectIdFromPath}/cases?create=1`);
+        } else {
+          run("/cases");
+        }
+      },
+    },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -287,6 +315,27 @@ export function CommandPalette({
                 Suites
               </Text>
               {suiteActions
+                .filter((action) => fuzzyScore(query, action.label) > 0)
+                .map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.label}
+                    onSelect={() => {
+                      action.run();
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--ef-radius-control)] px-2 py-2 text-[length:var(--ef-text-body)] text-popover-foreground aria-selected:bg-muted"
+                  >
+                    <Icon icon={action.icon} size="sm" aria-hidden />
+                    {action.label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
+
+            <Command.Group heading="Cases" className="mb-2">
+              <Text variant="table" className="px-2 py-1.5">
+                Cases
+              </Text>
+              {caseActions
                 .filter((action) => fuzzyScore(query, action.label) > 0)
                 .map((action) => (
                   <Command.Item

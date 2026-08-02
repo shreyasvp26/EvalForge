@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase 16 Milestone 4 — Cases & Prompt Versions: project-scoped list/create/detail, prompt draft/publish, case draft/publish, deprecate, Cases index project picker, command-palette actions
 - Phase 16 Milestone 3 — Suites product experience: project-scoped list/create/detail, draft/publish/retire version management, read-only composition viewer, Suites index project picker, command-palette actions
 - Phase 16 Milestone 2 — Projects product experience: list (`/projects` DataGrid with search/sort), create dialog, detail overview, settings (rename / settings map / deprecate), navigation + command palette actions, React Query over Control Plane REST
 - Phase 16 Milestone 1 — Authentication experience: login/logout/me against JWT Control Plane, protected shell routes, session persistence, user menu

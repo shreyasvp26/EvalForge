@@ -56,9 +56,10 @@ Groups:
 2. **Navigate** — fuzzy match over labels, hrefs, keywords
 3. **Projects** — Open Projects, Create Project
 4. **Suites** — Open Suites, Create Suite (project-aware when already in a project)
-5. **Appearance** — Light / Dark / System
-6. **Account** — Sign out
-7. **Help** — open keyboard shortcuts
+5. **Cases** — Open Cases, Create Case (project-aware when already in a project)
+6. **Appearance** — Light / Dark / System
+7. **Account** — Sign out
+8. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -84,6 +85,14 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Global `/suites` is a project picker (suites require a project).
 - Version statuses in UI: Draft, Active (published), Superseded, Retired.
 - Command palette: **Open Suites**, **Create Suite** (uses current project when present).
+
+## Cases
+
+- Project-scoped list: `/projects/[projectId]/cases`; detail: `/projects/[projectId]/cases/[caseId]`.
+- Global `/cases` is a project picker (cases require a project).
+- Prompt and case versions: Draft → Active (publish) → Superseded (no retire endpoint for cases).
+- Authoring order: create case → prompt draft → case draft (pins a prompt) → publish.
+- Command palette: **Open Cases**, **Create Case** (uses current project when present).
 
 ## Keyboard shortcuts
 

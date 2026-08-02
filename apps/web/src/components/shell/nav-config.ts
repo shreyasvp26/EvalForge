@@ -37,7 +37,12 @@ export const navSections: NavSection[] = [
         icon: Layers,
         keywords: ["suite", "create suite", "composition"],
       },
-      { href: "/cases", label: "Cases", icon: FlaskConical, keywords: ["case"] },
+      {
+        href: "/cases",
+        label: "Cases",
+        icon: FlaskConical,
+        keywords: ["case", "create case", "prompt"],
+      },
       { href: "/runs", label: "Runs", icon: Play, chord: "G R", keywords: ["run"] },
       {
         href: "/agents",
@@ -93,6 +98,17 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       } else {
         crumbs.push({ label: "Suites", href: `/projects/${projectId}/suites` });
         crumbs.push({ label: "Suite" });
+      }
+      return crumbs;
+    }
+    if (rest.startsWith("cases")) {
+      crumbs.push({ label: "Project", href: `/projects/${projectId}` });
+      const caseRest = rest.slice("cases".length);
+      if (caseRest === "" || caseRest === "/") {
+        crumbs.push({ label: "Cases" });
+      } else {
+        crumbs.push({ label: "Cases", href: `/projects/${projectId}/cases` });
+        crumbs.push({ label: "Case" });
       }
       return crumbs;
     }
