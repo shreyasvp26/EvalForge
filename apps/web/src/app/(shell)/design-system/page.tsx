@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { DataGridGalleryDemo } from "@/components/design-system/data-grid-gallery-demo";
+import { NavigationGallery } from "@/components/design-system/navigation-gallery";
 import { ProductPatternsGallery } from "@/components/design-system/product-patterns-gallery";
 import { FilterBar } from "@/components/layouts/filter-bar";
 import { LoadingContent } from "@/components/layouts/loading-content";
@@ -87,6 +88,7 @@ export default function DesignSystemPage() {
           [
             ["principles", "Principles"],
             ["layouts", "Layouts"],
+            ["navigation", "Navigation"],
             ["patterns", "UX patterns"],
             ["datagrid", "DataGrid"],
             ["color", "Color"],
@@ -162,6 +164,14 @@ export default function DesignSystemPage() {
           />
           <LoadingContent variant="skeleton" fill={false} label="Skeleton loading example" />
         </Stack>
+      </GallerySection>
+
+      <GallerySection
+        id="navigation"
+        title="Navigation"
+        description="Collapsible sidebar, breadcrumbs, recent pages, command palette, and keyboard chords — polished without domain CRUD."
+      >
+        <NavigationGallery />
       </GallerySection>
 
       <GallerySection
@@ -266,11 +276,29 @@ export default function DesignSystemPage() {
           </li>
           <li>
             <Text as="span" variant="code">
+              G then P / R / A
+            </Text>
+            <Text as="span" variant="secondary">
+              {" "}
+              — Projects / Runs / Agents
+            </Text>
+          </li>
+          <li>
+            <Text as="span" variant="code">
+              ?
+            </Text>
+            <Text as="span" variant="secondary">
+              {" "}
+              — Keyboard shortcuts cheatsheet
+            </Text>
+          </li>
+          <li>
+            <Text as="span" variant="code">
               Esc
             </Text>
             <Text as="span" variant="secondary">
               {" "}
-              — Close overlays
+              — Close overlays and drawers
             </Text>
           </li>
           <li>

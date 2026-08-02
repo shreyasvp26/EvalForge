@@ -10,6 +10,7 @@ const config: StorybookConfig = {
     "../src/**/*.mdx",
     "../src/**/*.stories.@(ts|tsx)",
     "../../../apps/web/src/components/patterns/**/*.stories.@(ts|tsx)",
+    "../../../apps/web/src/components/shell/**/*.stories.@(ts|tsx)",
   ],
   addons: ["@storybook/addon-essentials", "@storybook/addon-a11y"],
   framework: {
@@ -25,6 +26,7 @@ const config: StorybookConfig = {
       alias: {
         ...(config.resolve?.alias ?? {}),
         "@agent-eval/ui": join(dir, "../src"),
+        "next/link": join(dir, "next-link-stub.tsx"),
       },
     };
     return config;

@@ -10,17 +10,19 @@ export function TopBar({
   breadcrumbs,
   onOpenCommand,
   onOpenMobileNav,
+  onOpenShortcuts,
 }: {
   breadcrumbs?: ReactNode;
   onOpenCommand: () => void;
   onOpenMobileNav: () => void;
+  onOpenShortcuts: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-sm md:px-4">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-sm md:gap-3 md:px-4">
       <IconButton
         icon={Menu}
         label="Open navigation"
-        className="md:hidden"
+        className="lg:hidden"
         onClick={onOpenMobileNav}
       />
       <div className="min-w-0 flex-1">
@@ -38,6 +40,14 @@ export function TopBar({
         <kbd className="rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
           ⌘K
         </kbd>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenShortcuts}
+        className="inline-flex h-8 items-center rounded-[var(--ef-radius-control)] border border-border px-2 font-mono text-[length:var(--ef-text-caption)] text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="Keyboard shortcuts"
+      >
+        ?
       </button>
       <ThemeToggle />
     </header>
