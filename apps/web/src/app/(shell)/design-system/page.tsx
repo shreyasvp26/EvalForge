@@ -14,6 +14,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { DataGridGalleryDemo } from "@/components/design-system/data-grid-gallery-demo";
 import { FilterBar } from "@/components/layouts/filter-bar";
 import { LoadingContent } from "@/components/layouts/loading-content";
 import { PageHeader } from "@/components/layouts/page-header";
@@ -85,6 +86,7 @@ export default function DesignSystemPage() {
           [
             ["principles", "Principles"],
             ["layouts", "Layouts"],
+            ["datagrid", "DataGrid"],
             ["color", "Color"],
             ["type", "Typography"],
             ["components", "Components"],
@@ -158,6 +160,14 @@ export default function DesignSystemPage() {
           />
           <LoadingContent variant="skeleton" fill={false} label="Skeleton loading example" />
         </Stack>
+      </GallerySection>
+
+      <GallerySection
+        id="datagrid"
+        title="DataGrid"
+        description="Generic TanStack Table grid in @agent-eval/ui — sorting, search, column visibility, pagination-ready API, keyboard rows. No domain resources hardcoded. Full states in Storybook."
+      >
+        <DataGridGalleryDemo />
       </GallerySection>
 
       <GallerySection

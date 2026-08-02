@@ -7,6 +7,8 @@ export {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  ArrowDown,
+  ArrowUp,
   BookOpen,
   Check,
   ChevronDown,

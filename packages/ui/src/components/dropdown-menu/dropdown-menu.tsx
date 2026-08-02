@@ -2,6 +2,8 @@
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 
+import { Icon } from "../../icon/icon";
+import { Check } from "../../icon/icons";
 import { cn } from "../../lib/cn";
 
 import type { ComponentPropsWithoutRef } from "react";
@@ -71,5 +73,30 @@ export function DropdownMenuLabel({
       )}
       {...props}
     />
+  );
+}
+
+export function DropdownMenuCheckboxItem({
+  className,
+  children,
+  checked,
+  ...props
+}: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>) {
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      className={cn(
+        "relative flex cursor-default select-none items-center rounded-[6px] py-1.5 pr-2 pl-8 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        className,
+      )}
+      {...(checked !== undefined ? { checked } : {})}
+      {...props}
+    >
+      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Icon icon={Check} size="xs" aria-hidden />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.CheckboxItem>
   );
 }

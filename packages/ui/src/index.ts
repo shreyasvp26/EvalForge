@@ -79,6 +79,7 @@ export type { DialogContentProps } from "./components/dialog/dialog";
 
 export {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -110,6 +111,20 @@ export {
   TableLoading,
   TableRow,
 } from "./components/table/table";
+
+export {
+  DataGrid,
+  DataGridSearch,
+  DataGridColumnVisibility,
+  DataGridPagination,
+} from "./components/data-grid";
+export type {
+  DataGridProps,
+  DataGridSearchProps,
+  DataGridColumnOption,
+  DataGridColumnVisibilityProps,
+  DataGridPaginationProps,
+} from "./components/data-grid";
 
 export { Stack, Cluster, Container, Panel } from "./components/layout/layout";
 export type {

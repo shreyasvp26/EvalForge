@@ -1,3 +1,5 @@
+import { forwardRef } from "react";
+
 import { cn } from "../../lib/cn";
 import { Text } from "../../typography/text";
 import { EmptyState } from "../empty-state/empty-state";
@@ -17,9 +19,12 @@ export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSec
   return <thead className={cn("border-b border-border bg-muted/60", className)} {...props} />;
 }
 
-export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("[&_tr:last-child]:border-0", className)} {...props} />;
-}
+export const TableBody = forwardRef<
+  HTMLTableSectionElement,
+  HTMLAttributes<HTMLTableSectionElement>
+>(function TableBody({ className, ...props }, ref) {
+  return <tbody ref={ref} className={cn("[&_tr:last-child]:border-0", className)} {...props} />;
+});
 
 export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
   return (
