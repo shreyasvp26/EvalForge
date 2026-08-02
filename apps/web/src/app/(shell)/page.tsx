@@ -1,22 +1,26 @@
-import { EmptyState, FolderKanban, Heading, Stack, Text } from "@agent-eval/ui";
+import { FolderKanban } from "@agent-eval/ui";
+
+import { EmptyContent } from "@/components/layouts/empty-content";
+import { PageHeader } from "@/components/layouts/page-header";
+import { PageLayout } from "@/components/layouts/page-layout";
+import { Section } from "@/components/layouts/section";
 
 export default function HomePage() {
   return (
-    <Stack gap={5} className="mx-auto max-w-3xl px-6 py-10">
-      <Stack gap={2}>
-        <Text variant="caption" className="font-mono uppercase tracking-wide">
-          Workspace
-        </Text>
-        <Heading variant="page">Projects</Heading>
-        <Text variant="secondary">
-          Phase 15A foundation. Navigation hierarchy is live; project CRUD arrives in a later phase.
-        </Text>
-      </Stack>
-      <EmptyState
-        icon={FolderKanban}
-        title="No projects yet"
-        description="The shell is ready. Create and manage projects once product screens land."
+    <PageLayout>
+      <PageHeader
+        eyebrow="Workspace"
+        title="Projects"
+        description="Phase 15B product layouts are live. Project CRUD arrives in a later phase."
       />
-    </Stack>
+      <Section className="mt-8">
+        <EmptyContent
+          fill
+          icon={FolderKanban}
+          title="No projects yet"
+          description="The product layout system is ready. Create and manage projects once product screens land."
+        />
+      </Section>
+    </PageLayout>
   );
 }

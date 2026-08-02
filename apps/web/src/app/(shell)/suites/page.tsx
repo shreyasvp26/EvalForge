@@ -1,17 +1,22 @@
-import { EmptyState, Heading, Layers, Stack, Text } from "@agent-eval/ui";
+import { Layers } from "@agent-eval/ui";
+
+import { EmptyContent } from "@/components/layouts/empty-content";
+import { PageHeader } from "@/components/layouts/page-header";
+import { PageLayout } from "@/components/layouts/page-layout";
+import { Section } from "@/components/layouts/section";
 
 export default function SuitesPage() {
   return (
-    <Stack gap={5} className="mx-auto max-w-3xl px-6 py-10">
-      <Stack gap={2}>
-        <Heading variant="page">Suites</Heading>
-        <Text variant="secondary">Placeholder route for the product hierarchy shell.</Text>
-      </Stack>
-      <EmptyState
-        icon={Layers}
-        title="Suites come next"
-        description="No CRUD in Phase 15A — this route exists for navigation and command palette destinations."
-      />
-    </Stack>
+    <PageLayout>
+      <PageHeader title="Suites" description="Placeholder route for the product hierarchy shell." />
+      <Section className="mt-8">
+        <EmptyContent
+          fill
+          icon={Layers}
+          title="Suites come next"
+          description="No CRUD in Phase 15B — this route uses the shared product layout system."
+        />
+      </Section>
+    </PageLayout>
   );
 }

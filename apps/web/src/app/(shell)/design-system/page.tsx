@@ -14,11 +14,17 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { FilterBar } from "@/components/layouts/filter-bar";
+import { LoadingContent } from "@/components/layouts/loading-content";
+import { PageHeader } from "@/components/layouts/page-header";
+import { PageLayout } from "@/components/layouts/page-layout";
+import { Toolbar } from "@/components/layouts/toolbar";
+
 export const metadata: Metadata = {
   title: "Design system",
 };
 
-function Section({
+function GallerySection({
   id,
   title,
   description,
@@ -55,29 +61,30 @@ function Swatch({ name, className }: { name: string; className: string }) {
 
 export default function DesignSystemPage() {
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
-      <Stack gap={3} className="pb-8">
-        <Text variant="caption" className="font-mono uppercase tracking-wide">
-          Product gallery
-        </Text>
-        <Heading variant="page">Design system</Heading>
-        <Text variant="secondary">
-          Curated reference inside the real EvalForge shell. Exhaustive component variants live in
-          Storybook (`pnpm --filter @agent-eval/ui storybook`). Principles:{" "}
-          <Link
-            href="https://github.com/shreyasvp26/EvalForge/blob/main/docs/design/design-principles.md"
-            className="text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            docs/design/design-principles.md
-          </Link>
-          .
-        </Text>
-      </Stack>
+    <PageLayout width="lg">
+      <PageHeader
+        eyebrow="Product gallery"
+        title="Design system"
+        description={
+          <>
+            Curated reference inside the real EvalForge shell. Exhaustive component variants live in
+            Storybook. Principles:{" "}
+            <Link
+              href="https://github.com/shreyasvp26/EvalForge/blob/main/docs/design/design-principles.md"
+              className="text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              docs/design/design-principles.md
+            </Link>
+            .
+          </>
+        }
+      />
 
-      <nav aria-label="Design system sections" className="mb-2 flex flex-wrap gap-3">
+      <nav aria-label="Design system sections" className="mt-6 mb-2 flex flex-wrap gap-3">
         {(
           [
             ["principles", "Principles"],
+            ["layouts", "Layouts"],
             ["color", "Color"],
             ["type", "Typography"],
             ["components", "Components"],
@@ -95,7 +102,7 @@ export default function DesignSystemPage() {
         ))}
       </nav>
 
-      <Section
+      <GallerySection
         id="principles"
         title="Principles"
         description="Minimal, calm, dense-not-cluttered. Typography and spacing do the work; accent color stays under ~10%."
@@ -121,9 +128,39 @@ export default function DesignSystemPage() {
             </Card>
           ))}
         </div>
-      </Section>
+      </GallerySection>
 
-      <Section
+      <GallerySection
+        id="layouts"
+        title="Product layouts"
+        description="Every feature page should compose PageLayout, PageHeader, Section, Toolbar, and FilterBar — not one-off page chrome."
+      >
+        <Stack gap={4}>
+          <Toolbar
+            start={<Text variant="caption">View</Text>}
+            end={
+              <>
+                <Button size="sm" variant="outline">
+                  Export
+                </Button>
+                <Button size="sm">New</Button>
+              </>
+            }
+          />
+          <FilterBar
+            search={<Input aria-label="Search example" placeholder="Search…" />}
+            filters={
+              <Button size="sm" variant="outline">
+                Status
+              </Button>
+            }
+            meta={<Text variant="caption">0 results</Text>}
+          />
+          <LoadingContent variant="skeleton" fill={false} label="Skeleton loading example" />
+        </Stack>
+      </GallerySection>
+
+      <GallerySection
         id="color"
         title="Color"
         description="Neutral-first surfaces with calm blue-gray accent and quiet semantic status tokens."
@@ -146,9 +183,9 @@ export default function DesignSystemPage() {
           <Badge status="danger">Failed</Badge>
           <Badge status="cancelled">Cancelled</Badge>
         </div>
-      </Section>
+      </GallerySection>
 
-      <Section
+      <GallerySection
         id="type"
         title="Typography"
         description="Use Heading and Text only — never ad-hoc text-lg or raw product headings."
@@ -168,9 +205,9 @@ export default function DesignSystemPage() {
           <Text variant="code">run_01HZX9K…</Text>
           <Text variant="table">Table label</Text>
         </Stack>
-      </Section>
+      </GallerySection>
 
-      <Section
+      <GallerySection
         id="components"
         title="Components"
         description="Representative primitives. Full matrices and a11y checks are in Storybook."
@@ -190,9 +227,9 @@ export default function DesignSystemPage() {
             className="max-w-sm"
           />
         </Stack>
-      </Section>
+      </GallerySection>
 
-      <Section
+      <GallerySection
         id="keyboard"
         title="Keyboard"
         description="Treat the keyboard as a first-class input device."
@@ -226,9 +263,9 @@ export default function DesignSystemPage() {
             </Text>
           </li>
         </ul>
-      </Section>
+      </GallerySection>
 
-      <Section
+      <GallerySection
         id="anti"
         title="Anti-patterns"
         description="If a PR ships any of these, send it back."
@@ -238,8 +275,9 @@ export default function DesignSystemPage() {
           <li>Direct lucide-react imports or raw h1/p styling in apps/web</li>
           <li>Domain components (RunCard, ScorePanel, …) inside packages/ui</li>
           <li>Decorative charts or springy motion with no spatial meaning</li>
+          <li>One-off page chrome instead of PageLayout / PageHeader / Section</li>
         </ul>
-      </Section>
-    </div>
+      </GallerySection>
+    </PageLayout>
   );
 }
