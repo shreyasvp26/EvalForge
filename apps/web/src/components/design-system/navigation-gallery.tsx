@@ -18,8 +18,8 @@ export function NavigationGallery() {
         </Text>
         <Breadcrumbs
           items={[
-            { label: "Workspace", href: "/" },
-            { label: "Projects", href: "/" },
+            { label: "Workspace", href: "/projects" },
+            { label: "Projects", href: "/projects" },
             { label: "Example" },
           ]}
         />

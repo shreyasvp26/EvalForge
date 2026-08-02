@@ -7,12 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Phase 15B final polish: command palette focus trap (Radix Dialog), collapsed sidebar accessible names, skip link, mobile search affordance, lazy shortcuts dialog, Coming Soon route alignment, `NotFoundState` on 404, shell `loading.tsx`, tokenized radii (`--ef-radius-tight`), motion helpers wired to shared duration tokens, responsive SplitView / InspectorLayout / DataGridPagination
-
 ### Added
 
+- Phase 16 Milestone 2 — Projects product experience: list (`/projects` DataGrid with search/sort), create dialog, detail overview, settings (rename / settings map / deprecate), navigation + command palette actions, React Query over Control Plane REST
+- Phase 16 Milestone 1 — Authentication experience: login/logout/me against JWT Control Plane, protected shell routes, session persistence, user menu
 - Phase 15B product UX foundation: product layouts (`PageLayout`, `PageHeader`, `Section`, `Toolbar`, `FilterBar`, `DetailLayout`, `SplitView`), domain-agnostic `DataGrid`, UX patterns (skeletons, empty/error/confirm), navigation polish (collapsible sidebar, ⌘K, shortcuts, breadcrumbs, mobile drawer), design docs + Storybook Docs MDX
 - Phase 15A frontend design system foundation: `docs/design` principles + ADR-0003, `@agent-eval/ui` tokens/primitives/Storybook, Next.js `apps/web` shell (sidebar + top bar + lazy ⌘K command palette + opt-in inspector), `/design-system` gallery, light/dark theme
 - Phase 0 repository foundation (monorepo, tooling, CI scaffolding)
@@ -40,3 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production Pipeline Integration (Phase 11): Worker `integration/` composition replaces MockSandbox / MockAdapter / MockGraders with Docker Sandbox, Claude Code Adapter SDK, objective + rubric Graders, and Application score/lifecycle use cases; end-to-end production tests (mock JudgeProvider only)
 - Production Judge Providers (Phase 12): Anthropic / OpenAI / Gemini plugins implementing `JudgeProvider` with env config, exponential backoff, mapped platform failures, determinism passthrough; mocked-HTTP tests only (no live LLM calls)
 - Multi-Agent Adapter Expansion (Phase 13): Cursor, Codex CLI, Gemini CLI, and Aider production adapters over the existing Adapter SDK — NDJSON stream parsing, NDM translation, cancellation/timeout between lines; mocked stream-source tests only
+
+### Changed
+
+- Phase 15B final polish: command palette focus trap (Radix Dialog), collapsed sidebar accessible names, skip link, mobile search affordance, lazy shortcuts dialog, Coming Soon route alignment, `NotFoundState` on 404, shell `loading.tsx`, tokenized radii (`--ef-radius-tight`), motion helpers wired to shared duration tokens, responsive SplitView / InspectorLayout / DataGridPagination

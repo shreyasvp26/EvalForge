@@ -6,8 +6,7 @@ EvalForge web application — Next.js App Router.
 
 - **Phase 15A** — design system foundation — **complete**
 - **Phase 15B** — product UX foundation — **complete**
-
-No product CRUD or API-backed feature screens yet.
+- **Phase 16** — product implementation — **Projects complete** (Suites / Cases / … next)
 
 ## Scripts
 
@@ -25,11 +24,15 @@ pnpm --filter @agent-eval/web typecheck
 | App shell / nav | `src/components/shell/`          |
 | Product layouts | `src/components/layouts/`        |
 | UX patterns     | `src/components/patterns/`       |
+| Feature modules | `src/features/`                  |
+| API client      | `src/lib/api/`                   |
+| Auth            | `src/lib/auth/`                  |
 | Design gallery  | `src/app/(shell)/design-system/` |
 | Routes          | `src/app/(shell)/…`              |
 
 - Consumes `@agent-eval/ui` for tokens and primitives
 - Prefer Server Components; `"use client"` at the smallest leaf
+- Feature screens call Control Plane REST via `lib/api` + React Query (never repositories)
 - Lazy-load command palette
 
 ## Keyboard (shell)

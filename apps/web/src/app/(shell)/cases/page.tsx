@@ -9,7 +9,7 @@ export default function CasesPage() {
     <PageLayout>
       <PageHeader
         breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Cases" }]} />
+          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Cases" }]} />
         }
         title="Cases"
         description="Evaluation case authoring arrives with product CRUD."
