@@ -41,6 +41,14 @@ def get_actor(
         HTTPAuthorizationCredentials | None, Security(_bearer)
     ] = None,
 ) -> Actor:
+    """Return the authenticated Actor (middleware may have attached it)."""
+    existing = getattr(request.state, "actor", None)
+    if isinstance(existing, Actor):
+        return existing
+    scoped = request.scope.get("evalforge_actor")
+    if isinstance(scoped, Actor):
+        return scoped
+
     container = get_container(request)
     return authenticate_bearer(credentials, container.settings)
 

@@ -72,7 +72,8 @@ Creates return **201**. State transitions (deprecate / publish / cancel) use
 
 ## Auth
 
-`Authorization: Bearer <actor-id>` (dev: token value is the Actor id).
+`Authorization: Bearer <jwt>` where the JWT `sub` claim is the Actor id.
+Set `JWT_SECRET_KEY` (required unless `AUTH_DEV_ACCEPT_BEARER_AS_ACTOR_ID=true`).
 Authorization policy remains in Application (`AllowAllAuthorization` for now).
 
 ## Run locally

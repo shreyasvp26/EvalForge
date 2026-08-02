@@ -1,9 +1,9 @@
-"""API service configuration — extends shared BaseSettings."""
+"""JWT settings and Bearer authentication for the API Layer."""
 
 from __future__ import annotations
 
 from agent_eval_shared.config import BaseSettings, load_settings
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, model_validator
 
 
 class ApiSettings(BaseSettings):
@@ -21,12 +21,39 @@ class ApiSettings(BaseSettings):
     )
     api_title: str = Field(default="EvalForge Control Plane")
     api_version: str = Field(default="0.1.0")
-    # Development/test only: when True, accept any non-empty Bearer token as Actor id.
-    # Real token issuance / verification is TODO (dedicated auth design).
+
+    jwt_secret_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("JWT_SECRET_KEY", "SECRET_KEY"),
+    )
+    jwt_algorithm: str = Field(
+        default="HS256",
+        validation_alias=AliasChoices("JWT_ALGORITHM"),
+    )
+    jwt_issuer: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("JWT_ISSUER"),
+    )
+    jwt_audience: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("JWT_AUDIENCE"),
+    )
+    # Escape hatch for local scripts only — prefer JWT in all environments.
     auth_dev_accept_bearer_as_actor_id: bool = Field(
-        default=True,
+        default=False,
         validation_alias=AliasChoices("AUTH_DEV_ACCEPT_BEARER_AS_ACTOR_ID"),
     )
+
+    @model_validator(mode="after")
+    def _require_jwt_or_dev_bypass(self) -> ApiSettings:
+        if self.auth_dev_accept_bearer_as_actor_id:
+            return self
+        if not self.jwt_secret_key or not self.jwt_secret_key.strip():
+            raise ValueError(
+                "JWT_SECRET_KEY is required unless "
+                "AUTH_DEV_ACCEPT_BEARER_AS_ACTOR_ID=true"
+            )
+        return self
 
 
 def load_api_settings() -> ApiSettings:

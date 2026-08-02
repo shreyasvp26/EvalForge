@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from agent_eval_api.composition import ApiContainer, build_api_container
 from agent_eval_api.config import ApiSettings, load_api_settings
 from agent_eval_api.errors import register_exception_handlers
+from agent_eval_api.middleware.authentication import AuthenticationMiddleware
 from agent_eval_api.middleware.correlation import CorrelationIdMiddleware
 from agent_eval_api.middleware.logging import RequestLoggingMiddleware
 from agent_eval_api.middleware.timing import RequestTimingMiddleware
@@ -81,9 +82,11 @@ def create_app(
             "never repositories or Domain entities."
         ),
     )
-    # Starlette applies middleware LIFO: correlation (outer) → timing → logging (inner).
+    # Starlette applies middleware LIFO:
+    # correlation (outer) → auth → timing → logging (inner).
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(RequestTimingMiddleware)
+    app.add_middleware(AuthenticationMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     register_exception_handlers(app)
 
