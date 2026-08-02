@@ -31,7 +31,12 @@ export const navSections: NavSection[] = [
         chord: "G P",
         keywords: ["home", "workspace", "create project"],
       },
-      { href: "/suites", label: "Suites", icon: Layers, keywords: ["suite"] },
+      {
+        href: "/suites",
+        label: "Suites",
+        icon: Layers,
+        keywords: ["suite", "create suite", "composition"],
+      },
       { href: "/cases", label: "Cases", icon: FlaskConical, keywords: ["case"] },
       { href: "/runs", label: "Runs", icon: Play, chord: "G R", keywords: ["run"] },
       {
@@ -78,8 +83,21 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
   const projectMatch = /^\/projects\/([^/]+)(?:\/(.*))?$/.exec(pathname);
   if (projectMatch) {
     crumbs.push({ label: "Projects", href: "/projects" });
+    const projectId = projectMatch[1] ?? "";
+    const rest = projectMatch[2] ?? "";
+    if (rest.startsWith("suites")) {
+      crumbs.push({ label: "Project", href: `/projects/${projectId}` });
+      const suiteRest = rest.slice("suites".length);
+      if (suiteRest === "" || suiteRest === "/") {
+        crumbs.push({ label: "Suites" });
+      } else {
+        crumbs.push({ label: "Suites", href: `/projects/${projectId}/suites` });
+        crumbs.push({ label: "Suite" });
+      }
+      return crumbs;
+    }
     crumbs.push({ label: "Project" });
-    if (projectMatch[2] === "settings") {
+    if (rest === "settings") {
       crumbs.push({ label: "Settings" });
     }
     return crumbs;

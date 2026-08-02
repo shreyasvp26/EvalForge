@@ -6,7 +6,7 @@ EvalForge web application — Next.js App Router.
 
 - **Phase 15A** — design system foundation — **complete**
 - **Phase 15B** — product UX foundation — **complete**
-- **Phase 16** — product implementation — **Projects complete** (Suites / Cases / … next)
+- **Phase 16** — product implementation — **Projects + Suites complete** (Cases next)
 
 ## Scripts
 
