@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agent_eval_application.ports.authorization import AuthorizationPort
+from agent_eval_application.ports.identity import IdentityPort
 from agent_eval_application.use_cases.agent import (
     CreateAdapter,
     CreateAdapterDraftVersion,
@@ -25,6 +26,7 @@ from agent_eval_application.use_cases.agent import (
     PublishAdapterVersion,
     PublishAgentVersion,
 )
+from agent_eval_application.use_cases.auth import GetCurrentUser, Login
 from agent_eval_application.use_cases.case import (
     CreateCase,
     CreateCaseDraftVersion,
@@ -74,9 +76,12 @@ from agent_eval_infrastructure import (
     build_infrastructure,
 )
 from agent_eval_infrastructure.auth import (
+    InMemoryIdentityStore,
     InMemoryMembershipStore,
     MembershipStore,
+    SqlAlchemyIdentityStore,
     SqlAlchemyMembershipStore,
+    ensure_bootstrap_user,
 )
 
 from agent_eval_api.auth.rbac import ProjectRbacAuthorization
@@ -86,6 +91,10 @@ from agent_eval_api.config import ApiSettings, load_api_settings
 @dataclass(slots=True)
 class ApplicationServices:
     """API-facing Application use cases (public Control Plane surface)."""
+
+    # Auth
+    login: Login
+    get_current_user: GetCurrentUser
 
     # Projects
     create_project: CreateProject
@@ -152,6 +161,7 @@ class ApiContainer:
     auth: AuthorizationPort
     services: ApplicationServices
     memberships: MembershipStore
+    identity: IdentityPort
 
     def dispose(self) -> None:
         self.infrastructure.dispose()
@@ -178,9 +188,18 @@ def build_membership_store(
     return SqlAlchemyMembershipStore(infrastructure.session_factory)
 
 
+def build_identity_store(
+    infrastructure: InfrastructureContainer,
+) -> IdentityPort:
+    if infrastructure.profile is RuntimeProfile.MEMORY:
+        return InMemoryIdentityStore()
+    return SqlAlchemyIdentityStore(infrastructure.session_factory)
+
+
 def build_application_services(
     infrastructure: InfrastructureContainer,
     auth: AuthorizationPort,
+    identity: IdentityPort,
 ) -> ApplicationServices:
     """Construct Application use cases from Infrastructure ports."""
     uow = infrastructure.uow_factory
@@ -190,6 +209,8 @@ def build_application_services(
     run_queue = infrastructure.run_queue
 
     return ApplicationServices(
+        login=Login(identity),
+        get_current_user=GetCurrentUser(identity),
         create_project=CreateProject(uow, ids, auth, events, idempotency),
         get_project=GetProject(uow, auth),
         list_projects=ListProjects(uow, auth),
@@ -242,18 +263,28 @@ def build_api_container(
     infrastructure: InfrastructureContainer | None = None,
     auth: AuthorizationPort | None = None,
     memberships: MembershipStore | None = None,
+    identity: IdentityPort | None = None,
     profile: RuntimeProfile | None = None,
 ) -> ApiContainer:
     """Assemble the Control Plane composition root."""
     api_settings = settings or load_api_settings()
     infra = infrastructure or build_infrastructure(profile=profile)
     store = memberships or build_membership_store(infra)
+    identity_store = identity or build_identity_store(infra)
+    if api_settings.auth_bootstrap_email and api_settings.auth_bootstrap_password:
+        ensure_bootstrap_user(
+            identity_store,
+            email=api_settings.auth_bootstrap_email,
+            password=api_settings.auth_bootstrap_password,
+            display_name=api_settings.auth_bootstrap_display_name,
+        )
     authorization = auth or ProjectRbacAuthorization(store)
-    services = build_application_services(infra, authorization)
+    services = build_application_services(infra, authorization, identity_store)
     return ApiContainer(
         settings=api_settings,
         infrastructure=infra,
         auth=authorization,
         services=services,
         memberships=store,
+        identity=identity_store,
     )

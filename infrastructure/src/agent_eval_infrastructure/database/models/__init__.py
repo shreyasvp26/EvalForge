@@ -4,6 +4,7 @@ Organized by Schema Design entity groups / Domain bounded contexts.
 Importing this package registers every model on ``Base.metadata``.
 """
 
+from agent_eval_infrastructure.auth.identity import UserOrm
 from agent_eval_infrastructure.auth.membership import ProjectMembershipOrm
 from agent_eval_infrastructure.database.models.agent_integration import (
     AdapterOrm,
@@ -58,4 +59,5 @@ __all__ = [
     "SuiteCompositionOrm",
     "SuiteOrm",
     "SuiteVersionOrm",
+    "UserOrm",
 ]

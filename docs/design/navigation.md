@@ -26,7 +26,7 @@ Implementation: `apps/web/src/components/shell/`.
 ## Top bar
 
 - Auto breadcrumbs from the current path (`breadcrumbsForPath`).
-- ⌘K affordance, `?` shortcuts, theme toggle.
+- ⌘K affordance, `?` shortcuts, theme toggle, account menu (sign out).
 - Menu opens the mobile drawer below `lg`.
 
 ---
@@ -55,11 +55,19 @@ Groups:
 1. **Recent** — recent pages
 2. **Navigate** — fuzzy match over labels, hrefs, keywords
 3. **Appearance** — Light / Dark / System
-4. **Help** — open keyboard shortcuts
+4. **Account** — Sign out
+5. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
 ---
+
+## Authentication
+
+- Guest routes: `/login` (outside `(shell)`).
+- Product routes under `(shell)` are gated by `RequireAuth` + Next.js middleware (session cookie presence).
+- JWT access token persists in `localStorage`; session presence cookie `evalforge.auth` enables middleware redirects.
+- Top-bar **UserMenu** and command palette **Sign out** clear the session.
 
 ## Keyboard shortcuts
 

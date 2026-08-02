@@ -103,3 +103,8 @@ class GetGraderQuery:
 @dataclass(frozen=True, slots=True)
 class ListGradersQuery:
     actor: Actor
+
+
+@dataclass(frozen=True, slots=True)
+class GetCurrentUserQuery:
+    actor: Actor

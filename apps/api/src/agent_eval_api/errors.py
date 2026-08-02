@@ -11,6 +11,7 @@ from typing import Any
 from agent_eval_application.errors import (
     ApplicationLayerError,
     ApplicationValidationError,
+    AuthenticationError,
     AuthorizationError,
     ConflictError,
     NotFoundApplicationError,
@@ -45,6 +46,8 @@ def error_body(
 
 
 def _status_for_app_error(exc: AppError) -> int:
+    if isinstance(exc, AuthenticationError):
+        return 401
     if isinstance(exc, AuthorizationError):
         return 403
     if isinstance(exc, NotFoundApplicationError):
@@ -57,6 +60,8 @@ def _status_for_app_error(exc: AppError) -> int:
         return 503
     if isinstance(exc, ApplicationLayerError):
         # DomainTranslationError and other orchestration failures
+        if exc.code == "UNAUTHENTICATED":
+            return 401
         if exc.code == "NOT_FOUND":
             return 404
         if exc.code in {"INVALID_STATE_TRANSITION", "INVARIANT_VIOLATION"}:
@@ -79,9 +84,12 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
+        status_code = _status_for_app_error(exc)
+        headers = {"WWW-Authenticate": "Bearer"} if status_code == 401 else None
         return JSONResponse(
-            status_code=_status_for_app_error(exc),
+            status_code=status_code,
             content=_body_from_app_error(exc),
+            headers=headers,
         )
 
     @app.exception_handler(RequestValidationError)

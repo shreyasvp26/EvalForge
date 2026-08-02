@@ -81,8 +81,17 @@ params `cursor`, `limit`, `sort`, `status`, and `q`.
 
 ## Auth
 
-`Authorization: Bearer <jwt>` where the JWT `sub` claim is the Actor id.
+Issue a token with `POST /v1/auth/login` (`email` + `password`). Response
+includes `access_token`, `expires_in`, and `user`. Subsequent requests send
+`Authorization: Bearer <jwt>` (JWT `sub` is the Actor / user id).
+
+- `GET /v1/auth/me` — current user profile
+- `POST /v1/auth/logout` — confirms the caller is authenticated; clients must
+  discard the token (JWT is stateless)
+
 Set `JWT_SECRET_KEY` (required unless `AUTH_DEV_ACCEPT_BEARER_AS_ACTOR_ID=true`).
+Optional bootstrap user on startup: `AUTH_BOOTSTRAP_EMAIL` +
+`AUTH_BOOTSTRAP_PASSWORD`.
 
 Authorization uses project-aware RBAC (`Owner` / `Admin` / `Maintainer` /
 `Viewer`) via `ProjectRbacAuthorization`. Membership rows live in Infrastructure;
