@@ -53,10 +53,10 @@ Load Python settings via `agent_eval_shared.config.load_settings` /
 
 ## Testing
 
-| Layer           | Tool   | Location                                                                                                                               |
-| --------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                                           |
-| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `sandbox/tests/`, `apps/api/tests/` |
+| Layer           | Tool   | Location                                                                                                                                                  |
+| --------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                                                              |
+| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `sandbox/tests/`, `adapters/tests/`, `apps/api/tests/` |
 
 Run everything with `pnpm test`. Coverage: `pnpm test:coverage`.
 
@@ -155,6 +155,23 @@ Python package: `sandbox/` → `agent_eval_sandbox`.
 - Prefer `uv run pytest sandbox/tests` (mocked Docker). Optional live Docker:
   `uv run pytest sandbox/tests -m integration`.
 - See `sandbox/README.md`.
+
+## Adapter Layer
+
+Python package: `adapters/` → `agent_eval_adapters`.
+
+- **SDK:** `Adapter` contract, immutable `ExecutionContext`, `LifecycleDriver`
+  (`initialize` → `prepare` → `start` → `stream` → `finish` → `cleanup`),
+  `EventEmitter` (ordered, exactly-once via `EventSink` ports — never
+  repositories), `DefaultTranslator` (NativeObservation → NDM).
+- **Claude Code Adapter:** observes `--output-format stream-json`, maps tool
+  calls / file edits / shell / stdout / completion / errors; supports
+  cancellation and timeout between stream lines.
+- Depends on `domain` (NDM), `shared`, and `sandbox` only.
+- **Must not** import Application, Infrastructure, Workers, Execution Engine,
+  Graders, or FastAPI.
+- Prefer `uv run pytest adapters/tests` (mocked Sandbox only).
+- See `adapters/README.md`.
 
 ## API Layer / Control Plane
 

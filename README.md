@@ -16,7 +16,8 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | Execution workers / engine                           | Complete |
 | FastAPI Control Plane (Phase 6)                      | Complete |
 | Sandbox Runtime (Phase 7)                            | Complete |
-| Adapters / Graders / Web                             | Later    |
+| Adapter SDK + Claude Code (Phase 8)                  | Complete |
+| Graders / Web                                        | Later    |
 
 ## Repository layout
 
@@ -29,10 +30,11 @@ application/     Python Application Layer (use cases, UoW, ports)
 infrastructure/  Python Infrastructure adapters + Docker/ops scaffolding
 workers/         Background / async job workers (Execution Engine host)
 sandbox/         Sandbox Runtime — isolated Docker execution only
+adapters/        Adapter SDK + vendor adapters (Claude Code first)
 docs/            Architecture, ADRs, API notes, diagrams
 ```
 
-Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md). Adapters and graders packages land in later phases.
+Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md). Graders packages land in later phases.
 
 ## Prerequisites
 
@@ -94,6 +96,7 @@ uv run pytest
 | `agent-eval-infrastructure` (`infrastructure/`) | Adapters for Domain/Application ports + composition     |
 | `agent-eval-workers` (`workers/`)               | Execution Engine host, lifecycle, event pipeline        |
 | `agent-eval-sandbox` (`sandbox/`)               | Isolated Docker sandbox runtime (no orchestration)      |
+| `agent-eval-adapters` (`adapters/`)             | Adapter SDK + Claude Code (NDM translation only)        |
 | `agent-eval-api` (`apps/api`)                   | FastAPI Control Plane over Application use cases        |
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.
