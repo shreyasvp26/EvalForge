@@ -101,8 +101,9 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 
 - List: `/runs` (requires a project filter; status filter + search + sort).
 - Create: dedicated wizard at `/runs/new` (not a modal) — pins versions then launches with `Idempotency-Key`.
-- Detail: `/runs/[runId]` — status, immutable pins, timeline (events), artifacts, scores; cancel when queued/running.
-- No SSE / polling on detail in this milestone — refresh is manual via navigation or refetch actions.
+- Detail: `/runs/[runId]` — live execution chrome (status, started/finished/elapsed, pins, recent activity), grouped timeline, tabbed artifacts, expandable scores; cancel when queued/running.
+- Live refresh: lightweight polling (2.5s) while status is `queued` / `running` / `grading`, via `useRunPolling`. Stops automatically on terminal status. SSE can replace that hook later without changing data hooks.
+- Artifact viewer shows metadata and linked event summaries; full object-storage bodies are not exposed by REST yet.
 - Chord shortcut: `G` then `R`.
 - Command palette: **Open Runs**, **New Run** (`/runs/new`).
 

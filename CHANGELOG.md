@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase 16 Milestone 8 — Live execution experience: polling while queued/running/grading, execution chrome, grouped expandable timeline, tabbed artifact viewer, expandable score viewer, SSE-ready `useRunPolling` seam
 - Phase 16 Milestone 7 — Runs & execution management: project-filtered list, multi-step create wizard with pinned versions + Idempotency-Key, flagship detail (timeline/artifacts/scores), cancel confirmation, command-palette actions
 - Phase 16 Milestone 6 — Graders management: platform-scoped list/create/detail, family badges, draft/publish versions with specification preview, command-palette actions
 - Phase 16 Milestone 5 — Agents & Adapter management: platform-scoped list/create/detail, agent draft/publish, connect adapter, adapter detail with draft/publish, command-palette actions
