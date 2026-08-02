@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Lint, format, and verify workspace
+    name: Lint, format, test, and build
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +42,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install Python dependencies
-        run: uv sync --frozen
+        run: uv sync --all-packages --frozen
 
       - name: ESLint
         run: pnpm lint
@@ -52,6 +52,12 @@ jobs:
 
       - name: TypeScript typecheck
         run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build packages
+        run: pnpm build
 
       - name: Ruff
         run: uv run ruff check .

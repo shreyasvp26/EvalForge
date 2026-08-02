@@ -8,19 +8,46 @@
     "pnpm": ">=9"
   },
   "scripts": {
+    "build": "pnpm -r --if-present run build",
+    "clean": "pnpm -r --if-present run clean && rm -rf coverage .turbo",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r --if-present run typecheck",
-    "verify": "pnpm lint && pnpm format:check && pnpm -r --if-present run typecheck"
+    "test": "pnpm test:ts && pnpm test:py",
+    "test:ts": "pnpm -r --if-present run test",
+    "test:py": "uv run pytest",
+    "test:coverage": "pnpm -r --if-present exec vitest run --coverage && uv run pytest --cov --cov-report=term-missing",
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
+    "prepare": "husky || true"
   },
   "devDependencies": {
     "@agent-eval/config": "workspace:*",
     "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^3.0.5",
     "eslint": "^9.17.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import-x": "^4.6.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.2"
+    "typescript-eslint": "^8.18.2",
+    "vitest": "^3.0.5"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.py": [
+      "uv run ruff check --fix",
+      "uv run black"
+    ]
   }
 }

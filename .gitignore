@@ -32,6 +32,7 @@ htmlcov/
 coverage/
 *.lcov
 .nyc_output/
+.turbo/
 
 # Editors / OS
 .idea/

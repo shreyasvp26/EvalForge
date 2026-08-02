@@ -1,8 +1,12 @@
 {
-  "extends": "@agent-eval/config/typescript/base.json",
-  "compilerOptions": {
-    "composite": false
-  },
   "files": [],
-  "references": [{ "path": "apps/web" }, { "path": "packages/shared" }, { "path": "packages/sdk" }]
+  "references": [
+    { "path": "packages/errors/tsconfig.build.json" },
+    { "path": "packages/utils/tsconfig.build.json" },
+    { "path": "packages/env/tsconfig.build.json" },
+    { "path": "packages/logger/tsconfig.build.json" },
+    { "path": "packages/shared/tsconfig.build.json" },
+    { "path": "packages/sdk/tsconfig.build.json" },
+    { "path": "apps/web/tsconfig.build.json" }
+  ]
 }

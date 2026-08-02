@@ -9,4 +9,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Phase 0 engineering foundation (monorepo, tooling, CI scaffolding)
+- Phase 0 repository foundation (monorepo, tooling, CI scaffolding)
+- Engineering foundation: shared TS packages (`errors`, `env`, `logger`, `utils`), Python `shared/`, Vitest/pytest, Husky, root verify scripts

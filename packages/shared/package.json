@@ -2,19 +2,34 @@
   "name": "@agent-eval/shared",
   "version": "0.0.0",
   "private": true,
-  "description": "Shared TypeScript types and utilities",
+  "description": "Barrel re-exports of EvalForge TypeScript foundation packages",
   "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
+      "import": "./src/index.ts",
       "default": "./src/index.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@agent-eval/env": "workspace:*",
+    "@agent-eval/errors": "workspace:*",
+    "@agent-eval/logger": "workspace:*",
+    "@agent-eval/utils": "workspace:*"
   },
   "devDependencies": {
     "@agent-eval/config": "workspace:*",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
   }
 }

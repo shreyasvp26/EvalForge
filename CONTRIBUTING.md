@@ -1,12 +1,14 @@
 # Contributing
 
-Thank you for your interest in contributing to the Coding Agent Evaluation Platform.
+Thank you for your interest in contributing to EvalForge.
 
 ## Before you start
 
 1. Read the [Code of Conduct](./CODE_OF_CONDUCT.md).
-2. Search existing issues and pull requests to avoid duplicates.
-3. For significant changes, open an issue first to discuss the approach.
+2. Read [docs/development.md](./docs/development.md) for engineering conventions.
+3. Treat [docs/architecture/](./docs/architecture/) as the source of truth — do not silently redesign boundaries.
+4. Search existing issues and pull requests to avoid duplicates.
+5. For significant changes, open an issue first to discuss the approach.
 
 ## Development setup
 
@@ -15,7 +17,7 @@ Thank you for your interest in contributing to the Coding Agent Evaluation Platf
 - Node.js 20+
 - pnpm 9+
 - Python 3.12+
-- uv (recommended)
+- uv
 
 ### Install
 
@@ -27,16 +29,12 @@ uv sync
 ### Common commands
 
 ```bash
-# TypeScript / JS
-pnpm lint
+pnpm verify          # lint + format + types + tests + build
+pnpm lint:fix
 pnpm format
-pnpm format:check
-
-# Python
-uv run ruff check .
+pnpm test
 uv run ruff check --fix .
 uv run black .
-uv run black --check .
 ```
 
 ## Branching & commits
@@ -47,7 +45,7 @@ uv run black --check .
 
 ## Pull requests
 
-1. Ensure lint and format checks pass locally.
+1. Ensure `pnpm verify` passes locally.
 2. Fill out the pull request template.
 3. Keep PRs focused — one concern per PR when practical.
 4. Request review from the appropriate code owners.
@@ -62,7 +60,3 @@ Use the GitHub issue templates:
 ## Security
 
 See [SECURITY.md](./SECURITY.md) for private vulnerability reporting. Do not file public issues for security concerns.
-
-## Questions
-
-Open a GitHub Discussion or an issue labeled `question` if you need clarification.

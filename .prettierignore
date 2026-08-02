@@ -19,6 +19,10 @@ node_modules
 .mypy_cache
 .pytest_cache
 
+# Architecture source-of-truth docs (avoid drive-by reflow)
+docs/architecture/**
+docs/adr/ADR-*.md
+
 # Misc
 *.min.js
 *.min.css

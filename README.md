@@ -1,32 +1,98 @@
 # EvalForge
 
-Production-grade evaluation infrastructure for autonomous coding agents.
+Production-grade platform for evaluating autonomous coding agents (Cursor, Claude Code, Codex, Gemini CLI, and others) against standardized, reproducible evaluation cases.
 
-CodeEval evaluates agents such as Cursor, Claude Code, Gemini CLI, Codex, and future coding assistants using reproducible engineering benchmarks.
+> EvalForge is infrastructure, not a chatbot. Correctness and longitudinal comparability of evaluation data are the product.
 
-## Current Status
+## Current status
 
-🚧 Active Development
+| Phase                                                | Status   |
+| ---------------------------------------------------- | -------- |
+| Phase 0 — Repository foundation                      | Complete |
+| Engineering foundation (tooling, shared libs, tests) | Complete |
+| Domain layer                                         | Next     |
+| Application / API / workers                          | Later    |
 
-Completed
+## Repository layout
 
-- ✅ Phase 0 — Repository Foundation
+```
+apps/            Deployable applications (API, web)
+packages/        TypeScript libraries (foundation, SDK, tooling config)
+shared/          Python cross-cutting foundation (logging, config, errors)
+workers/         Background / async job workers
+infrastructure/  Docker scaffolding and scripts (ops)
+docs/            Architecture, ADRs, API notes, diagrams
+```
 
-Upcoming
+Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md). Domain, application, adapters, and graders packages are intentionally not scaffolded until those phases begin.
 
-- Development Environment
-- Core Domain Model
-- Evaluation Engine
-- Agent Adapters
-- Graders
-- Dashboard
+## Prerequisites
 
-## Tech Stack
+- Node.js 20+
+- pnpm 9+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/)
 
-- FastAPI
-- Next.js
-- PostgreSQL
-- Redis
-- Docker
-- TypeScript
-- Python
+## Quick start
+
+```bash
+pnpm install
+uv sync
+
+# Full verification (lint, format, types, tests, build)
+pnpm verify
+```
+
+## Common scripts
+
+| Script                              | Purpose                             |
+| ----------------------------------- | ----------------------------------- |
+| `pnpm build`                        | Build all TypeScript packages       |
+| `pnpm lint` / `pnpm lint:fix`       | ESLint                              |
+| `pnpm format` / `pnpm format:check` | Prettier                            |
+| `pnpm typecheck`                    | TypeScript project-references check |
+| `pnpm test`                         | Vitest (TS) + pytest (Python)       |
+| `pnpm clean`                        | Remove build outputs                |
+| `pnpm verify`                       | CI-equivalent local gate            |
+
+Python-only:
+
+```bash
+uv run ruff check .
+uv run black --check .
+uv run pytest
+```
+
+## Foundation packages
+
+**TypeScript**
+
+| Package              | Role                                                  |
+| -------------------- | ----------------------------------------------------- |
+| `@agent-eval/config` | Shared ESLint / Prettier / TS / Vitest tooling config |
+| `@agent-eval/errors` | Typed error hierarchy                                 |
+| `@agent-eval/env`    | Zod-validated environment loading                     |
+| `@agent-eval/logger` | Structured logging + correlation context              |
+| `@agent-eval/utils`  | Small cross-cutting helpers                           |
+| `@agent-eval/shared` | Barrel re-exports of the above                        |
+
+**Python**
+
+| Package                         | Role                                   |
+| ------------------------------- | -------------------------------------- |
+| `agent-eval-shared` (`shared/`) | Errors, settings, structlog, utilities |
+
+See [docs/development.md](./docs/development.md) for conventions and dependency rules.
+
+## Documentation
+
+| Doc                                          | Purpose                               |
+| -------------------------------------------- | ------------------------------------- |
+| [docs/development.md](./docs/development.md) | Engineering conventions               |
+| [docs/architecture/](./docs/architecture/)   | System architecture (source of truth) |
+| [CONTRIBUTING.md](./CONTRIBUTING.md)         | Contribution workflow                 |
+| [SECURITY.md](./SECURITY.md)                 | Vulnerability reporting               |
+
+## License
+
+TBD

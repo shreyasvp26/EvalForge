@@ -1,7 +1,7 @@
 [project]
 name = "agent-eval"
 version = "0.0.0"
-description = "Coding Agent Evaluation Platform — Python workspace root"
+description = "EvalForge — Python workspace root"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
@@ -9,11 +9,13 @@ dependencies = []
 [dependency-groups]
 dev = [
   "black>=24.10.0",
+  "pytest>=8.3.0",
+  "pytest-cov>=6.0.0",
   "ruff>=0.8.0",
 ]
 
 [tool.uv.workspace]
-members = ["apps/api", "workers"]
+members = ["apps/api", "workers", "shared"]
 
 [tool.uv]
 package = false
@@ -43,10 +45,23 @@ extend-exclude = [
 
 [tool.ruff.lint]
 select = [
-  "E",   # pycodestyle errors
-  "W",   # pycodestyle warnings
-  "F",   # pyflakes
-  "I",   # isort
-  "B",   # flake8-bugbear
-  "UP",  # pyupgrade
+  "E",
+  "W",
+  "F",
+  "I",
+  "B",
+  "UP",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["shared/tests"]
+pythonpath = ["shared/src"]
+addopts = ["-q", "--strict-markers"]
+
+[tool.coverage.run]
+source = ["agent_eval_shared"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
