@@ -37,6 +37,7 @@ orchestration.
 ```
 agent_eval_infrastructure/
   database/                 # Engine, session factory, metadata, ORM models
+  mappers/                  # Explicit ORM ↔ Domain mapping (Data Mapper)
   repositories/             # Domain repository Protocol adapters
   unit_of_work/             # Application UnitOfWork implementation
   queue/                    # Run queue / messaging adapters
@@ -47,6 +48,28 @@ agent_eval_infrastructure/
   migrations/               # Alembic migration package hooks (versions live below)
 ```
 
+## Repositories
+
+Thin persistence adapters: load ORM → map to Domain → map Domain → ORM →
+persist. They never commit (Unit of Work owns transactions in Phase 4) and
+never enforce Domain invariants.
+
+| Protocol            | Adapter                       |
+| ------------------- | ----------------------------- |
+| `ProjectRepository` | `SqlAlchemyProjectRepository` |
+| `SuiteRepository`   | `SqlAlchemySuiteRepository`   |
+| `CaseRepository`    | `SqlAlchemyCaseRepository`    |
+| `AgentRepository`   | `SqlAlchemyAgentRepository`   |
+| `AdapterRepository` | `SqlAlchemyAdapterRepository` |
+| `GraderRepository`  | `SqlAlchemyGraderRepository`  |
+| `RunRepository`     | `SqlAlchemyRunRepository`     |
+
+**Mapping rules:** Version _content_ is insert-once; version _lifecycle status_
+may be updated in place to match Domain Model §7. Run children (events,
+artifacts, scores) are append-only. Run `lock_version` is SQLAlchemy-managed
+optimistic concurrency (not a Domain field). Sandbox is Domain-only and is
+reconstructed as `None`.
+
 Sibling directories in this folder (ops, not Python import graph):
 
 - `docker/` — container and compose scaffolding
@@ -55,9 +78,10 @@ Sibling directories in this folder (ops, not Python import graph):
 
 ## Status
 
-Phase 2 — SQLAlchemy persistence foundation complete (engine, sessions, Base,
-naming conventions, ORM models, repository base). Repository adapters, Unit
-of Work, Redis, and Alembic revisions land in later phases.
+Phase 3 — SQLAlchemy repository adapters implement every Domain repository
+Protocol (`Project`, `Suite`, `Case`, `Agent`, `Adapter`, `Grader`, `Run`).
+Explicit ORM ↔ Domain mappers live under `mappers/`. Unit of Work, Redis,
+queue, object storage, DI, and Alembic revisions land in later phases.
 
 ## Database package
 
@@ -78,5 +102,6 @@ not require async ORM for the Control Plane.
 
 ## Testing
 
-Infrastructure tests will use testcontainers / local Postgres where needed
-in later phases. Prefer `uv run pytest infrastructure/tests`.
+Repository unit tests use in-memory SQLite (`sqlite+pysqlite:///:memory:`).
+Prefer `uv run pytest infrastructure/tests`. PostgreSQL-specific behavior
+and testcontainers arrive with later phases.

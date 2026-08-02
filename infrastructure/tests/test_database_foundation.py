@@ -11,7 +11,7 @@ from agent_eval_infrastructure.database.session import (
     create_session_factory,
     session_scope,
 )
-from agent_eval_infrastructure.repositories import SqlAlchemyRepository
+from agent_eval_infrastructure.repositories.base import SqlAlchemyRepository
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 

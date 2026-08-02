@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import JSON
 
 from agent_eval_infrastructure.database.base import Base
 from agent_eval_infrastructure.database.mixins import (
-    OptimisticLockMixin,
     TimestampMixin,
     UuidPrimaryKeyMixin,
 )
 
+_JsonType = JSON().with_variant(JSONB(), "postgresql")
 
-class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, OptimisticLockMixin, Base):
+
+class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
     """Logical table: Run.
 
     Status is the sole legitimate mutation target on an otherwise append-only
@@ -22,6 +27,14 @@ class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, OptimisticLockMixin, Base):
     """
 
     __tablename__ = "runs"
+
+    lock_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+        server_default="1",
+    )
+    __mapper_args__ = {"version_id_col": lock_version}
 
     status: Mapped[str] = mapped_column(String(64), nullable=False, default="created")
     project_id: Mapped[str] = mapped_column(
@@ -61,9 +74,13 @@ class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, OptimisticLockMixin, Base):
         nullable=True,
         index=True,
     )
+    grader_version_ids: Mapped[list[Any]] = mapped_column(
+        _JsonType,
+        nullable=False,
+        default=list,
+    )
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     cancellation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # Execution cost facts — primary observations, not derived (Schema Design).
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     wall_clock_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)

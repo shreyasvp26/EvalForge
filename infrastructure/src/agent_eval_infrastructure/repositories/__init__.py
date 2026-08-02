@@ -1,25 +1,21 @@
-"""Repository base classes — session binding only (Phase 2).
+"""Domain repository Protocol adapters (SQLAlchemy)."""
 
-Concrete ``get`` / ``save`` / query methods arrive in Phase 3. This base
-exists so every adapter shares one session-lifetime pattern without
-embedding Domain logic.
-"""
+from agent_eval_infrastructure.repositories.adapter import SqlAlchemyAdapterRepository
+from agent_eval_infrastructure.repositories.agent import SqlAlchemyAgentRepository
+from agent_eval_infrastructure.repositories.base import SqlAlchemyRepository
+from agent_eval_infrastructure.repositories.case import SqlAlchemyCaseRepository
+from agent_eval_infrastructure.repositories.grader import SqlAlchemyGraderRepository
+from agent_eval_infrastructure.repositories.project import SqlAlchemyProjectRepository
+from agent_eval_infrastructure.repositories.run import SqlAlchemyRunRepository
+from agent_eval_infrastructure.repositories.suite import SqlAlchemySuiteRepository
 
-from __future__ import annotations
-
-from sqlalchemy.orm import Session
-
-
-class SqlAlchemyRepository:
-    """Base for Infrastructure repository adapters.
-
-    Holds the active SQLAlchemy ``Session`` supplied by the Unit of Work
-    (Phase 4). Subclasses must not open or commit their own sessions.
-    """
-
-    def __init__(self, session: Session) -> None:
-        self._session = session
-
-    @property
-    def session(self) -> Session:
-        return self._session
+__all__ = [
+    "SqlAlchemyRepository",
+    "SqlAlchemyProjectRepository",
+    "SqlAlchemySuiteRepository",
+    "SqlAlchemyCaseRepository",
+    "SqlAlchemyAgentRepository",
+    "SqlAlchemyAdapterRepository",
+    "SqlAlchemyGraderRepository",
+    "SqlAlchemyRunRepository",
+]
