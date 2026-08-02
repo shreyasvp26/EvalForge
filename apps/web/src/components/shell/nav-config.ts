@@ -1,8 +1,17 @@
-import { BookOpen, Bot, FlaskConical, FolderKanban, Layers, Play } from "@agent-eval/ui";
+import {
+  BookOpen,
+  Bot,
+  CheckCircle2,
+  FlaskConical,
+  FolderKanban,
+  Layers,
+  Play,
+} from "@agent-eval/ui";
 
 import type { LucideIcon } from "@agent-eval/ui";
 
-export type NavHref = "/projects" | "/suites" | "/cases" | "/runs" | "/agents" | "/design-system";
+export type NavHref =
+  "/projects" | "/suites" | "/cases" | "/runs" | "/agents" | "/graders" | "/design-system";
 
 export interface NavItem {
   href: NavHref;
@@ -50,6 +59,12 @@ export const navSections: NavSection[] = [
         icon: Bot,
         chord: "G A",
         keywords: ["agent", "adapter", "create agent"],
+      },
+      {
+        href: "/graders",
+        label: "Graders",
+        icon: CheckCircle2,
+        keywords: ["grader", "objective", "rubric", "create grader"],
       },
     ],
   },
@@ -135,6 +150,18 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       return crumbs;
     }
     crumbs.push({ label: "Agent" });
+    return crumbs;
+  }
+
+  const graderMatch = /^\/graders(?:\/(.*))?$/.exec(pathname);
+  if (graderMatch) {
+    const rest = graderMatch[1] ?? "";
+    if (rest === "") {
+      crumbs.push({ label: "Graders" });
+      return crumbs;
+    }
+    crumbs.push({ label: "Graders", href: "/graders" });
+    crumbs.push({ label: "Grader" });
     return crumbs;
   }
 

@@ -3,6 +3,7 @@
 import {
   BookOpen,
   Bot,
+  CheckCircle2,
   Command as CommandIcon,
   Dialog,
   DialogContent,
@@ -216,6 +217,25 @@ export function CommandPalette({
     },
   ];
 
+  const graderActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+    {
+      id: "open-graders",
+      label: "Open Graders",
+      icon: CheckCircle2,
+      run: () => {
+        run("/graders");
+      },
+    },
+    {
+      id: "create-grader",
+      label: "Create Grader",
+      icon: Plus,
+      run: () => {
+        run("/graders?create=1");
+      },
+    },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -377,6 +397,27 @@ export function CommandPalette({
                 Agents
               </Text>
               {agentActions
+                .filter((action) => fuzzyScore(query, action.label) > 0)
+                .map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.label}
+                    onSelect={() => {
+                      action.run();
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--ef-radius-control)] px-2 py-2 text-[length:var(--ef-text-body)] text-popover-foreground aria-selected:bg-muted"
+                  >
+                    <Icon icon={action.icon} size="sm" aria-hidden />
+                    {action.label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
+
+            <Command.Group heading="Graders" className="mb-2">
+              <Text variant="table" className="px-2 py-1.5">
+                Graders
+              </Text>
+              {graderActions
                 .filter((action) => fuzzyScore(query, action.label) > 0)
                 .map((action) => (
                   <Command.Item
