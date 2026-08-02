@@ -14,7 +14,10 @@ from agent_eval_api.main import create_app
 from agent_eval_application.common.actor import Actor
 from agent_eval_domain.common.ids import ProjectId
 from agent_eval_infrastructure import RuntimeProfile, build_infrastructure
-from agent_eval_infrastructure.auth import InMemoryMembershipStore
+from agent_eval_infrastructure.auth import (
+    InMemoryIdentityStore,
+    InMemoryMembershipStore,
+)
 from api_fakes import FakeContainer, mock_services
 from fastapi.testclient import TestClient
 
@@ -23,8 +26,11 @@ def test_build_application_services_from_memory_infra() -> None:
     infra = build_infrastructure(profile=RuntimeProfile.MEMORY)
     try:
         auth = AllowAllAuthorization()
-        services = build_application_services(infra, auth)
+        identity = InMemoryIdentityStore()
+        services = build_application_services(infra, auth, identity)
         assert isinstance(services, ApplicationServices)
+        assert services.login is not None
+        assert services.get_current_user is not None
         assert services.create_project is not None
         assert services.create_run is not None
         auth.ensure_can_create_project(Actor(id="actor-1"))
@@ -53,6 +59,7 @@ def test_build_api_container_wires_services(settings) -> None:
         assert isinstance(container.services, ApplicationServices)
         assert isinstance(container.auth, ProjectRbacAuthorization)
         assert isinstance(container.memberships, InMemoryMembershipStore)
+        assert isinstance(container.identity, InMemoryIdentityStore)
         checks = container.readiness_checks()
         assert checks["composition"] == "ok"
         assert checks["database"] == "ok"

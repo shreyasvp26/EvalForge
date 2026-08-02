@@ -17,7 +17,15 @@ from agent_eval_api.config import ApiSettings
 from agent_eval_api.errors import error_body
 
 UNAUTHENTICATED_PREFIXES = ("/health/",)
-UNAUTHENTICATED_PATHS = frozenset({"/docs", "/redoc", "/openapi.json", "/metrics"})
+UNAUTHENTICATED_PATHS = frozenset(
+    {
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/metrics",
+        "/v1/auth/login",
+    }
+)
 
 
 class AuthenticationMiddleware:

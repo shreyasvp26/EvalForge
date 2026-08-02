@@ -17,6 +17,7 @@ from agent_eval_application.dto.run import (
     ScoreValueDTO,
 )
 from agent_eval_application.dto.suite import SuiteDTO
+from agent_eval_application.dto.user import UserDTO
 from agent_eval_application.errors import (
     ApplicationValidationError,
     AuthorizationError,
@@ -123,9 +124,21 @@ def sample_score(**overrides: Any) -> ScoreDTO:
     return ScoreDTO(**base)
 
 
+def sample_user(**overrides: Any) -> UserDTO:
+    base = dict(
+        id="user-1",
+        email="admin@evalforge.local",
+        display_name="EvalForge Admin",
+    )
+    base.update(overrides)
+    return UserDTO(**base)
+
+
 def mock_services() -> MagicMock:
     """ApplicationServices stand-in with Magics for every public use case."""
     services = MagicMock()
+    services.login.execute.return_value = sample_user()
+    services.get_current_user.execute.return_value = sample_user()
     services.create_project.execute.return_value = sample_project()
     services.get_project.execute.return_value = sample_project()
     services.list_projects.execute.return_value = [sample_project()]
@@ -167,6 +180,7 @@ class FakeContainer:
         self.settings = settings
         self.auth = MagicMock()
         self.memberships = MagicMock()
+        self.identity = MagicMock()
         self.infrastructure = MagicMock()
         self._ready = True
 
@@ -193,4 +207,5 @@ __all__ = [
     "sample_run",
     "sample_score",
     "sample_suite",
+    "sample_user",
 ]

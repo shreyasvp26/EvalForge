@@ -33,6 +33,24 @@ class ApplicationLayerError(ApplicationError):
         )
 
 
+class AuthenticationError(ApplicationLayerError):
+    """Caller could not be authenticated (bad credentials or invalid session)."""
+
+    def __init__(
+        self,
+        message: str = "Authentication failed",
+        *,
+        details: dict[str, Any] | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            code="UNAUTHENTICATED",
+            details=details,
+            cause=cause,
+        )
+
+
 class AuthorizationError(ApplicationLayerError):
     """Caller is authenticated but not permitted for this operation."""
 

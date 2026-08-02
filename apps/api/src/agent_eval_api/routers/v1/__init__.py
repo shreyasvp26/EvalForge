@@ -3,6 +3,7 @@
 from agent_eval_api.routers.v1 import (
     adapters,
     agents,
+    auth,
     cases,
     graders,
     projects,
@@ -14,6 +15,7 @@ from agent_eval_api.routers.v1 import (
 __all__ = [
     "adapters",
     "agents",
+    "auth",
     "cases",
     "graders",
     "projects",

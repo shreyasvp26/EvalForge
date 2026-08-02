@@ -38,6 +38,7 @@ export {
   LayoutDashboard,
   Loader2,
   Lock,
+  LogOut,
   Menu,
   Monitor,
   Moon,
@@ -53,6 +54,7 @@ export {
   Sun,
   Terminal,
   Trash2,
+  User,
   X,
   XCircle,
 } from "lucide-react";

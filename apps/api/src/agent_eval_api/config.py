@@ -38,10 +38,28 @@ class ApiSettings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("JWT_AUDIENCE"),
     )
+    jwt_access_token_ttl_seconds: int = Field(
+        default=3600,
+        ge=60,
+        le=86_400,
+        validation_alias=AliasChoices("JWT_ACCESS_TOKEN_TTL_SECONDS"),
+    )
     # Escape hatch for local scripts only — prefer JWT in all environments.
     auth_dev_accept_bearer_as_actor_id: bool = Field(
         default=False,
         validation_alias=AliasChoices("AUTH_DEV_ACCEPT_BEARER_AS_ACTOR_ID"),
+    )
+    auth_bootstrap_email: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("AUTH_BOOTSTRAP_EMAIL"),
+    )
+    auth_bootstrap_password: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("AUTH_BOOTSTRAP_PASSWORD"),
+    )
+    auth_bootstrap_display_name: str = Field(
+        default="EvalForge Admin",
+        validation_alias=AliasChoices("AUTH_BOOTSTRAP_DISPLAY_NAME"),
     )
     metrics_enabled: bool = Field(
         default=True,

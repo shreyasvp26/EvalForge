@@ -33,6 +33,7 @@ from agent_eval_api.routers import health, metrics, system, v1_root
 from agent_eval_api.routers.v1 import (
     adapters,
     agents,
+    auth,
     cases,
     graders,
     projects,
@@ -124,6 +125,7 @@ def create_app(
     app.include_router(metrics.router)
     app.include_router(v1_root.router)
     app.include_router(system.router)
+    app.include_router(auth.router)
     app.include_router(projects.router)
     app.include_router(suites.router)
     app.include_router(cases.router)

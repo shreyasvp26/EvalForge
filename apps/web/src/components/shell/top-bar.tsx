@@ -4,6 +4,7 @@ import { IconButton, Menu, Search, Text } from "@agent-eval/ui";
 
 import type { ReactNode } from "react";
 
+import { UserMenu } from "@/components/shell/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function TopBar({
@@ -55,6 +56,7 @@ export function TopBar({
         ?
       </button>
       <ThemeToggle />
+      <UserMenu />
     </header>
   );
 }
