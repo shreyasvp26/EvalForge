@@ -37,6 +37,20 @@ export function clearAccessToken(): void {
   document.cookie = `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
+/** Epoch ms when the stored access token expires, or null if unknown/absent. */
+export function readTokenExpiresAt(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(EXPIRES_AT_KEY);
+    if (!raw) return null;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 export function hasSessionCookie(cookieHeader: string | null | undefined): boolean {
   if (!cookieHeader) return false;
   return cookieHeader.split(";").some((part) => part.trim().startsWith(`${SESSION_COOKIE}=`));
