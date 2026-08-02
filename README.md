@@ -6,14 +6,16 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 
 ## Current status
 
-| Phase                                                | Status      |
-| ---------------------------------------------------- | ----------- |
-| Phase 0 — Repository foundation                      | Complete    |
-| Engineering foundation (tooling, shared libs, tests) | Complete    |
-| Domain layer                                         | Complete    |
-| Application layer                                    | Complete    |
-| Infrastructure layer                                 | In progress |
-| API / workers                                        | Next        |
+| Phase                                                | Status   |
+| ---------------------------------------------------- | -------- |
+| Phase 0 — Repository foundation                      | Complete |
+| Engineering foundation (tooling, shared libs, tests) | Complete |
+| Domain layer                                         | Complete |
+| Application layer                                    | Complete |
+| Infrastructure layer                                 | Complete |
+| Execution workers / engine                           | Complete |
+| FastAPI Control Plane (`apps/api`)                   | Complete |
+| Adapters / Graders / Web                             | Next     |
 
 ## Repository layout
 
@@ -82,12 +84,14 @@ uv run pytest
 
 **Python**
 
-| Package                                         | Role                                                         |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| `agent-eval-shared` (`shared/`)                 | Errors, settings, structlog, utilities                       |
-| `agent-eval-domain` (`domain/`)                 | Aggregates, invariants, domain events, repository ports      |
-| `agent-eval-application` (`application/`)       | Use cases, UoW, auth/queue/event ports, DTOs                 |
-| `agent-eval-infrastructure` (`infrastructure/`) | Adapters for Domain/Application ports (scaffold in progress) |
+| Package                                         | Role                                                    |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `agent-eval-shared` (`shared/`)                 | Errors, settings, structlog, utilities                  |
+| `agent-eval-domain` (`domain/`)                 | Aggregates, invariants, domain events, repository ports |
+| `agent-eval-application` (`application/`)       | Use cases, UoW, auth/queue/event ports, DTOs            |
+| `agent-eval-infrastructure` (`infrastructure/`) | Adapters for Domain/Application ports + composition     |
+| `agent-eval-workers` (`workers/`)               | Execution Engine host, lifecycle, event pipeline        |
+| `agent-eval-api` (`apps/api`)                   | FastAPI Control Plane over Application use cases        |
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.
 

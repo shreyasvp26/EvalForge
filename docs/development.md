@@ -53,10 +53,10 @@ Load Python settings via `agent_eval_shared.config.load_settings` /
 
 ## Testing
 
-| Layer           | Tool   | Location                                                                        |
-| --------------- | ------ | ------------------------------------------------------------------------------- |
-| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                    |
-| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/` |
+| Layer           | Tool   | Location                                                                                                             |
+| --------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
+| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                                                         |
+| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/`, `workers/tests/`, `apps/api/tests/` |
 
 Run everything with `pnpm test`. Coverage: `pnpm test:coverage`.
 
@@ -135,6 +135,21 @@ Python package: `workers/` → `agent_eval_workers`.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
 - Prefer `uv run pytest workers/tests` for worker-only feedback.
+
+## API Layer / Control Plane
+
+Python package: `apps/api/` → `agent_eval_api`.
+
+- FastAPI Control Plane: authenticate, validate request shape, invoke
+  Application use cases, serialize DTOs, map errors to HTTP.
+- Composition root: `build_api_container()` wires Application ← Infrastructure
+  ← Configuration. Routers consume `ApplicationServices` only.
+- **Must not** import Domain entities into routers, open SQLAlchemy sessions,
+  touch Redis/S3, or contain business rules.
+- Auth boundary: Bearer → `Actor`; authorization policy remains Application
+  (`AllowAllAuthorization` stub until real policies land).
+- Prefer `uv run pytest apps/api/tests` for API-only feedback (Application
+  services are mocked — never a live database).
 
 ## What does not belong in foundation packages
 
