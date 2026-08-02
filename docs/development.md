@@ -94,6 +94,10 @@ Python package: `application/` → `agent_eval_application`.
 - **Must not** import FastAPI, SQLAlchemy, Redis, Celery, HTTP, or JSON
   transport concerns.
 - Business rules stay in Domain; Application coordinates aggregates and commits.
+- **Read surface:** list/get use cases for Projects, Suites, Cases, Agents,
+  Adapters, Graders, and Runs, plus Run nested reads (`GetRunEvents`,
+  `GetRunArtifacts`, `GetRunScores`). Returns frozen DTOs only. Future REST
+  routers must call these use cases — never Domain repositories directly.
 - Prefer `uv run pytest application/tests` for application-only feedback
   (ports are mocked — never a real database or broker).
 
@@ -143,7 +147,8 @@ Python package: `apps/api/` → `agent_eval_api`.
 - **Phase 6A (foundation):** FastAPI factory, lifespan, composition root,
   Bearer auth boundary, correlation/timing/request-logging middleware,
   centralized error mapping, OpenAPI, health/readiness, `/v1` root.
-- **Phase 6B (next):** business resource routers over Application use cases.
+- **Phase 6B (next):** business resource routers over the complete Application
+  read/write surface (no repository access from routers).
 - Composition root: `build_api_container()` / `build_application_services()`.
 - **Must not** import Domain entities into routers, open SQLAlchemy sessions,
   touch Redis/S3, or contain business rules.

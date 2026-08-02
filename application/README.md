@@ -39,7 +39,41 @@ agent_eval_application/
   errors.py       # Application errors + Domain error translation
 ```
 
+## Read surface
+
+Every future REST resource is served through Application query use cases that
+return frozen DTOs only (never Domain entities). Catalog and project reads:
+
+| Use case                           | Query                                   | Returns                           |
+| ---------------------------------- | --------------------------------------- | --------------------------------- |
+| `GetProject` / `ListProjects`      | `GetProjectQuery` / `ListProjectsQuery` | `ProjectDTO` / `list[ProjectDTO]` |
+| `GetSuite` / `ListSuitesByProject` | …                                       | `SuiteDTO` / `list[SuiteDTO]`     |
+| `GetCase` / `ListCasesByProject`   | …                                       | `CaseDTO` / `list[CaseDTO]`       |
+| `GetAgent` / `ListAgents`          | …                                       | `AgentDTO` / `list[AgentDTO]`     |
+| `GetAdapter` / `ListAdapters`      | …                                       | `AdapterDTO` / `list[AdapterDTO]` |
+| `GetGrader` / `ListGraders`        | …                                       | `GraderDTO` / `list[GraderDTO]`   |
+| `GetRun` / `ListRunsByProject`     | …                                       | `RunDTO` / `list[RunDTO]`         |
+
+Run nested reads (owned by the Run aggregate; no separate event/artifact repos):
+
+| Use case          | Query                  | Returns                   |
+| ----------------- | ---------------------- | ------------------------- |
+| `GetRunEvents`    | `GetRunEventsQuery`    | `list[ExecutionEventDTO]` |
+| `GetRunArtifacts` | `GetRunArtifactsQuery` | `list[ArtifactDTO]`       |
+| `GetRunScores`    | `GetRunScoresQuery`    | `list[ScoreDTO]`          |
+
+`ListProjects` filters by `ensure_can_access_project` per row. Platform catalog
+lists (`ListAgents` / `ListAdapters` / `ListGraders`) gate on
+`ensure_can_create_project`. Run nested reads authorize via the Run's pinned
+`project_id`.
+
+Repository support for catalog/project listing: Domain `list_all()` on
+`ProjectRepository`, `AgentRepository`, `AdapterRepository`, and
+`GraderRepository` (Infrastructure + in-memory test fakes implement it).
+
 ## Testing
 
 Unit tests mock ports (Unit of Work, repositories, dispatcher, queue). They
 never touch a real database or broker. Prefer `uv run pytest application/tests`.
+In-memory harness: `SharedStore`, `InMemoryUnitOfWorkFactory`, auth fakes in
+`tests/fakes.py`. Read-query coverage lives in `tests/test_read_queries.py`.
