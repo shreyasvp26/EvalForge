@@ -98,7 +98,7 @@ uv run pytest
 | `agent-eval-workers` (`workers/`)               | Execution Engine host, lifecycle, event pipeline        |
 | `agent-eval-sandbox` (`sandbox/`)               | Isolated Docker sandbox runtime (no orchestration)      |
 | `agent-eval-adapters` (`adapters/`)             | Adapter SDK + Claude Code (NDM translation only)        |
-| `agent-eval-graders` (`graders/`)               | Grader SDK + objective graders (Domain Scores only)     |
+| `agent-eval-graders` (`graders/`)               | Grader SDK + objective + rubric graders (Domain Scores) |
 | `agent-eval-api` (`apps/api`)                   | FastAPI Control Plane over Application use cases        |
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.

@@ -183,10 +183,15 @@ Python package: `graders/` → `agent_eval_graders`.
 - **Objective graders:** BuildSuccess, ExitCode, TestPass, Lint,
   ExpectedFile, DiffValidation, JSONOutput — deterministic reads of
   recorded Execution Events / Artifacts only.
+- **Rubric graders:** `RubricGrader` + injectable `JudgeProvider` /
+  `MockJudgeProvider`; prompt builder (Run record + pinned rubric only);
+  strict response parser; rubric wording immutable per Grader Version.
+  No external LLM providers yet.
 - Produces immutable Domain `Score` / `ScoreValue` (pass/fail, numeric,
   reason, metadata, grader version, timestamps).
 - Sibling grader failures never affect each other (`run_graders_isolated`).
-- Depends on `domain` + `shared` only.
+- Depends on `domain` + `shared` only (rubric family uses the shared Grader
+  SDK; does not modify objective graders).
 - **Must not** import Application, Infrastructure, Workers, Execution
   Engine, Sandbox, Adapters, or FastAPI.
 - Prefer `uv run pytest graders/tests`.
