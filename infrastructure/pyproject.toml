@@ -1,0 +1,43 @@
+[project]
+name = "agent-eval-infrastructure"
+version = "0.0.0"
+description = "EvalForge Infrastructure Layer — adapters for Domain and Application ports"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "agent-eval-shared",
+  "agent-eval-domain",
+  "agent-eval-application",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["agent_eval_infrastructure"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/agent_eval_infrastructure" = "agent_eval_infrastructure"
+
+[tool.uv.sources]
+agent-eval-shared = { workspace = true }
+agent-eval-domain = { workspace = true }
+agent-eval-application = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [
+  "src",
+  "../application/src",
+  "../domain/src",
+  "../shared/src",
+  "tests",
+]
+addopts = ["-q", "--strict-markers"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+  "pytest-cov>=6.0.0",
+]

@@ -16,6 +16,7 @@ From Backend Architecture §5 / §11:
 
 - `domain` → `shared` only (and nothing else)
 - `application` → `domain` + `shared` only (never Infrastructure, FastAPI, SQLAlchemy, Redis, …)
+- `infrastructure` → `domain` + `application` + `shared` + concrete tech (SQLAlchemy, Redis, …)
 - `shared` → nothing else in the backend tree
 - Domain **must not** import config or logging modules
 - Application **must not** contain domain invariants or transport/persistence details
@@ -46,10 +47,10 @@ Service-specific schemas should **extend** the baseline, not replace it.
 
 ## Testing
 
-| Layer           | Tool   | Location                                               |
-| --------------- | ------ | ------------------------------------------------------ |
-| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`           |
-| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/` |
+| Layer           | Tool   | Location                                                                        |
+| --------------- | ------ | ------------------------------------------------------------------------------- |
+| TypeScript unit | Vitest | `*.test.ts` next to source or under `tests/`                                    |
+| Python unit     | pytest | `shared/tests/`, `domain/tests/`, `application/tests/`, `infrastructure/tests/` |
 
 Run everything with `pnpm test`. Coverage: `pnpm test:coverage`.
 
@@ -89,6 +90,17 @@ Python package: `application/` → `agent_eval_application`.
 - Business rules stay in Domain; Application coordinates aggregates and commits.
 - Prefer `uv run pytest application/tests` for application-only feedback
   (ports are mocked — never a real database or broker).
+
+## Infrastructure Layer
+
+Python package: `infrastructure/` → `agent_eval_infrastructure`
+(colocated with existing `docker/` and `scripts/` ops assets).
+
+- Implements Domain repository Protocols and Application ports.
+- Depends on `domain`, `application`, `shared`, and concrete technologies.
+- **Must not** contain Domain rules, authorization policy, grading, adapters,
+  or execution orchestration.
+- Prefer `uv run pytest infrastructure/tests` for infrastructure-only feedback.
 
 ## What does not belong in foundation packages
 
