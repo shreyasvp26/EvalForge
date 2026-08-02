@@ -6,8 +6,10 @@ import {
   Dialog,
   DialogContent,
   DialogTitleHidden,
+  FlaskConical,
   FolderKanban,
   Icon,
+  Layers,
   LogOut,
   Monitor,
   Moon,
@@ -16,7 +18,7 @@ import {
   Text,
 } from "@agent-eval/ui";
 import { Command } from "cmdk";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -52,10 +54,16 @@ export function CommandPalette({
   onOpenShortcuts,
 }: CommandPaletteProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { setTheme } = useTheme();
   const { logout } = useAuth();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const projectIdFromPath = useMemo(() => {
+    const match = /^\/projects\/([^/]+)/.exec(pathname);
+    return match?.[1] ?? null;
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) setQuery("");
@@ -130,6 +138,60 @@ export function CommandPalette({
       icon: Plus,
       run: () => {
         run("/projects?create=1");
+      },
+    },
+  ];
+
+  const suiteActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+    {
+      id: "open-suites",
+      label: "Open Suites",
+      icon: Layers,
+      run: () => {
+        if (projectIdFromPath) {
+          run(`/projects/${projectIdFromPath}/suites`);
+        } else {
+          run("/suites");
+        }
+      },
+    },
+    {
+      id: "create-suite",
+      label: "Create Suite",
+      icon: Plus,
+      run: () => {
+        if (projectIdFromPath) {
+          run(`/projects/${projectIdFromPath}/suites?create=1`);
+        } else {
+          run("/suites");
+        }
+      },
+    },
+  ];
+
+  const caseActions: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+    {
+      id: "open-cases",
+      label: "Open Cases",
+      icon: FlaskConical,
+      run: () => {
+        if (projectIdFromPath) {
+          run(`/projects/${projectIdFromPath}/cases`);
+        } else {
+          run("/cases");
+        }
+      },
+    },
+    {
+      id: "create-case",
+      label: "Create Case",
+      icon: Plus,
+      run: () => {
+        if (projectIdFromPath) {
+          run(`/projects/${projectIdFromPath}/cases?create=1`);
+        } else {
+          run("/cases");
+        }
       },
     },
   ];
@@ -232,6 +294,48 @@ export function CommandPalette({
                 Projects
               </Text>
               {projectActions
+                .filter((action) => fuzzyScore(query, action.label) > 0)
+                .map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.label}
+                    onSelect={() => {
+                      action.run();
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--ef-radius-control)] px-2 py-2 text-[length:var(--ef-text-body)] text-popover-foreground aria-selected:bg-muted"
+                  >
+                    <Icon icon={action.icon} size="sm" aria-hidden />
+                    {action.label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
+
+            <Command.Group heading="Suites" className="mb-2">
+              <Text variant="table" className="px-2 py-1.5">
+                Suites
+              </Text>
+              {suiteActions
+                .filter((action) => fuzzyScore(query, action.label) > 0)
+                .map((action) => (
+                  <Command.Item
+                    key={action.id}
+                    value={action.label}
+                    onSelect={() => {
+                      action.run();
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-[var(--ef-radius-control)] px-2 py-2 text-[length:var(--ef-text-body)] text-popover-foreground aria-selected:bg-muted"
+                  >
+                    <Icon icon={action.icon} size="sm" aria-hidden />
+                    {action.label}
+                  </Command.Item>
+                ))}
+            </Command.Group>
+
+            <Command.Group heading="Cases" className="mb-2">
+              <Text variant="table" className="px-2 py-1.5">
+                Cases
+              </Text>
+              {caseActions
                 .filter((action) => fuzzyScore(query, action.label) > 0)
                 .map((action) => (
                   <Command.Item
