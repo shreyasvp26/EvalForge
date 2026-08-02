@@ -1,22 +1,17 @@
 # API documentation
 
-## Control Plane foundation (Phase 6A)
+## Control Plane REST API (Phase 6B)
 
 The public HTTP API for EvalForge lives in `apps/api` (`agent_eval_api`).
 
-**Phase 6A** delivers the Control Plane foundation only:
+**Phase 6A** delivered the foundation (factory, DI, middleware, errors, auth
+boundary, health, OpenAPI).
 
-- Application factory + lifespan
-- Composition root / DI
-- Middleware (correlation, timing, structured request logging)
-- Exception mapping
-- Authentication boundary
-- OpenAPI
-- Health / readiness
-- Versioned `/v1` root
+**Phase 6B** exposes the Application layer over versioned REST:
 
-**Phase 6B** adds business resource endpoints (Projects, Suites, Cases, Agents,
-Graders, Runs).
+- Projects, Suites, Cases, Prompt Versions, Case Versions
+- Agents, Adapters, Graders
+- Runs + nested Events, Artifacts, Scores
 
 Architecture authorities:
 
@@ -31,7 +26,7 @@ Implementation README: [`apps/api/README.md`](../../apps/api/README.md)
 2. Timing recorded (`X-Request-Duration-Ms`)
 3. Structured request log (method, path, status, duration)
 4. Bearer authentication → `Actor` (except health probes)
-5. Router → Application use case (from Phase 6B)
+5. Router builds Command/Query → Application use case → Pydantic response
 6. Error envelope on failure (no stack traces)
 
 ## Error envelope
@@ -47,10 +42,11 @@ Implementation README: [`apps/api/README.md`](../../apps/api/README.md)
 }
 ```
 
-## Out of scope until later
+## Remaining after Phase 6
 
-- Business CRUD routes (Phase 6B)
 - Real JWT / OAuth verification
-- Project-scoped authorization policies
+- Project-scoped authorization policies (beyond `AllowAllAuthorization`)
 - SSE run progress
 - Cursor pagination
+- Audit log endpoints
+- Score cross-run queries by Grader

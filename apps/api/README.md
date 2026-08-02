@@ -1,20 +1,22 @@
 # agent-eval-api
 
-EvalForge **Control Plane** — FastAPI HTTP foundation (Phase 6A).
+EvalForge **Control Plane** — FastAPI REST API (Phase 6B).
 
-## Scope (Phase 6A)
+## Scope
 
-Foundation only. **No business resource endpoints yet** (Projects, Suites,
-Cases, Agents, Graders, Runs arrive in Phase 6B).
+Versioned business resource endpoints over Application use cases. Routers
+construct Commands/Queries, invoke use cases, map DTOs → Pydantic schemas, and
+return HTTP responses. They never touch repositories, SQLAlchemy, Redis, or
+Domain entities.
 
 | Owns                                              | Must NOT do                                    |
 | ------------------------------------------------- | ---------------------------------------------- |
-| Application factory, lifespan, OpenAPI            | Business CRUD routes                           |
+| Application factory, lifespan, OpenAPI            | Business rules / Domain invariants             |
 | Composition root + Application use-case factories | SQLAlchemy / Redis / S3 in routers             |
 | Bearer → `Actor` auth boundary                    | Authorization _policy_ (Application owns that) |
 | Correlation, timing, structured request logging   | Domain entities in routers                     |
 | Centralized error → HTTP mapping                  | Instantiating repositories in handlers         |
-| Health / readiness                                |                                                |
+| Health / readiness + `/v1` business resources     | Exposing Application DTOs directly             |
 
 ## Package layout
 
@@ -27,8 +29,11 @@ agent_eval_api/
   errors.py            # Consistent error schema / handlers
   auth/                # Bearer verification + AllowAllAuthorization
   middleware/          # Correlation, timing, request logging
-  schemas/             # Health / error shapes
-  routers/             # health, /v1 root, system
+  schemas/             # Pydantic request/response models
+  routers/
+    health.py, system.py, v1_root.py
+    v1/                # projects, suites, cases, prompts, agents,
+                       # adapters, graders, runs
 ```
 
 ## Request flow
@@ -39,37 +44,36 @@ Client
   → Timing middleware (X-Request-Duration-Ms)
   → Structured request logging
   → Auth boundary (Bearer → Actor)   # except /health/*
-  → Router (foundation only in 6A)
-  → Application services (wired; used from 6B)
+  → Router (Command/Query + schema map)
+  → Application use case
 ```
 
-## Dependency injection
+## API surface (v1)
 
-`build_api_container()`:
+| Resource        | Collection                     | Nested / actions                                 |
+| --------------- | ------------------------------ | ------------------------------------------------ |
+| Projects        | `GET/POST /v1/projects`        | get, rename (PATCH), settings (PATCH), deprecate |
+| Suites          | `GET/POST /v1/suites`          | versions, publish, retire, deprecate             |
+| Cases           | `GET/POST /v1/cases`           | versions, publish, deprecate                     |
+| Prompt Versions | under `/v1/cases/{id}/prompts` | draft + publish                                  |
+| Agents          | `GET/POST /v1/agents`          | versions + publish                               |
+| Adapters        | `GET/POST /v1/adapters`        | get, versions + publish                          |
+| Graders         | `GET/POST /v1/graders`         | versions + publish                               |
+| Runs            | `GET/POST /v1/runs`            | cancel; nested `events`, `artifacts`, `scores`   |
 
-1. Load `ApiSettings` + `build_infrastructure(...)`
-2. Attach `AllowAllAuthorization` (real Project-scoped policy is TODO)
-3. `build_application_services(...)` constructs use cases from Infrastructure ports
-4. Lifespan stores `ApiContainer` on `app.state` and disposes on shutdown
+Creates return **201**. State transitions (deprecate / publish / cancel) use
+**POST**. Lists return `{ items, count }`.
 
-Routers must never open repositories or sessions — only consume
-`ApplicationServices` via Depends (Phase 6B).
+## Idempotency
 
-## Health
+`Idempotency-Key` header on resource-creating POSTs (`projects`, `suites`,
+`cases`, `agents`, `adapters`, `graders`, `runs`). Forwarded to Application
+`idempotency_key` — never accepted in the JSON body.
 
-| Endpoint            | Auth | Purpose                                      |
-| ------------------- | ---- | -------------------------------------------- |
-| `GET /health/live`  | no   | Process up                                   |
-| `GET /health/ready` | no   | Composition present + Infrastructure healthy |
-
-## Versioned root
-
-`GET /v1` — foundation marker. Business paths under `/v1/...` land in 6B.
-`GET /v1/system/info` — authenticated process metadata.
-
-## Auth (boundary only)
+## Auth
 
 `Authorization: Bearer <actor-id>` (dev: token value is the Actor id).
+Authorization policy remains in Application (`AllowAllAuthorization` for now).
 
 ## Run locally
 
@@ -85,5 +89,5 @@ uv run evalforge-api
 uv run pytest apps/api/tests
 ```
 
-Foundation tests mock Infrastructure via `FakeContainer` where appropriate;
-DI tests exercise `build_infrastructure(profile=MEMORY)`.
+Tests use `TestClient` + `FakeContainer` / mocked `ApplicationServices` — no
+real database.

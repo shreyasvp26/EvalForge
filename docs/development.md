@@ -144,11 +144,13 @@ Python package: `workers/` → `agent_eval_workers`.
 
 Python package: `apps/api/` → `agent_eval_api`.
 
-- **Phase 6A (foundation):** FastAPI factory, lifespan, composition root,
-  Bearer auth boundary, correlation/timing/request-logging middleware,
-  centralized error mapping, OpenAPI, health/readiness, `/v1` root.
-- **Phase 6B (next):** business resource routers over the complete Application
-  read/write surface (no repository access from routers).
+- **Phase 6A:** FastAPI factory, lifespan, composition root, Bearer auth
+  boundary, correlation/timing/request-logging middleware, centralized error
+  mapping, OpenAPI, health/readiness, `/v1` root.
+- **Phase 6B:** versioned business routers under `routers/v1/` for Projects,
+  Suites, Cases, Prompt/Case Versions, Agents, Adapters, Graders, Runs, and
+  nested Run Events / Artifacts / Scores. Routers map Pydantic schemas ↔
+  Application Commands/Queries/DTOs only.
 - Composition root: `build_api_container()` / `build_application_services()`.
 - **Must not** import Domain entities into routers, open SQLAlchemy sessions,
   touch Redis/S3, or contain business rules.
