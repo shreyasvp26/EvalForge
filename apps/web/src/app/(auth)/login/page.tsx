@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { GlobalLoading } from "@/components/patterns/global-loading";
 import { InlineError } from "@/components/patterns/inline-error";
+import { readUserPreferences } from "@/features/settings/preferences-store";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GuestOnly } from "@/lib/auth/guest-only";
@@ -17,9 +18,9 @@ const loginSchema = z.object({
 });
 
 function safeNextPath(raw: string | null): string {
-  if (!raw) return "/";
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
-  if (raw.startsWith("/login")) return "/";
+  if (!raw) return readUserPreferences().landingPage;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return readUserPreferences().landingPage;
+  if (raw.startsWith("/login")) return readUserPreferences().landingPage;
   return raw;
 }
 

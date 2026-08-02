@@ -76,9 +76,14 @@ export function UserMenu() {
           </Text>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled className="gap-2 opacity-70">
+        <DropdownMenuItem
+          className="gap-2"
+          onSelect={() => {
+            router.push("/settings/profile");
+          }}
+        >
           <Icon icon={User} size="sm" aria-hidden />
-          Account
+          Settings
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={signingOut}

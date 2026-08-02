@@ -7,12 +7,21 @@ import {
   LayoutDashboard,
   Layers,
   Play,
+  Settings,
 } from "@agent-eval/ui";
 
 import type { LucideIcon } from "@agent-eval/ui";
 
 export type NavHref =
-  "/" | "/projects" | "/suites" | "/cases" | "/runs" | "/agents" | "/graders" | "/design-system";
+  | "/"
+  | "/projects"
+  | "/suites"
+  | "/cases"
+  | "/runs"
+  | "/agents"
+  | "/graders"
+  | "/settings"
+  | "/design-system";
 
 export interface NavItem {
   href: NavHref;
@@ -86,6 +95,12 @@ export const navSections: NavSection[] = [
     id: "system",
     label: "System",
     items: [
+      {
+        href: "/settings",
+        label: "Settings",
+        icon: Settings,
+        keywords: ["settings", "preferences", "profile", "account", "api", "about"],
+      },
       {
         href: "/design-system",
         label: "Design system",
@@ -198,6 +213,25 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       return crumbs;
     }
     crumbs.push({ label: "Run" });
+    return crumbs;
+  }
+
+  const settingsMatch = /^\/settings(?:\/(.*))?$/.exec(pathname);
+  if (settingsMatch) {
+    const rest = settingsMatch[1] ?? "";
+    if (rest === "") {
+      crumbs.push({ label: "Settings" });
+      return crumbs;
+    }
+    crumbs.push({ label: "Settings", href: "/settings" });
+    const labels: Record<string, string> = {
+      profile: "Profile",
+      account: "Account",
+      preferences: "Preferences",
+      api: "API",
+      about: "About",
+    };
+    crumbs.push({ label: labels[rest] ?? "Page" });
     return crumbs;
   }
 

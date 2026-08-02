@@ -25,7 +25,7 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | Production Hardening (Phase 14)                         | Complete    |
 | Phase 15A — Frontend design system foundation           | Complete    |
 | Phase 15B — Product UX foundation                       | Complete    |
-| Phase 16 — Product implementation (Projects → Overview) | In progress |
+| Phase 16 — Product implementation (Projects → Settings) | In progress |
 | Additional adapters / remaining product CRUD UI         | Later       |
 
 ## Repository layout

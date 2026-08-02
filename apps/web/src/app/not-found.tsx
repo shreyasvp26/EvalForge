@@ -9,11 +9,16 @@ export default function NotFound() {
       <NotFoundState
         resourceLabel="page"
         title="Page not found"
-        description="That route is not part of the EvalForge shell yet — or the URL is wrong."
+        description="That route is not part of EvalForge — or the URL is wrong."
         action={
-          <Button asChild variant="secondary">
-            <Link href="/">Back to projects</Link>
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button asChild>
+              <Link href="/">Back to Overview</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/projects">Open Projects</Link>
+            </Button>
+          </div>
         }
       />
     </div>
