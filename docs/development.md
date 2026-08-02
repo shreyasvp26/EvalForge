@@ -177,10 +177,14 @@ Python package: `adapters/` → `agent_eval_adapters`.
 - **Claude Code Adapter:** observes `--output-format stream-json`, maps tool
   calls / file edits / shell / stdout / completion / errors; supports
   cancellation and timeout between stream lines.
+- **Additional production adapters (Phase 13):** Cursor (`agent`), Codex CLI
+  (`codex exec --json`), Gemini CLI (`gemini --output-format stream-json`),
+  and Aider (`aider --message`) — same Adapter SDK lifecycle and NDM
+  translation contract; injectable `stream_source` for mocked tests.
 - Depends on `domain` (NDM), `shared`, and `sandbox` only.
 - **Must not** import Application, Infrastructure, Workers, Execution Engine,
   Graders, or FastAPI.
-- Prefer `uv run pytest adapters/tests` (mocked Sandbox only).
+- Prefer `uv run pytest adapters/tests` (mocked Sandbox / streams only).
 - See `adapters/README.md`.
 
 ## Grader Layer
