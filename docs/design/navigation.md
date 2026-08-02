@@ -54,9 +54,10 @@ Groups:
 
 1. **Recent** — recent pages
 2. **Navigate** — fuzzy match over labels, hrefs, keywords
-3. **Appearance** — Light / Dark / System
-4. **Account** — Sign out
-5. **Help** — open keyboard shortcuts
+3. **Projects** — Open Projects, Create Project
+4. **Appearance** — Light / Dark / System
+5. **Account** — Sign out
+6. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -68,6 +69,13 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Product routes under `(shell)` are gated by `RequireAuth` + Next.js middleware (session cookie presence).
 - JWT access token persists in `localStorage`; session presence cookie `evalforge.auth` enables middleware redirects.
 - Top-bar **UserMenu** and command palette **Sign out** clear the session.
+
+## Projects
+
+- Canonical list route: `/projects` (`/` redirects here).
+- Detail: `/projects/[projectId]`; settings: `/projects/[projectId]/settings`.
+- Sidebar Projects item stays active for nested project routes.
+- Command palette: **Open Projects**, **Create Project** (`/projects?create=1`).
 
 ## Keyboard shortcuts
 

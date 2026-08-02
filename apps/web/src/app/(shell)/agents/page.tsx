@@ -9,7 +9,7 @@ export default function AgentsPage() {
     <PageLayout>
       <PageHeader
         breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Agents" }]} />
+          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Agents" }]} />
         }
         title="Agents"
         description="Adapter and agent registry screens arrive in a later phase."

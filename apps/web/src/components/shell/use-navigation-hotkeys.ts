@@ -71,7 +71,7 @@ export function useNavigationHotkeys({
 
       if (chordRef.current === "g") {
         event.preventDefault();
-        if (key === "p") router.push("/");
+        if (key === "p") router.push("/projects");
         if (key === "r") router.push("/runs");
         if (key === "a") router.push("/agents");
         clearChord();

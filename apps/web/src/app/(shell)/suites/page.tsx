@@ -9,7 +9,7 @@ export default function SuitesPage() {
     <PageLayout>
       <PageHeader
         breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Suites" }]} />
+          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Suites" }]} />
         }
         title="Suites"
         description="Suite management arrives with product CRUD."

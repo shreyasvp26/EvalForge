@@ -8,7 +8,9 @@ export default function RunsPage() {
   return (
     <PageLayout>
       <PageHeader
-        breadcrumbs={<Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Runs" }]} />}
+        breadcrumbs={
+          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Runs" }]} />
+        }
         title="Runs"
         description="Execution history and run detail screens arrive with product CRUD."
       />
