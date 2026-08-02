@@ -7,6 +7,7 @@ from agent_eval_api.routers.v1 import (
     graders,
     projects,
     prompts,
+    runs,
     suites,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "graders",
     "projects",
     "prompts",
+    "runs",
     "suites",
 ]

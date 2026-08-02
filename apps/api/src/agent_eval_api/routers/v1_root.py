@@ -1,4 +1,4 @@
-"""Versioned API root — business resources land in Phase 6B."""
+"""Versioned API root."""
 
 from __future__ import annotations
 
@@ -12,6 +12,6 @@ def api_root() -> dict[str, str]:
     """Version marker for the Control Plane API surface."""
     return {
         "api_version": "v1",
-        "status": "foundation",
-        "message": "Business resources arrive in Phase 6B",
+        "status": "ok",
+        "message": "EvalForge Control Plane REST API",
     }

@@ -1,7 +1,7 @@
 """FastAPI Control Plane application factory and process entrypoint.
 
-Phase 6A: foundation only — health, DI, middleware, errors, auth boundary.
-Business resource routers arrive in Phase 6B.
+Phase 6B: foundation (6A) plus versioned business resource routers over
+Application use cases only.
 """
 
 from __future__ import annotations
@@ -20,6 +20,16 @@ from agent_eval_api.middleware.correlation import CorrelationIdMiddleware
 from agent_eval_api.middleware.logging import RequestLoggingMiddleware
 from agent_eval_api.middleware.timing import RequestTimingMiddleware
 from agent_eval_api.routers import health, system, v1_root
+from agent_eval_api.routers.v1 import (
+    adapters,
+    agents,
+    cases,
+    graders,
+    projects,
+    prompts,
+    runs,
+    suites,
+)
 
 
 def create_app(
@@ -66,8 +76,9 @@ def create_app(
         redoc_url="/redoc",
         openapi_url="/openapi.json",
         description=(
-            "EvalForge Control Plane foundation (Phase 6A). "
-            "Business resource endpoints arrive in Phase 6B."
+            "EvalForge Control Plane REST API (v1). "
+            "Routers invoke Application use cases only — "
+            "never repositories or Domain entities."
         ),
     )
     # Starlette applies middleware LIFO: correlation (outer) → timing → logging (inner).
@@ -79,6 +90,14 @@ def create_app(
     app.include_router(health.router)
     app.include_router(v1_root.router)
     app.include_router(system.router)
+    app.include_router(projects.router)
+    app.include_router(suites.router)
+    app.include_router(cases.router)
+    app.include_router(prompts.router)
+    app.include_router(agents.router)
+    app.include_router(adapters.router)
+    app.include_router(graders.router)
+    app.include_router(runs.router)
 
     return app
 
