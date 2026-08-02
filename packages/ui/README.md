@@ -10,7 +10,7 @@ This package owns:
 - Typography primitives (`Heading`, `Text`)
 - Motion primitives
 - Form controls, tables, feedback, overlays, charts
-- `<Icon />` wrapper
+- `<Icon />` wrapper and curated Lucide re-exports
 
 It must **never** contain EvalForge domain components (`RunCard`, `ProjectCard`, `ScorePanel`, etc.). Those live in `apps/web`.
 
@@ -19,9 +19,13 @@ See [docs/design/design-principles.md](../../docs/design/design-principles.md) a
 ## Usage
 
 ```ts
-import { cn } from "@agent-eval/ui";
+import { cn, Heading, Text, Icon, Search } from "@agent-eval/ui";
 import "@agent-eval/ui/styles.css";
 ```
+
+## Fonts
+
+Geist Sans / Geist Mono are loaded in `apps/web` via `geist/font` and expose `--font-geist-sans` / `--font-geist-mono`. Tokens reference those variables.
 
 ## Storybook
 

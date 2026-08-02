@@ -1,20 +1,39 @@
 /**
- * EvalForge design tokens (Phase 15A bootstrap).
- * Full semantic palette lands in the tokens milestone — this file establishes
- * the CSS variable contract and light/dark scaffolding.
+ * EvalForge design tokens
+ * Source of truth: docs/design/design-principles.md
  */
 
 :root {
   color-scheme: light;
 
+  /* Typography */
   --ef-font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --ef-font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --ef-radius-control: 8px;
-  --ef-radius-panel: 10px;
-  --ef-radius-dialog: 12px;
-  --ef-radius-pill: 9999px;
+  --ef-text-display: 2.25rem;
+  --ef-text-display-leading: 2.5rem;
+  --ef-text-page: 1.5rem;
+  --ef-text-page-leading: 2rem;
+  --ef-text-section: 1.125rem;
+  --ef-text-section-leading: 1.75rem;
+  --ef-text-card: 0.9375rem;
+  --ef-text-card-leading: 1.375rem;
+  --ef-text-body: 0.875rem;
+  --ef-text-body-leading: 1.375rem;
+  --ef-text-secondary: 0.875rem;
+  --ef-text-secondary-leading: 1.375rem;
+  --ef-text-caption: 0.75rem;
+  --ef-text-caption-leading: 1.125rem;
+  --ef-text-code: 0.8125rem;
+  --ef-text-code-leading: 1.25rem;
+  --ef-text-table: 0.75rem;
+  --ef-text-table-leading: 1rem;
 
+  --ef-font-weight-regular: 400;
+  --ef-font-weight-medium: 500;
+  --ef-font-weight-semibold: 600;
+
+  /* Spacing: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 */
   --ef-space-1: 4px;
   --ef-space-2: 8px;
   --ef-space-3: 12px;
@@ -24,42 +43,126 @@
   --ef-space-7: 48px;
   --ef-space-8: 64px;
 
+  /* Radii */
+  --ef-radius-control: 8px;
+  --ef-radius-panel: 10px;
+  --ef-radius-dialog: 12px;
+  --ef-radius-pill: 9999px;
+
+  /* Motion */
   --ef-duration-fast: 150ms;
   --ef-duration-normal: 200ms;
   --ef-duration-slow: 250ms;
   --ef-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ef-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
 
-  --ef-background: #fafafa;
+  /* Elevation — intentionally subtle */
+  --ef-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04);
+  --ef-shadow-md: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.04);
+
+  /* Z-index */
+  --ef-z-dropdown: 50;
+  --ef-z-sticky: 100;
+  --ef-z-overlay: 200;
+  --ef-z-modal: 300;
+  --ef-z-toast: 400;
+  --ef-z-command: 500;
+
+  /* Surfaces & text */
+  --ef-background: #f7f7f8;
   --ef-foreground: #111113;
-  --ef-muted: #f0f0f2;
+  --ef-muted: #efeff1;
   --ef-muted-foreground: #63636e;
-  --ef-border: #e4e4e8;
-  --ef-ring: #5b6b7c;
-  --ef-accent: #3d4f63;
-  --ef-accent-foreground: #fafafa;
+  --ef-border: #e2e2e7;
+  --ef-border-strong: #cfcfd6;
+  --ef-ring: #5c6b7c;
   --ef-card: #ffffff;
   --ef-card-foreground: #111113;
+  --ef-popover: #ffffff;
+  --ef-popover-foreground: #111113;
+  --ef-input: #ffffff;
+  --ef-input-foreground: #111113;
+
+  /* Accent — calm blue-gray, sparse use */
+  --ef-accent: #3f5164;
+  --ef-accent-foreground: #f7f7f8;
+  --ef-accent-muted: #e8eef3;
+
+  /* Semantic status */
+  --ef-success: #0f7a45;
+  --ef-success-foreground: #ffffff;
+  --ef-success-muted: #e3f6ec;
+  --ef-warning: #9a5b00;
+  --ef-warning-foreground: #ffffff;
+  --ef-warning-muted: #fff1d6;
   --ef-danger: #b42318;
-  --ef-success: #0f7b4a;
-  --ef-warning: #a15c07;
+  --ef-danger-foreground: #ffffff;
+  --ef-danger-muted: #fde8e6;
+  --ef-running: #2f5f9e;
+  --ef-running-foreground: #ffffff;
+  --ef-running-muted: #e4eef9;
+  --ef-queued: #5c6570;
+  --ef-queued-foreground: #ffffff;
+  --ef-queued-muted: #eceef1;
+  --ef-cancelled: #6b6b76;
+  --ef-cancelled-foreground: #ffffff;
+  --ef-cancelled-muted: #efeff1;
+  --ef-completed: #0f7a45;
+  --ef-completed-foreground: #ffffff;
+  --ef-completed-muted: #e3f6ec;
+  --ef-grading: #6b4f9a;
+  --ef-grading-foreground: #ffffff;
+  --ef-grading-muted: #f0eaf8;
 }
 
 .dark {
   color-scheme: dark;
 
-  --ef-background: #0a0a0b;
-  --ef-foreground: #f4f4f5;
+  --ef-background: #0b0b0c;
+  --ef-foreground: #f2f2f3;
   --ef-muted: #161618;
-  --ef-muted-foreground: #a1a1aa;
+  --ef-muted-foreground: #a0a0a8;
   --ef-border: #27272a;
+  --ef-border-strong: #3f3f46;
   --ef-ring: #8b9aab;
-  --ef-accent: #8b9aab;
-  --ef-accent-foreground: #0a0a0b;
   --ef-card: #111113;
-  --ef-card-foreground: #f4f4f5;
-  --ef-danger: #f97066;
+  --ef-card-foreground: #f2f2f3;
+  --ef-popover: #141416;
+  --ef-popover-foreground: #f2f2f3;
+  --ef-input: #111113;
+  --ef-input-foreground: #f2f2f3;
+
+  --ef-accent: #9aabbc;
+  --ef-accent-foreground: #0b0b0c;
+  --ef-accent-muted: #1a222b;
+
+  --ef-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --ef-shadow-md: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.35);
+
   --ef-success: #3dd68c;
+  --ef-success-foreground: #052e1c;
+  --ef-success-muted: #0f2a1c;
   --ef-warning: #fdb022;
+  --ef-warning-foreground: #3b2200;
+  --ef-warning-muted: #2e2108;
+  --ef-danger: #f97066;
+  --ef-danger-foreground: #3b0a06;
+  --ef-danger-muted: #2f1210;
+  --ef-running: #7eb6f0;
+  --ef-running-foreground: #0a1e33;
+  --ef-running-muted: #132235;
+  --ef-queued: #a1a1aa;
+  --ef-queued-foreground: #18181b;
+  --ef-queued-muted: #1c1c1f;
+  --ef-cancelled: #a1a1aa;
+  --ef-cancelled-foreground: #18181b;
+  --ef-cancelled-muted: #1c1c1f;
+  --ef-completed: #3dd68c;
+  --ef-completed-foreground: #052e1c;
+  --ef-completed-muted: #0f2a1c;
+  --ef-grading: #c4a8f0;
+  --ef-grading-foreground: #1f1233;
+  --ef-grading-muted: #221830;
 }
 
 @media (prefers-reduced-motion: reduce) {

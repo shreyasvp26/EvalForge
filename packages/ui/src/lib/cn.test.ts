@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cn } from "./cn.js";
+import { cn } from "./cn";
 
 describe("cn", () => {
   it("merges class names", () => {

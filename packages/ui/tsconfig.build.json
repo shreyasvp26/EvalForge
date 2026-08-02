@@ -5,6 +5,7 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "emitDeclarationOnly": true,
     "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
   },
   "exclude": ["src/**/*.{test,spec}.{ts,tsx}", "src/**/*.stories.{ts,tsx}", "dist", "node_modules"]

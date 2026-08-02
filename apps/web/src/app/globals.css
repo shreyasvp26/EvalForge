@@ -12,18 +12,49 @@
   --color-muted: var(--ef-muted);
   --color-muted-foreground: var(--ef-muted-foreground);
   --color-border: var(--ef-border);
+  --color-border-strong: var(--ef-border-strong);
   --color-ring: var(--ef-ring);
   --color-accent: var(--ef-accent);
   --color-accent-foreground: var(--ef-accent-foreground);
+  --color-accent-muted: var(--ef-accent-muted);
   --color-card: var(--ef-card);
   --color-card-foreground: var(--ef-card-foreground);
+  --color-popover: var(--ef-popover);
+  --color-popover-foreground: var(--ef-popover-foreground);
+  --color-input: var(--ef-input);
+  --color-input-foreground: var(--ef-input-foreground);
   --color-danger: var(--ef-danger);
+  --color-danger-foreground: var(--ef-danger-foreground);
+  --color-danger-muted: var(--ef-danger-muted);
   --color-success: var(--ef-success);
+  --color-success-foreground: var(--ef-success-foreground);
+  --color-success-muted: var(--ef-success-muted);
   --color-warning: var(--ef-warning);
+  --color-warning-foreground: var(--ef-warning-foreground);
+  --color-warning-muted: var(--ef-warning-muted);
+  --color-running: var(--ef-running);
+  --color-running-foreground: var(--ef-running-foreground);
+  --color-running-muted: var(--ef-running-muted);
+  --color-queued: var(--ef-queued);
+  --color-queued-foreground: var(--ef-queued-foreground);
+  --color-queued-muted: var(--ef-queued-muted);
+  --color-cancelled: var(--ef-cancelled);
+  --color-cancelled-foreground: var(--ef-cancelled-foreground);
+  --color-cancelled-muted: var(--ef-cancelled-muted);
+  --color-completed: var(--ef-completed);
+  --color-completed-foreground: var(--ef-completed-foreground);
+  --color-completed-muted: var(--ef-completed-muted);
+  --color-grading: var(--ef-grading);
+  --color-grading-foreground: var(--ef-grading-foreground);
+  --color-grading-muted: var(--ef-grading-muted);
 
   --radius-control: var(--ef-radius-control);
   --radius-panel: var(--ef-radius-panel);
   --radius-dialog: var(--ef-radius-dialog);
+  --radius-pill: var(--ef-radius-pill);
+
+  --shadow-ef-sm: var(--ef-shadow-sm);
+  --shadow-ef-md: var(--ef-shadow-md);
 }
 
 html,

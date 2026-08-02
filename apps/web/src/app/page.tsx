@@ -1,12 +1,16 @@
+import { Heading, Text } from "@agent-eval/ui";
+
 export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-full max-w-3xl flex-col justify-center gap-4 px-6 py-16">
-      <p className="font-mono text-sm text-muted-foreground">EvalForge</p>
-      <h1 className="text-3xl font-semibold tracking-tight text-foreground">Frontend foundation</h1>
-      <p className="max-w-prose text-muted-foreground">
-        Phase 15A bootstrap. The design system, app shell, and galleries land in subsequent
-        milestones. Product CRUD is intentionally out of scope.
-      </p>
+      <Text variant="caption" className="font-mono uppercase tracking-wide">
+        EvalForge
+      </Text>
+      <Heading variant="page">Frontend foundation</Heading>
+      <Text variant="secondary">
+        Phase 15A bootstrap. Design tokens, typography, and theme are in place. The app shell and
+        component library land next. Product CRUD remains out of scope.
+      </Text>
     </main>
   );
 }
