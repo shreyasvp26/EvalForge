@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase 16 Milestone 3 — Suites product experience: project-scoped list/create/detail, draft/publish/retire version management, read-only composition viewer, Suites index project picker, command-palette actions
 - Phase 16 Milestone 2 — Projects product experience: list (`/projects` DataGrid with search/sort), create dialog, detail overview, settings (rename / settings map / deprecate), navigation + command palette actions, React Query over Control Plane REST
 - Phase 16 Milestone 1 — Authentication experience: login/logout/me against JWT Control Plane, protected shell routes, session persistence, user menu
 - Phase 15B product UX foundation: product layouts (`PageLayout`, `PageHeader`, `Section`, `Toolbar`, `FilterBar`, `DetailLayout`, `SplitView`), domain-agnostic `DataGrid`, UX patterns (skeletons, empty/error/confirm), navigation polish (collapsible sidebar, ⌘K, shortcuts, breadcrumbs, mobile drawer), design docs + Storybook Docs MDX

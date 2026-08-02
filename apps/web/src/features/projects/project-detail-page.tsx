@@ -130,6 +130,9 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           actions={
             <Cluster gap={2}>
               <Button asChild variant="outline">
+                <Link href={`/projects/${project.id}/suites`}>Suites</Link>
+              </Button>
+              <Button asChild variant="outline">
                 <Link href={`/projects/${project.id}/settings`}>Settings</Link>
               </Button>
               {!isDeprecated ? (
@@ -264,6 +267,9 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
 
           <Section title="Quick actions" description="Common project operations.">
             <Cluster gap={2} className="flex-col items-stretch sm:items-start">
+              <Button asChild variant="outline" className="justify-start">
+                <Link href={`/projects/${project.id}/suites`}>Open suites</Link>
+              </Button>
               <Button asChild variant="outline" className="justify-start">
                 <Link href={`/projects/${project.id}/settings`}>Open settings</Link>
               </Button>
