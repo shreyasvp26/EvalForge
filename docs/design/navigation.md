@@ -8,7 +8,7 @@ Implementation: `apps/web/src/components/shell/`.
 
 ## Sidebar
 
-- Sections: **Workspace** (Projects, Suites, Cases, Runs, Agents, Graders) and **System** (Design system).
+- Sections: **Workspace** (Overview, Projects, Suites, Cases, Runs, Agents, Graders) and **System** (Design system).
 - Active item: muted background + inset accent bar + `aria-current="page"`.
 - Collapsible to icon rail (`lg+`); state persisted in `localStorage` (`evalforge.sidebar.collapsed`).
 - Section expand/collapse persisted (`evalforge.sidebar.sections`).
@@ -54,15 +54,16 @@ Groups:
 
 1. **Recent** — recent pages
 2. **Navigate** — fuzzy match over labels, hrefs, keywords
-3. **Projects** — Open Projects, Create Project
-4. **Suites** — Open Suites, Create Suite (project-aware when already in a project)
-5. **Cases** — Open Cases, Create Case (project-aware when already in a project)
-6. **Runs** — Open Runs, New Run
-7. **Agents** — Open Agents, Create Agent
-8. **Graders** — Open Graders, Create Grader
-9. **Appearance** — Light / Dark / System
-10. **Account** — Sign out
-11. **Help** — open keyboard shortcuts
+3. **Overview** — Open Overview
+4. **Projects** — Open Projects, Create Project
+5. **Suites** — Open Suites, Create Suite (project-aware when already in a project)
+6. **Cases** — Open Cases, Create Case (project-aware when already in a project)
+7. **Runs** — Open Runs, New Run
+8. **Agents** — Open Agents, Create Agent
+9. **Graders** — Open Graders, Create Grader
+10. **Appearance** — Light / Dark / System
+11. **Account** — Sign out
+12. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -74,10 +75,19 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Product routes under `(shell)` are gated by `RequireAuth` + Next.js middleware (session cookie presence).
 - JWT access token persists in `localStorage`; session presence cookie `evalforge.auth` enables middleware redirects.
 - Top-bar **UserMenu** and command palette **Sign out** clear the session.
+- Authenticated landing: `/` (Overview dashboard).
+
+## Overview
+
+- Canonical home route: `/` (no longer redirects to Projects).
+- Composes existing list APIs (projects, agents, graders; suites/cases/runs fan-out across recent projects).
+- Sections: platform summary, run activity, recent results, resource lists, quick actions; empty onboarding for new installs.
+- Chord shortcut: `G` then `H`.
+- Command palette: **Open Overview**.
 
 ## Projects
 
-- Canonical list route: `/projects` (`/` redirects here).
+- Canonical list route: `/projects`.
 - Detail: `/projects/[projectId]`; settings: `/projects/[projectId]/settings`.
 - Sidebar Projects item stays active for nested project routes.
 - Command palette: **Open Projects**, **Create Project** (`/projects?create=1`).
@@ -129,6 +139,7 @@ Ignored while focus is in inputs / contenteditable.
 | Shortcut        | Action                           |
 | --------------- | -------------------------------- |
 | `⌘K` / `Ctrl+K` | Toggle command palette           |
+| `G` then `H`    | Overview                         |
 | `G` then `P`    | Projects                         |
 | `G` then `R`    | Runs                             |
 | `G` then `A`    | Agents                           |
