@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+
+from agent_eval_shared.metrics import observe_grader_run
+from agent_eval_shared.tracing import start_span
 
 from agent_eval_graders.sdk.context import GradingContext
 from agent_eval_graders.sdk.exceptions import DuplicateScoreError, GraderError
@@ -81,9 +85,23 @@ def run_grader(
     sink: ScoreSink,
 ) -> GraderResult:
     """Run one complete Grader lifecycle against ``context``."""
-    driver = LifecycleDriver(grader=grader, sink=sink)
-    outcome = driver.run(context)
-    return GraderResult(outcome=outcome, scores=tuple(driver.scores))
+    started = time.perf_counter()
+    with start_span(
+        "grader.run",
+        tracer_name="evalforge.grader",
+        attributes={
+            "grader.id": context.grader_id.value,
+            "grader.version_id": context.grader_version_id.value,
+        },
+    ):
+        driver = LifecycleDriver(grader=grader, sink=sink)
+        outcome = driver.run(context)
+    result = GraderResult(outcome=outcome, scores=tuple(driver.scores))
+    observe_grader_run(
+        outcome=outcome.value,
+        duration_seconds=time.perf_counter() - started,
+    )
+    return result
 
 
 def run_graders_isolated(

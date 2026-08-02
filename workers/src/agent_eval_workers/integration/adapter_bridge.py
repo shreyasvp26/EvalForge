@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
@@ -19,6 +20,8 @@ from agent_eval_adapters.sdk.translator import DefaultTranslator, Translator
 from agent_eval_domain.common.ids import RunId
 from agent_eval_sandbox.manager import SandboxManager
 from agent_eval_sandbox.models import ExecutionRequest, ExecutionResult, SandboxHandle
+from agent_eval_shared.metrics import observe_adapter_run
+from agent_eval_shared.tracing import start_span
 
 from agent_eval_workers.cancellation.registry import InMemoryCancellationRegistry
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
@@ -153,51 +156,85 @@ class SdkAdapterBridge:
         if self.before_run is not None:
             self.before_run(run_id)
         if self.fail_on_run:
+            observe_adapter_run(outcome="failed", duration_seconds=0.0)
             raise RecoverableExecutionError(
                 f"Adapter failed for {run_id.value}",
                 cause=FailureCause.ADAPTER_FAILURE,
             )
         session = self._sessions.get(run_id.value)
         if session is None:
+            observe_adapter_run(outcome="failed", duration_seconds=0.0)
             raise RecoverableExecutionError(
                 f"Adapter run without start for {run_id.value}",
                 cause=FailureCause.ADAPTER_FAILURE,
             )
+        started = time.perf_counter()
         try:
-            for observation in session.adapter.stream(session.context):
-                session.observations.append(observation)
-                artifacts = tuple(
-                    session.translator.artifacts_for(observation, session.context)
-                )
-                artifact_ids = tuple(a.artifact_id for a in artifacts)
-                for artifact in artifacts:
-                    session.emitter.emit_artifact(artifact)
-                for event in session.translator.translate(observation, session.context):
-                    if artifact_ids and not event.artifact_ids:
-                        event = replace(event, artifact_ids=artifact_ids)
-                    session.emitter.emit_event(event)
-                progress = session.translator.progress_for(observation, session.context)
-                if progress is not None:
-                    session.emitter.emit_progress(progress)
+            with start_span(
+                "adapter.bridge.run",
+                tracer_name="evalforge.adapter",
+                attributes={"run.id": run_id.value},
+            ):
+                for observation in session.adapter.stream(session.context):
+                    session.observations.append(observation)
+                    artifacts = tuple(
+                        session.translator.artifacts_for(observation, session.context)
+                    )
+                    artifact_ids = tuple(a.artifact_id for a in artifacts)
+                    for artifact in artifacts:
+                        session.emitter.emit_artifact(artifact)
+                    for event in session.translator.translate(
+                        observation, session.context
+                    ):
+                        if artifact_ids and not event.artifact_ids:
+                            event = replace(event, artifact_ids=artifact_ids)
+                        session.emitter.emit_event(event)
+                    progress = session.translator.progress_for(
+                        observation, session.context
+                    )
+                    if progress is not None:
+                        session.emitter.emit_progress(progress)
             self.ran.append(run_id)
+            observe_adapter_run(
+                outcome="succeeded",
+                duration_seconds=time.perf_counter() - started,
+                events=session.emitter.event_count,
+                artifacts=session.emitter.artifact_count,
+            )
             if self.after_run is not None:
                 self.after_run(run_id)
         except AdapterCancellationError as exc:
+            observe_adapter_run(
+                outcome="cancelled",
+                duration_seconds=time.perf_counter() - started,
+            )
             raise RecoverableExecutionError(
                 f"Adapter cancelled for {run_id.value}",
                 cause=FailureCause.WORKER_FAILURE,
             ) from exc
         except AdapterTimeoutError as exc:
+            observe_adapter_run(
+                outcome="timeout",
+                duration_seconds=time.perf_counter() - started,
+            )
             raise RecoverableExecutionError(
                 f"Adapter timed out for {run_id.value}: {exc}",
                 cause=FailureCause.TIMEOUT,
             ) from exc
         except AdapterError as exc:
+            observe_adapter_run(
+                outcome="failed",
+                duration_seconds=time.perf_counter() - started,
+            )
             raise RecoverableExecutionError(
                 f"Adapter failed for {run_id.value}: {exc}",
                 cause=FailureCause.ADAPTER_FAILURE,
             ) from exc
         except Exception as exc:  # noqa: BLE001
+            observe_adapter_run(
+                outcome="failed",
+                duration_seconds=time.perf_counter() - started,
+            )
             raise RecoverableExecutionError(
                 f"Adapter failed for {run_id.value}: {exc}",
                 cause=FailureCause.ADAPTER_FAILURE,

@@ -6,10 +6,13 @@ or process lifecycle — those remain Worker concerns.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from agent_eval_domain.common.ids import RunId
+from agent_eval_shared.metrics import observe_execution_step
+from agent_eval_shared.tracing import start_span
 
 from agent_eval_workers.cancellation.ports import CancellationPort
 from agent_eval_workers.checkpoints.manager import CheckpointManager
@@ -98,11 +101,26 @@ class ExecutionEngine:
                 )
 
             resume_before = self.lifecycle.phase
+            step_started = time.perf_counter()
             try:
-                if self.before_step is not None:
-                    self.before_step(trigger)
-                self.lifecycle.apply(trigger)
+                with start_span(
+                    "execution.step",
+                    tracer_name="evalforge.execution",
+                    attributes={
+                        "run.id": self.run_id.value,
+                        "lifecycle.trigger": trigger.value,
+                        "lifecycle.phase": self.lifecycle.phase.value,
+                    },
+                ):
+                    if self.before_step is not None:
+                        self.before_step(trigger)
+                    self.lifecycle.apply(trigger)
             except RecoverableExecutionError as exc:
+                observe_execution_step(
+                    trigger=trigger.value,
+                    outcome="recoverable_failure",
+                    duration_seconds=time.perf_counter() - step_started,
+                )
                 # ``phase`` is where finalize should apply; ``resume_phase`` is
                 # the durable restart point for Worker retries.
                 return EngineResult(
@@ -111,6 +129,11 @@ class ExecutionEngine:
                     failure_cause=exc.cause,
                     resume_phase=resume_before,
                 )
+            observe_execution_step(
+                trigger=trigger.value,
+                outcome="ok",
+                duration_seconds=time.perf_counter() - step_started,
+            )
 
             self.checkpoints.create(
                 self.run_id,

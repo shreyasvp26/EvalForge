@@ -17,6 +17,7 @@ from agent_eval_api.config import ApiSettings
 from agent_eval_api.errors import error_body
 
 UNAUTHENTICATED_PREFIXES = ("/health/",)
+UNAUTHENTICATED_PATHS = frozenset({"/docs", "/redoc", "/openapi.json", "/metrics"})
 
 
 class AuthenticationMiddleware:
@@ -74,7 +75,7 @@ class AuthenticationMiddleware:
 
 
 def _is_public(path: str) -> bool:
-    if path in {"/docs", "/redoc", "/openapi.json"}:
+    if path in UNAUTHENTICATED_PATHS:
         return True
     return any(path.startswith(prefix) for prefix in UNAUTHENTICATED_PREFIXES)
 

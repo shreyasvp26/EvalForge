@@ -43,6 +43,18 @@ class ApiSettings(BaseSettings):
         default=False,
         validation_alias=AliasChoices("AUTH_DEV_ACCEPT_BEARER_AS_ACTOR_ID"),
     )
+    metrics_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("METRICS_ENABLED"),
+    )
+    tracing_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("TRACING_ENABLED", "OTEL_TRACES_ENABLED"),
+    )
+    otel_exporter_otlp_endpoint: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("OTEL_EXPORTER_OTLP_ENDPOINT"),
+    )
 
     @model_validator(mode="after")
     def _require_jwt_or_dev_bypass(self) -> ApiSettings:

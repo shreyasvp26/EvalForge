@@ -7,11 +7,15 @@ Never mutates Domain Run status directly — Engine → lifecycle → status por
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 
 from agent_eval_domain.common.ids import RunId
+from agent_eval_shared.log import bind_context, clear_context
+from agent_eval_shared.metrics import observe_worker_task
+from agent_eval_shared.tracing import start_span
 
 from agent_eval_workers.cancellation.ports import CancellationPort
 from agent_eval_workers.checkpoints.manager import CheckpointManager
@@ -84,11 +88,29 @@ class WorkerRuntime:
 
         self._current_task = task
         self._state = WorkerState.RUNNING
+        started = time.perf_counter()
+        bind_context(
+            worker_id=self.worker_id,
+            run_id=task.run_id.value,
+        )
         try:
-            result = self._process(task)
+            with start_span(
+                "worker.task",
+                tracer_name="evalforge.worker",
+                attributes={
+                    "worker.id": self.worker_id,
+                    "run.id": task.run_id.value,
+                },
+            ):
+                result = self._process(task)
             self._settle(task, result)
+            observe_worker_task(
+                outcome=result.kind.value,
+                duration_seconds=time.perf_counter() - started,
+            )
             return result
         finally:
+            clear_context()
             self._current_task = None
             if self._stop_requested:
                 self._state = WorkerState.STOPPED

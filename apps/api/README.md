@@ -80,6 +80,12 @@ Authorization uses project-aware RBAC (`Owner` / `Admin` / `Maintainer` /
 `Viewer`) via `ProjectRbacAuthorization`. Membership rows live in Infrastructure;
 creating a Project grants the caller `Owner`. Application use cases are unchanged.
 
+## Observability
+
+- `GET /metrics` — Prometheus scrape (unauthenticated)
+- OpenTelemetry tracing via `TRACING_ENABLED` + optional `OTEL_EXPORTER_OTLP_ENDPOINT`
+- Structured request metrics recorded by middleware (method, route, status, duration)
+
 ## Run locally
 
 ```bash

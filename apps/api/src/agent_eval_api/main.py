@@ -11,6 +11,8 @@ from contextlib import asynccontextmanager
 
 from agent_eval_infrastructure import RuntimeProfile
 from agent_eval_shared.log import configure_logging
+from agent_eval_shared.metrics import configure_metrics
+from agent_eval_shared.tracing import configure_tracing, shutdown_tracing
 from fastapi import FastAPI
 
 from agent_eval_api.composition import ApiContainer, build_api_container
@@ -19,8 +21,9 @@ from agent_eval_api.errors import register_exception_handlers
 from agent_eval_api.middleware.authentication import AuthenticationMiddleware
 from agent_eval_api.middleware.correlation import CorrelationIdMiddleware
 from agent_eval_api.middleware.logging import RequestLoggingMiddleware
+from agent_eval_api.middleware.metrics import RequestMetricsMiddleware
 from agent_eval_api.middleware.timing import RequestTimingMiddleware
-from agent_eval_api.routers import health, system, v1_root
+from agent_eval_api.routers import health, metrics, system, v1_root
 from agent_eval_api.routers.v1 import (
     adapters,
     agents,
@@ -61,10 +64,18 @@ def create_app(
             environment=api_settings.environment,
             service_name="evalforge-api",
         )
+        configure_metrics(enabled=api_settings.metrics_enabled)
+        configure_tracing(
+            enabled=api_settings.tracing_enabled,
+            service_name="evalforge-api",
+            environment=api_settings.environment,
+            otlp_endpoint=api_settings.otel_exporter_otlp_endpoint,
+        )
         app.state.container = active
         try:
             yield
         finally:
+            shutdown_tracing()
             if owned:
                 active.dispose()
             app.state.container = None
@@ -83,7 +94,8 @@ def create_app(
         ),
     )
     # Starlette applies middleware LIFO:
-    # correlation (outer) → auth → timing → logging (inner).
+    # correlation → auth → timing → logging → metrics (inner).
+    app.add_middleware(RequestMetricsMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(RequestTimingMiddleware)
     app.add_middleware(AuthenticationMiddleware)
@@ -91,6 +103,7 @@ def create_app(
     register_exception_handlers(app)
 
     app.include_router(health.router)
+    app.include_router(metrics.router)
     app.include_router(v1_root.router)
     app.include_router(system.router)
     app.include_router(projects.router)
