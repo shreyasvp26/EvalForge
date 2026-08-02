@@ -1,4 +1,5 @@
-"""Concrete ID generators satisfying the Application IdGenerator port.
+"""Concrete ID generators satisfying the Application IdGenerator port."""
 
-Phase 5. Generation strategy only — Domain requires non-empty opaque IDs.
-"""
+from agent_eval_infrastructure.ids.uuid_generator import UuidIdGenerator
+
+__all__ = ["UuidIdGenerator"]
