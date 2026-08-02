@@ -114,3 +114,12 @@ def test_unauthenticated_maps_to_401(client) -> None:
     response = client.get("/v1/system/info")
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+
+
+def test_business_route_authorization_maps_to_403(
+    client, services, auth_headers
+) -> None:
+    services.get_project.execute.side_effect = AuthorizationError("denied")
+    response = client.get("/v1/projects/proj-1", headers=auth_headers)
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "FORBIDDEN"
