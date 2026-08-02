@@ -118,3 +118,5 @@ export type {
   ContainerProps,
   PanelProps,
 } from "./components/layout/layout";
+export { InspectorLayout } from "./components/layout/inspector-layout";
+export type { InspectorLayoutProps } from "./components/layout/inspector-layout";
