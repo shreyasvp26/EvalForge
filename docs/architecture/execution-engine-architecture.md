@@ -340,6 +340,17 @@ Every step in Run Lifecycle produces signal worth capturing beyond the Execution
 
 This document defines the architecture governing execution orchestration; it does not define how any of the components that architecture invokes are actually implemented. It does not specify the numerical values of any resource limit discussed in Resource Accounting — execution timeouts, CPU or memory budgets, storage or Artifact size limits, and event volume limits are named here as dimensions this architecture accounts for, never as specific figures, which are an operational tuning decision made separately. It does not specify the numerical values behind any Scheduling Philosophy policy either — concurrency limits, fairness allocations, and execution quotas are named as platform-owned policy categories, not as configured thresholds. It does not specify worker implementation — the specific process model, language-level concurrency mechanism, or task-consumption library a worker uses internally is an implementation decision made against this document, not part of it. It does not specify Sandbox implementation, nor does it name or assume any particular containerization or virtualization technology, including Docker or Kubernetes — this document's Sandbox Lifecycle section establishes the guarantees a Sandbox implementation must provide, deliberately without naming the mechanism that provides them. It does not specify queue technology — Retry Philosophy's at-least-once guarantee and Worker Model's crash-and-resume mechanism are written to hold against any broker that provides the properties this document assumes (durable enqueue, visibility-timeout-based redelivery), not against any specific product. It does not specify object storage implementation, beyond the metadata and checksum obligations Artifact Handling establishes. It does not specify SDK implementation for Adapters or Graders, beyond the invocation boundary Adapter Invocation and Grading Pipeline already describe. It does not define API endpoints — Run creation, cancellation, and status retrieval are referenced throughout this document exactly as the REST API Design already specifies them, and this document adds nothing to that surface. It does not define database schema — every persisted fact this document discusses is exactly the table Schema Design already specifies, referenced here by name, never redefined. And it does not discuss deployment — how many workers run, in what environment, on what infrastructure, and how that infrastructure is provisioned or scaled operationally are concerns this document deliberately leaves to the teams and documents responsible for the platform's operational deployment, informed by this document's Scalability section but not specified by it.
 
+## Implementation status
+
+The EvalForge workers package (`workers/` → `agent_eval_workers`) realizes this
+architecture's orchestration surface behind ports: Run lifecycle state machine,
+Worker chassis (claim / retry / checkpoint / cancel / timeout), Event
+Persistence Pipeline (Application-mediated, append-only, idempotent), and a
+Phase 5 end-to-end harness with **mocked** Sandbox, Adapter, and Graders for
+orchestration verification. Concrete vendor Adapters, real Sandbox substrates,
+and production Graders remain out of scope for that harness — matching this
+document's Non-Goals. See `workers/README.md` and `docs/development.md`.
+
 ## References
 
 - System Overview (`docs/architecture/system-overview.md`)

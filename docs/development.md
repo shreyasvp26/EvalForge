@@ -116,7 +116,7 @@ Python package: `workers/` → `agent_eval_workers`.
 
 - Thin chassis hosting the Execution Engine (Backend Architecture §4 / §7).
 - Subpackages: `worker`, `execution_engine`, `scheduler`, `lifecycle`,
-  `cancellation`, `checkpoints`, `event_pipeline`.
+  `cancellation`, `checkpoints`, `event_pipeline`, `mocks`.
 - **Lifecycle (Phase 2):** `RunLifecycle` + `LifecycleOrchestrator` own
   orchestration sequencing and illegal-transition rejection. Ports for
   Sandbox / Adapter / events / grading / status are interfaces only.
@@ -128,6 +128,10 @@ Python package: `workers/` → `agent_eval_workers`.
   Events and Artifacts only through Application use cases
   (`RecordExecutionEvent`, `RecordArtifact`); ordered, idempotent, with
   projection hooks for future live consumers.
+- **End-to-end orchestration (Phase 5):** `build_orchestration_harness`
+  wires Worker + Engine + Lifecycle + Event Pipeline + mock Sandbox /
+  Adapter / Graders. Continuous event streaming during Adapter `run`;
+  grading only after final event persistence. See `workers/README.md`.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
 - Prefer `uv run pytest workers/tests` for worker-only feedback.

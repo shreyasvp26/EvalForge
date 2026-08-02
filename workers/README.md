@@ -30,35 +30,63 @@ the Engine — never API.
 ```
 agent_eval_workers/
   worker/              # Process chassis — claim, retry, heartbeat, shutdown
-  execution_engine/    # Orchestration authority for one Run
-  scheduler/           # Queue → worker delivery policy (Phase 1 scaffold)
+  execution_engine/    # Orchestration authority + Phase 5 composition harness
+  scheduler/           # Queue → worker delivery policy (scaffold)
   lifecycle/           # Named Run stages / transition contracts
   cancellation/        # Cooperative cancel observation
   checkpoints/         # Crash-recovery progress markers
   event_pipeline/      # Durable Event/Artifact recording + projection hooks
+  mocks/               # Deterministic Sandbox / Adapter / Grader stubs
   clock.py             # Monotonic clock port (timeouts)
 ```
 
 ## Status
 
-**Phases 2–4** are implemented (lifecycle, worker runtime, event pipeline).
+**Phases 2–5** are implemented. Phase 5 wires the complete mocked end-to-end
+orchestration path via `build_orchestration_harness()`.
 
-**Phase 4 — Event persistence pipeline:**
+Still deferred: real Adapter/Sandbox/Grader packages, scheduler delivery
+policy, Redis worker-queue adapter, live SSE networking.
 
-- `EventPersistencePipeline` — ordered buffer, Application-mediated writes,
-  batching, `persist_final` (lifecycle port)
-- Application `RecordExecutionEvent` + idempotent `RecordArtifact`
-- Domain idempotent replay by event/artifact id (append-only, no mutate)
-- `EventProjector` / `ProjectionHub` hooks for future SSE/WebSocket consumers
-- `PersistenceFailure` classified for Worker retry policy
+## Complete orchestration sequence (Phase 5)
 
-Still deferred: concrete Adapter/Sandbox/Grader wiring, scheduler delivery
-policy, Redis-backed worker queue adapter, live SSE networking.
+```
+Queue claim (Worker)
+        ↓
+Checkpoint restore (Worker)
+        ↓
+ExecutionEngine.execute
+        ↓
+Lifecycle: CLAIM → status.project_running
+        ↓
+BEGIN_SANDBOX_PROVISIONING → MockSandbox.provision
+        ↓
+SANDBOX_READY
+        ↓
+START_ADAPTER → MockAdapter.start
+        ↓
+ADAPTER_STARTED → MockAdapter.run  (streams events/artifacts continuously
+                                     into EventPersistencePipeline)
+        ↓
+ADAPTER_FINISHED → MockAdapter.finish
+        ↓
+PERSIST_FINAL_EVENTS → pipeline.persist_final
+        ↓
+FINALS_PERSISTED → MockGradingScheduler.schedule (isolated MockGraders)
+                 → status.project_grading
+        ↓
+GRADING_FINISHED → status.project_completed
+        ↓
+Worker ack
+```
+
+Use `agent_eval_workers.execution_engine.build_orchestration_harness` for
+deterministic verification without Redis, Postgres, S3, or vendor code.
 
 ## Event pipeline (Phase 4)
 
 ```
-Engine emits NDM actions / artifacts
+Adapter emits NDM actions / artifacts (continuously during run)
         ↓
 EventPersistencePipeline (ordered buffer, optional batch)
         ↓
@@ -68,9 +96,6 @@ Domain EvaluationRun append-only history
         ↓
 ProjectionHub → EventProjector subscribers (no networking yet)
 ```
-
-Rules: never bypass Application; never mutate past events; duplicates are
-safe; flush stops on first failure without skipping remaining items.
 
 ## Lifecycle (Phase 2)
 
@@ -95,6 +120,8 @@ Illegal transitions raise `IllegalLifecycleTransition` immediately.
 | Execution timeout         | Engine (propagates `TIMEOUT`)                   |
 | Checkpoint create/restore | Engine writes; Worker restores on claim         |
 | Domain Run status         | Lifecycle → status port (never Worker directly) |
+| Event streaming           | Adapter → Event Pipeline (Engine sequences)     |
+| Grader judgment           | Grader (Engine only schedules)                  |
 
 ## Boundaries (authoritative)
 
@@ -108,3 +135,5 @@ Illegal transitions raise `IllegalLifecycleTransition` immediately.
 - **Infrastructure** owns concrete queue / DB / object storage adapters.
 - **Lifecycle** owns sequencing and transition validation only — never
   Adapter translation, grading, direct persistence, or direct enqueue.
+- The Engine never knows Redis, SQLAlchemy, repositories, S3, or queue
+  implementation details — only ports.
