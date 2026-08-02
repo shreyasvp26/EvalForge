@@ -8,7 +8,7 @@ Implementation: `apps/web/src/components/shell/`.
 
 ## Sidebar
 
-- Sections: **Workspace** (Overview, Projects, Suites, Cases, Runs, Agents, Graders) and **System** (Design system).
+- Sections: **Workspace** (Overview, Projects, Suites, Cases, Runs, Agents, Graders) and **System** (Settings, Design system).
 - Active item: muted background + inset accent bar + `aria-current="page"`.
 - Collapsible to icon rail (`lg+`); state persisted in `localStorage` (`evalforge.sidebar.collapsed`).
 - Section expand/collapse persisted (`evalforge.sidebar.sections`).
@@ -62,8 +62,9 @@ Groups:
 8. **Agents** — Open Agents, Create Agent
 9. **Graders** — Open Graders, Create Grader
 10. **Appearance** — Light / Dark / System
-11. **Account** — Sign out
-12. **Help** — open keyboard shortcuts
+11. **Settings** — Open Settings, Open Preferences
+12. **Account** — Sign out
+13. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -75,7 +76,18 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Product routes under `(shell)` are gated by `RequireAuth` + Next.js middleware (session cookie presence).
 - JWT access token persists in `localStorage`; session presence cookie `evalforge.auth` enables middleware redirects.
 - Top-bar **UserMenu** and command palette **Sign out** clear the session.
-- Authenticated landing: `/` (Overview dashboard).
+- Authenticated landing defaults to `/` (Overview); guests may override via Preferences (`evalforge.preferences.landingPage`).
+
+## Settings
+
+- Canonical hub: `/settings` redirects to `/settings/profile`.
+- Nested routes: `/settings/profile`, `/settings/account`, `/settings/preferences`, `/settings/api`, `/settings/about`.
+- In-page side nav (`SettingsNav`) for Profile / Account / Preferences / API / About.
+- Profile shows `GET /v1/auth/me` read-only (no profile PATCH on Control Plane).
+- Preferences are frontend-only (theme via existing theme toggle; density, landing page, reduced motion in `localStorage`).
+- API page exposes base URL, API version, auth status, JWT expiry with copy actions.
+- About shows build metadata (`NEXT_PUBLIC_APP_VERSION` / `GIT_COMMIT` / `BUILD_TIME`), `GET /v1/system/info`, and public health probes.
+- Sidebar System → Settings; UserMenu → Settings; command palette **Open Settings** / **Open Preferences**.
 
 ## Overview
 

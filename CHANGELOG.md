@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Phase 16 Milestone 10 — Settings, administration & production UX: `/settings` shell (Profile, Account, Preferences, API, About), local preferences store, system/health API client, offline banner, route error boundaries, Settings navigation
 - Phase 16 Milestone 9 — Dashboard & analytics overview: authenticated `/` home with platform summary, run activity, recent results, resource lists, quick actions, empty onboarding, and Overview navigation
 - Phase 16 Milestone 8 — Live execution experience: polling while queued/running/grading, execution chrome, grouped expandable timeline, tabbed artifact viewer, expandable score viewer, SSE-ready `useRunPolling` seam
 - Phase 16 Milestone 7 — Runs & execution management: project-filtered list, multi-step create wizard with pinned versions + Idempotency-Key, flagship detail (timeline/artifacts/scores), cancel confirmation, command-palette actions
