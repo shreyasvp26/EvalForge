@@ -9,6 +9,7 @@
 # Shared libraries
 /packages/       @agent-eval/maintainers
 /shared/         @agent-eval/maintainers
+/domain/         @agent-eval/maintainers
 
 # Infrastructure & CI
 /infrastructure/ @agent-eval/maintainers

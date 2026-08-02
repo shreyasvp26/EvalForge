@@ -61,9 +61,20 @@ Husky runs `lint-staged` on pre-commit (ESLint/Prettier for TS/JS; Ruff/Black fo
 
 Library packages emit declarations and JS to `dist/` via `tsc -b` (project references). Workspace runtime resolution currently points at `src/` for fast local iteration; `pnpm build` still verifies emit is clean and deterministic.
 
+## Domain Layer
+
+Python package: `domain/` → `agent_eval_domain`.
+
+- Organized by bounded contexts (`evaluation_management`, `execution`,
+  `agent_integration`, `grading`, `versioning`).
+- Depends only on `agent_eval_shared` (error bases / tiny helpers).
+- **Must not** import config, logging, HTTP, ORM, queues, adapters, or graders.
+- Repository interfaces live in `agent_eval_domain.repositories`; Infrastructure
+  implements them in a later phase.
+- Prefer `uv run pytest domain/tests` for domain-only feedback.
+
 ## What does not belong in foundation packages
 
-- Domain entities, invariants, or evaluation concepts
-- HTTP handlers, Prisma/SQL, queue consumers
-- Adapter or Grader logic
+- HTTP handlers, SQL/ORM, queue consumers
+- Adapter or Grader _implementations_ (interfaces/contracts may live in Domain)
 - UI components

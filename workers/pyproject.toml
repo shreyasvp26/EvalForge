@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "agent-eval-shared",
+  "agent-eval-domain",
 ]
 
 [build-system]
@@ -17,3 +18,4 @@ packages = ["src/agent_eval_workers"]
 
 [tool.uv.sources]
 agent-eval-shared = { workspace = true }
+agent-eval-domain = { workspace = true }

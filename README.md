@@ -10,8 +10,8 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 | ---------------------------------------------------- | -------- |
 | Phase 0 — Repository foundation                      | Complete |
 | Engineering foundation (tooling, shared libs, tests) | Complete |
-| Domain layer                                         | Next     |
-| Application / API / workers                          | Later    |
+| Domain layer                                         | Complete |
+| Application / API / workers                          | Next     |
 
 ## Repository layout
 
@@ -19,12 +19,13 @@ Production-grade platform for evaluating autonomous coding agents (Cursor, Claud
 apps/            Deployable applications (API, web)
 packages/        TypeScript libraries (foundation, SDK, tooling config)
 shared/          Python cross-cutting foundation (logging, config, errors)
+domain/          Python Domain Layer (business model — source of truth)
 workers/         Background / async job workers
 infrastructure/  Docker scaffolding and scripts (ops)
 docs/            Architecture, ADRs, API notes, diagrams
 ```
 
-Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md). Domain, application, adapters, and graders packages are intentionally not scaffolded until those phases begin.
+Backend module layout follows [Backend Architecture §11](./docs/architecture/backend-architecture.md). Application, infrastructure (code), adapters, and graders packages land in later phases.
 
 ## Prerequisites
 
@@ -78,9 +79,10 @@ uv run pytest
 
 **Python**
 
-| Package                         | Role                                   |
-| ------------------------------- | -------------------------------------- |
-| `agent-eval-shared` (`shared/`) | Errors, settings, structlog, utilities |
+| Package                         | Role                                                    |
+| ------------------------------- | ------------------------------------------------------- |
+| `agent-eval-shared` (`shared/`) | Errors, settings, structlog, utilities                  |
+| `agent-eval-domain` (`domain/`) | Aggregates, invariants, domain events, repository ports |
 
 See [docs/development.md](./docs/development.md) for conventions and dependency rules.
 

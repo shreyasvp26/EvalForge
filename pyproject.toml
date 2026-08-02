@@ -15,7 +15,7 @@ dev = [
 ]
 
 [tool.uv.workspace]
-members = ["apps/api", "workers", "shared"]
+members = ["apps/api", "workers", "shared", "domain"]
 
 [tool.uv]
 package = false
@@ -54,12 +54,12 @@ select = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["shared/tests"]
-pythonpath = ["shared/src"]
+testpaths = ["shared/tests", "domain/tests"]
+pythonpath = ["shared/src", "domain/src"]
 addopts = ["-q", "--strict-markers"]
 
 [tool.coverage.run]
-source = ["agent_eval_shared"]
+source = ["agent_eval_shared", "agent_eval_domain"]
 branch = true
 
 [tool.coverage.report]
