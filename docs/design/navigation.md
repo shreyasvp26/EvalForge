@@ -57,11 +57,12 @@ Groups:
 3. **Projects** — Open Projects, Create Project
 4. **Suites** — Open Suites, Create Suite (project-aware when already in a project)
 5. **Cases** — Open Cases, Create Case (project-aware when already in a project)
-6. **Agents** — Open Agents, Create Agent
-7. **Graders** — Open Graders, Create Grader
-8. **Appearance** — Light / Dark / System
-9. **Account** — Sign out
-10. **Help** — open keyboard shortcuts
+6. **Runs** — Open Runs, New Run
+7. **Agents** — Open Agents, Create Agent
+8. **Graders** — Open Graders, Create Grader
+9. **Appearance** — Light / Dark / System
+10. **Account** — Sign out
+11. **Help** — open keyboard shortcuts
 
 Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom score).
 
@@ -95,6 +96,15 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 - Prompt and case versions: Draft → Active (publish) → Superseded (no retire endpoint for cases).
 - Authoring order: create case → prompt draft → case draft (pins a prompt) → publish.
 - Command palette: **Open Cases**, **Create Case** (uses current project when present).
+
+## Runs
+
+- List: `/runs` (requires a project filter; status filter + search + sort).
+- Create: dedicated wizard at `/runs/new` (not a modal) — pins versions then launches with `Idempotency-Key`.
+- Detail: `/runs/[runId]` — status, immutable pins, timeline (events), artifacts, scores; cancel when queued/running.
+- No SSE / polling on detail in this milestone — refresh is manual via navigation or refetch actions.
+- Chord shortcut: `G` then `R`.
+- Command palette: **Open Runs**, **New Run** (`/runs/new`).
 
 ## Agents
 

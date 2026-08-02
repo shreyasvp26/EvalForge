@@ -52,7 +52,13 @@ export const navSections: NavSection[] = [
         icon: FlaskConical,
         keywords: ["case", "create case", "prompt"],
       },
-      { href: "/runs", label: "Runs", icon: Play, chord: "G R", keywords: ["run"] },
+      {
+        href: "/runs",
+        label: "Runs",
+        icon: Play,
+        chord: "G R",
+        keywords: ["run", "create run", "new run", "execution"],
+      },
       {
         href: "/agents",
         label: "Agents",
@@ -162,6 +168,22 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
     }
     crumbs.push({ label: "Graders", href: "/graders" });
     crumbs.push({ label: "Grader" });
+    return crumbs;
+  }
+
+  const runMatch = /^\/runs(?:\/(.*))?$/.exec(pathname);
+  if (runMatch) {
+    const rest = runMatch[1] ?? "";
+    if (rest === "") {
+      crumbs.push({ label: "Runs" });
+      return crumbs;
+    }
+    crumbs.push({ label: "Runs", href: "/runs" });
+    if (rest === "new") {
+      crumbs.push({ label: "New run" });
+      return crumbs;
+    }
+    crumbs.push({ label: "Run" });
     return crumbs;
   }
 
