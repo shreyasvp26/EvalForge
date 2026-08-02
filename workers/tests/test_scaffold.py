@@ -28,5 +28,17 @@ def test_runtime_subpackages_importable() -> None:
     )
     for package in packages:
         assert package.__doc__ is not None
-        assert "Phase 1" in (package.__doc__ or "")
         assert "Must NOT" in (package.__doc__ or "")
+
+
+def test_unfinished_packages_remain_phase1_scaffold() -> None:
+    """Phase 2 implemented lifecycle; remaining packages stay structure-only."""
+    for package in (
+        worker,
+        execution_engine,
+        scheduler,
+        cancellation,
+        checkpoints,
+        event_pipeline,
+    ):
+        assert "Phase 1" in (package.__doc__ or "")

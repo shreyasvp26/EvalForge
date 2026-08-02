@@ -39,8 +39,27 @@ agent_eval_workers/
 
 ## Status
 
-Phase 1 — package scaffold only. No claim loop, lifecycle behavior, Adapter
-calls, or Grader scheduling yet.
+**Phase 2 — Run lifecycle orchestration** is implemented under `lifecycle/`:
+
+- Explicit `OrchestrationPhase` state machine with validated transitions
+- Failure / cancel / timeout paths (orchestration only)
+- Ports for Sandbox, Adapter, event pipeline, grading schedule, status projection
+- Domain `RunStatus` mapping (Engine phases project onto Domain; Domain owns invariants)
+
+Still deferred: claim loop, concrete Adapter/Sandbox/Grader wiring, event
+pipeline persistence, checkpoints, cancellation propagation.
+
+## Lifecycle (Phase 2)
+
+Happy path:
+
+`Queued → Claimed → Sandbox Provisioning → Sandbox Ready → Adapter Starting →
+Execution Streaming → Adapter Finished → Final Event Persistence →
+Grading Scheduled → Completed`
+
+Terminal failure/cancel phases: `Failed`, `Cancelled`.
+
+Illegal transitions raise `IllegalLifecycleTransition` immediately.
 
 ## Boundaries (authoritative)
 
@@ -51,3 +70,5 @@ calls, or Grader scheduling yet.
 - **Application** owns authorization, UoW commit boundaries, and Domain
   status transitions invoked by the runtime.
 - **Infrastructure** owns concrete queue / DB / object storage adapters.
+- **Lifecycle** owns sequencing and transition validation only — never
+  Adapter translation, grading, direct persistence, or direct enqueue.

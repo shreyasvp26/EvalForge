@@ -19,3 +19,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Infrastructure transactional Unit of Work (`SqlAlchemyUnitOfWork` / factory): shared-session repositories, commit/rollback, optimistic concurrency propagation; no domain-event dispatch
 - Infrastructure service adapters and composition root: Redis-compatible run queue, S3-compatible object storage, UUID ID generator, in-process event dispatcher, idempotency stores, `InfrastructureSettings`, `build_infrastructure`
 - Execution Worker runtime scaffold: `worker`, `execution_engine`, `scheduler`, `lifecycle`, `cancellation`, `checkpoints`, `event_pipeline` packages (structure only)
+- Execution Worker Run lifecycle orchestration: explicit phase machine, validated transitions, failure/cancel/timeout paths, subsystem ports, Domain `RunStatus` projection mapping, lifecycle unit tests
