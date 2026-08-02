@@ -1,0 +1,40 @@
+[project]
+name = "agent-eval-graders"
+version = "0.0.0"
+description = "EvalForge Grader Layer — SDK + objective graders (measurement only)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "agent-eval-shared",
+  "agent-eval-domain",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["agent_eval_graders"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/agent_eval_graders" = "agent_eval_graders"
+
+[tool.uv.sources]
+agent-eval-shared = { workspace = true }
+agent-eval-domain = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [
+  "src",
+  "../shared/src",
+  "../domain/src",
+  "tests",
+]
+addopts = ["-q", "--strict-markers"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+  "pytest-cov>=6.0.0",
+]
