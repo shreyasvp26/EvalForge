@@ -115,9 +115,7 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
           eyebrow="Grader"
           title={grader.name}
           description={
-            grader.description.trim()
-              ? grader.description
-              : "No description provided for this grader."
+            grader.description.trim() ? grader.description : "Objective scoring for runs."
           }
           actions={
             <Cluster gap={2}>
@@ -133,7 +131,8 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
               ) : null}
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void navigator.clipboard.writeText(grader.id).then(
                     () => {
@@ -153,9 +152,9 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <Section
-            title="Overview"
+            title="Identity"
             className="lg:col-span-2"
-            description="Grader identity and family."
+            description="Stable grader record from the Control Plane."
           >
             <dl className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
@@ -180,6 +179,14 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
               </div>
               <div className="space-y-1">
                 <Text as="div" variant="caption">
+                  Created
+                </Text>
+                <Text as="div" variant="body" className="tabular-nums">
+                  {formatGraderDate(grader.created_at)}
+                </Text>
+              </div>
+              <div className="space-y-1">
+                <Text as="div" variant="caption">
                   Grader ID
                 </Text>
                 <Text
@@ -201,49 +208,51 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
             </dl>
           </Section>
 
-          <Section title="Metadata" description="Lifecycle timestamps from the Control Plane.">
+          <Section title="Versions" description="Published specification used when scoring runs.">
             <dl className="space-y-4">
               <div className="space-y-1">
                 <Text as="div" variant="caption">
-                  Created
-                </Text>
-                <Text as="div" variant="body" className="tabular-nums">
-                  {formatGraderDate(grader.created_at)}
-                </Text>
-              </div>
-              <div className="space-y-1">
-                <Text as="div" variant="caption">
-                  Versions
+                  Version count
                 </Text>
                 <Text as="div" variant="body" className="tabular-nums">
                   {String(grader.versions.length)}
                 </Text>
               </div>
+              <div className="space-y-1">
+                <Text as="div" variant="caption">
+                  Active version
+                </Text>
+                {current ? (
+                  <Cluster gap={2} className="items-center">
+                    <Text as="span" variant="body" className="font-medium">
+                      v{String(current.version_number)} · {current.label}
+                    </Text>
+                    <Badge status={versionStatusBadge(current.status)}>
+                      {versionStatusLabel(current.status)}
+                    </Badge>
+                  </Cluster>
+                ) : (
+                  <Text variant="secondary">None published</Text>
+                )}
+              </div>
+              {isDeprecated ? (
+                <Text variant="secondary">This grader is deprecated; new drafts are blocked.</Text>
+              ) : null}
             </dl>
           </Section>
 
           <Section
-            title="Active version"
+            title="Usage"
             className="lg:col-span-3"
-            description="The published specification used when this grader scores a run."
+            description="Active specification applied when this grader scores a run."
           >
             {current ? (
-              <div className="space-y-3">
-                <Cluster gap={2} className="items-center">
-                  <Text as="span" variant="body" className="font-medium">
-                    Version {String(current.version_number)} · {current.label}
-                  </Text>
-                  <Badge status={versionStatusBadge(current.status)}>
-                    {versionStatusLabel(current.status)}
-                  </Badge>
-                </Cluster>
-                <pre className="max-h-64 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-3 font-mono text-[length:var(--ef-text-caption)] leading-relaxed text-foreground whitespace-pre-wrap break-words">
-                  {current.specification}
-                </pre>
-              </div>
+              <pre className="max-h-64 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-3 font-mono text-[length:var(--ef-text-caption)] leading-relaxed text-foreground whitespace-pre-wrap break-words">
+                {current.specification}
+              </pre>
             ) : (
               <Text variant="secondary">
-                No active grader version. Publish a draft to establish the active specification.
+                No active specification. Publish a draft to establish the scoring contract.
               </Text>
             )}
           </Section>
@@ -251,7 +260,7 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
           <Section
             title="Version history"
             className="lg:col-span-3"
-            description="Draft → Active (publish) → Superseded. Specification is shown as read-only text."
+            description="Draft → Active (publish) → Superseded. Specification is read-only text."
             actions={
               !isDeprecated ? (
                 <Button
@@ -268,28 +277,6 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
             }
           >
             <GraderVersionCards grader={grader} versions={versions} />
-          </Section>
-
-          <Section title="Quick actions" description="Common grader operations.">
-            <Cluster gap={2} className="flex-col items-stretch sm:items-start">
-              <Button asChild variant="outline" className="justify-start">
-                <Link href="/graders">Back to graders</Link>
-              </Button>
-              {!isDeprecated ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="justify-start"
-                  onClick={() => {
-                    setDraftOpen(true);
-                  }}
-                >
-                  Create grader draft
-                </Button>
-              ) : (
-                <Text variant="secondary">This grader is deprecated; new drafts are blocked.</Text>
-              )}
-            </Cluster>
           </Section>
         </div>
       </FadeIn>

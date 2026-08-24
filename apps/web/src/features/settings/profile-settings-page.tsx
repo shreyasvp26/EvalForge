@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Input, Label, Text } from "@agent-eval/ui";
+import { Badge, Input, Label } from "@agent-eval/ui";
 
 import { SettingsShell } from "./settings-shell";
 
@@ -13,7 +13,7 @@ export function ProfileSettingsPage() {
 
   if (status === "loading" || !user) {
     return (
-      <SettingsShell title="Profile" description="Your EvalForge identity.">
+      <SettingsShell title="Profile" description="Your Control Plane identity.">
         <DetailSkeleton withInspector={false} />
       </SettingsShell>
     );
@@ -22,9 +22,9 @@ export function ProfileSettingsPage() {
   return (
     <SettingsShell
       title="Profile"
-      description="Identity fields from the Control Plane. Profile updates are not exposed by the API yet."
+      description="Identity from the authenticated session. Profile updates are not exposed by the API yet."
     >
-      <Section title="Identity" description="Read-only while no PATCH /v1/auth/me endpoint exists.">
+      <Section title="Identity" description="Read-only while no profile update endpoint exists.">
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="profile-display-name">Display name</Label>
@@ -41,10 +41,6 @@ export function ProfileSettingsPage() {
           <Badge status="neutral">Read-only</Badge>
         </div>
       </Section>
-      <Text variant="caption">
-        When a profile update API ships, editable fields will appear here without changing this
-        layout.
-      </Text>
     </SettingsShell>
   );
 }

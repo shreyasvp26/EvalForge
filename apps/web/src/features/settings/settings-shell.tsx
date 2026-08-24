@@ -18,8 +18,8 @@ export function SettingsShell({
 }) {
   return (
     <PageLayout width="lg">
-      <PageHeader eyebrow="Administration" title={title} description={description} />
-      <div className="mt-8 grid gap-8 md:grid-cols-[11rem_minmax(0,1fr)]">
+      <PageHeader eyebrow="Workspace" title={title} description={description} />
+      <div className="mt-8 grid gap-8 md:grid-cols-[12rem_minmax(0,1fr)]">
         <SettingsNav />
         <div className="min-w-0 space-y-6">{children}</div>
       </div>

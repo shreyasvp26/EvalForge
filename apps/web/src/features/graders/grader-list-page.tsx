@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Button,
-  CheckCircle2,
-  DataGrid,
-  DataGridPagination,
-  DataGridSearch,
-  Plus,
-} from "@agent-eval/ui";
+import { Button, DataGrid, DataGridPagination, DataGridSearch, Plus } from "@agent-eval/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -65,7 +58,7 @@ export function GraderListPage({ initialCreateOpen = false }: { initialCreateOpe
       <PageHeader
         eyebrow="Platform"
         title="Graders"
-        description="Platform catalog of objective and rubric graders. Each grader versions an opaque specification used when scoring runs."
+        description="Objective scoring for runs."
         actions={
           <Button
             type="button"
@@ -114,8 +107,8 @@ export function GraderListPage({ initialCreateOpen = false }: { initialCreateOpe
             emptyTitle={globalFilter.trim() ? "No matching graders" : "No graders yet"}
             emptyDescription={
               globalFilter.trim()
-                ? "Try a different search, or clear the filter to see all graders."
-                : "Create a grader to register an objective or rubric scorer in the platform catalog."
+                ? "Try a different search, or clear the filter."
+                : "Register a grader, publish a specification, then pin it on runs."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (
@@ -126,7 +119,7 @@ export function GraderListPage({ initialCreateOpen = false }: { initialCreateOpe
                     setCreateOpen(true);
                   }}
                 >
-                  Create grader
+                  New grader
                 </Button>
               )
             }
@@ -135,28 +128,15 @@ export function GraderListPage({ initialCreateOpen = false }: { initialCreateOpe
             }}
             aria-label="Graders"
             toolbar={
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <DataGridSearch
-                  value={globalFilter}
-                  onValueChange={(value) => {
-                    setGlobalFilter(value);
-                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                  }}
-                  placeholder="Search graders…"
-                  className="max-w-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftIcon={CheckCircle2}
-                  onClick={() => {
-                    setCreateOpen(true);
-                  }}
-                >
-                  New grader
-                </Button>
-              </div>
+              <DataGridSearch
+                value={globalFilter}
+                onValueChange={(value) => {
+                  setGlobalFilter(value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                placeholder="Search graders…"
+                className="max-w-sm"
+              />
             }
             footer={
               graders.length > 0 ? (
