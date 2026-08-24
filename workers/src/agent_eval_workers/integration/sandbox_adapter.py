@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from uuid import uuid4
 
 from agent_eval_domain.common.ids import RunId
 from agent_eval_sandbox.exceptions import SandboxError
@@ -68,12 +69,15 @@ def sandbox_network_from_env() -> NetworkPolicy:
 
 
 def default_sandbox_spec(run_id: RunId) -> SandboxSpec:
+    # Include a unique suffix so deterministic test IDs (and rapid retries) never
+    # collide on Docker container names left behind after cleanup races.
+    unique = uuid4().hex[:8]
     return SandboxSpec(
         image=sandbox_image_from_env(),
         working_dir="/workspace",
         environment=sandbox_environment_from_allowlist(),
         labels={"run_id": run_id.value, "evalforge.component": "sandbox"},
-        name=f"run-{run_id.value}"[:63],
+        name=f"run-{run_id.value}-{unique}"[:63],
         network=sandbox_network_from_env(),
     )
 

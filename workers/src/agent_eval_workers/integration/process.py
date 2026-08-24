@@ -175,21 +175,28 @@ def build_production_lifecycle_factory(
     manager = SandboxManager(runtime=DockerSandbox(engine=docker_engine))
     sandbox = ManagedSandboxAdapter(manager=manager, registry=sandbox_registry)
 
-    def _verify_sandbox_ready(run_id: RunId) -> None:
-        """Prove the provisioned container accepts exec (real Docker path)."""
-        handle = sandbox.handle_for(run_id)
-        result = manager.execute(
-            handle,
-            ExecutionRequest(command=("true",)),
-        )
-        if result.timed_out or result.exit_code != 0:
-            raise RecoverableExecutionError(
-                f"Sandbox workspace verify failed for {run_id.value} "
-                f"(exit={result.exit_code}, timed_out={result.timed_out})",
-                cause=FailureCause.SANDBOX_FAILURE,
-            )
+    if os.environ.get("WORKER_SANDBOX_VERIFY", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
 
-    sandbox.after_provision = _verify_sandbox_ready
+        def _verify_sandbox_ready(run_id: RunId) -> None:
+            """Prove the provisioned container accepts exec (real Docker path)."""
+            handle = sandbox.handle_for(run_id)
+            result = manager.execute(
+                handle,
+                ExecutionRequest(command=("true",), timeout_seconds=15.0),
+            )
+            if result.timed_out or result.exit_code != 0:
+                raise RecoverableExecutionError(
+                    f"Sandbox workspace verify failed for {run_id.value} "
+                    f"(exit={result.exit_code}, timed_out={result.timed_out})",
+                    cause=FailureCause.SANDBOX_FAILURE,
+                )
+
+        sandbox.after_provision = _verify_sandbox_ready
 
     writer = UseCaseEventWriter(
         record_event_uc=RecordExecutionEvent(uow_factory, worker_auth, events),

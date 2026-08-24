@@ -64,12 +64,15 @@ Redis cancel signals.
 | `WORKER_SANDBOX_IMAGE`         | `evalforge/sandbox:local`          | Built by Compose `sandbox-image`                              |
 | `WORKER_SANDBOX_NETWORK`       | `none`                             | Use `bridge` for live Claude egress                           |
 | `WORKER_SANDBOX_ENV_ALLOWLIST` | `ANTHROPIC_API_KEY,PATH,HOME,TERM` | Never pass full host env                                      |
+| `WORKER_SANDBOX_VERIFY`        | `0`                                | Opt-in post-provision workspace exec (`true`)                 |
 | `WORKER_ACTOR_ID`              | `system-worker`                    | Trusted worker Actor                                          |
 
 ```bash
 uv run evalforge-worker
 uv run pytest workers/tests/test_process_worker.py
-uv run pytest workers/tests -m integration  # live Docker when available
+uv run pytest workers/tests -m "not integration"
+# Live DockerSandbox e2e (optional; Compose + sandbox/tests cover the path):
+EVALFORGE_LIVE_WORKER_DOCKER=1 uv run pytest workers/tests/test_docker_production_integration.py -m integration
 ```
 
 Still deferred: live SSE networking, richer pin→adapter registry, frontend redesign.

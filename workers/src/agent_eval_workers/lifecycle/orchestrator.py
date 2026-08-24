@@ -68,6 +68,9 @@ class LifecycleOrchestrator:
             self.grading.schedule(run_id)
         elif trigger is LifecycleTrigger.GRADING_FINISHED:
             self.status.project_completed(run_id)
+            # Always tear down the sandbox after a terminal success — never leak
+            # containers across completed Runs.
+            self.sandbox.destroy(run_id)
         elif transition.to_phase is OrchestrationPhase.FAILED:
             assert transition.failure_cause is not None
             self.sandbox.destroy(run_id)

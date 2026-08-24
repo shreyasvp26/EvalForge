@@ -178,6 +178,7 @@ services:
       WORKER_ADAPTER_MODE: ${WORKER_ADAPTER_MODE:-deterministic}
       WORKER_SANDBOX_IMAGE: ${WORKER_SANDBOX_IMAGE:-evalforge/sandbox:local}
       WORKER_EXECUTION_TIMEOUT_SECONDS: ${WORKER_EXECUTION_TIMEOUT_SECONDS:-300}
+      WORKER_SANDBOX_VERIFY: ${WORKER_SANDBOX_VERIFY:-0}
       RUN_CANCEL_KEY_PREFIX: ${RUN_CANCEL_KEY_PREFIX:-evalforge:cancel}
       # Explicit allow-list for sandbox env injection (never pass full host env).
       WORKER_SANDBOX_ENV_ALLOWLIST: ${WORKER_SANDBOX_ENV_ALLOWLIST:-ANTHROPIC_API_KEY,PATH,HOME,TERM}
@@ -215,6 +216,7 @@ services:
     restart: unless-stopped
 
   web:
+    profiles: ["full", "web"]
     build:
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.web

@@ -99,9 +99,13 @@ class DockerPyEngine:
             return int(exit_code), stdout, stderr
 
         try:
-            with ThreadPoolExecutor(max_workers=1) as pool:
+            pool = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = pool.submit(_run)
                 exit_code, stdout, stderr = future.result(timeout=host_timeout)
+            finally:
+                # Never block forever on a stuck docker-py exec thread.
+                pool.shutdown(wait=False, cancel_futures=True)
         except FuturesTimeoutError as exc:
             raise SandboxTimeoutError(
                 f"Sandbox exec exceeded timeout of {timeout_seconds}s",

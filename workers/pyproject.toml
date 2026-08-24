@@ -51,6 +51,9 @@ pythonpath = [
   "tests",
 ]
 addopts = ["-q", "--strict-markers"]
+markers = [
+  "integration: requires a live Docker daemon",
+]
 
 [dependency-groups]
 dev = [

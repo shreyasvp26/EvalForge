@@ -32,6 +32,12 @@ cp .env.example .env
 docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up --build
 ```
 
+Include the web UI (optional profile — builds the Next.js image):
+
+```bash
+docker compose -f infrastructure/docker/docker-compose.yml --env-file .env --profile full up --build
+```
+
 Verify:
 
 ```bash
@@ -67,6 +73,11 @@ Compose workers default to **real Docker** + **deterministic Claude adapter**:
 | `WORKER_SANDBOX_ENGINE` | `docker`                  | Real `DockerPyEngine` via mounted Docker socket                           |
 | `WORKER_ADAPTER_MODE`   | `deterministic`           | `ClaudeCodeAdapter` with injected NDJSON stream (no provider credentials) |
 | `WORKER_SANDBOX_IMAGE`  | `evalforge/sandbox:local` | Image built by `sandbox-image` service                                    |
+| `WORKER_SANDBOX_VERIFY` | `0`                       | Opt-in post-provision `true` exec; keep off unless debugging Docker       |
+
+Default `docker compose up` starts the core stack (postgres, redis, minio, migrate,
+api, workers). The `web` service is behind profiles `full` / `web` so a low-disk
+host can still run the execution path without building the Next.js image.
 
 ### Real Claude CLI (optional)
 
@@ -98,5 +109,7 @@ still queued. Workers observe the signal cooperatively and tear down the sandbox
 | Claude live mode fails             | CLI installed in sandbox image; `ANTHROPIC_API_KEY` set; network `bridge` |
 | Sandbox timeout                    | `WORKER_EXECUTION_TIMEOUT_SECONDS`; worker + Docker logs                  |
 | Worker not consuming               | `docker compose logs workers`; Redis pending list; API enqueue errors     |
+| Build fails / read-only FS         | Host disk near full — free space, `docker system prune`, restart Desktop  |
+| Web image OOM/disk                 | Omit web: default compose; or `--profile full` only when disk allows      |
 
 See also `docs/development.md` and `workers/README.md`.

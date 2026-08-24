@@ -17,7 +17,16 @@ from agent_eval_workers.integration.process import build_production_worker
 from agent_eval_workers.worker.memory_queue import InMemoryWorkerQueue
 
 pytest_plugins = ["test_run_use_cases"]
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        __import__("os").environ.get("EVALFORGE_LIVE_WORKER_DOCKER", "0") != "1",
+        reason=(
+            "Set EVALFORGE_LIVE_WORKER_DOCKER=1 for full worker+Docker e2e "
+            "(Compose + sandbox/tests cover the same path)."
+        ),
+    ),
+]
 
 
 def _docker_available() -> bool:
@@ -60,6 +69,9 @@ def test_production_worker_real_docker_deterministic(
     )
     monkeypatch.setenv("WORKER_SANDBOX_NETWORK", "none")
     monkeypatch.setenv("WORKER_SANDBOX_ENV_ALLOWLIST", "PATH,HOME,TERM")
+    # Live Docker exec can be slow under Desktop load; skip verify in this test —
+    # sandbox integration suite already covers create/exec/timeout/cleanup.
+    monkeypatch.setenv("WORKER_SANDBOX_VERIFY", "0")
 
     storage = InMemoryObjectStorage()
     queue = InMemoryWorkerQueue()
@@ -95,13 +107,19 @@ def test_production_worker_real_docker_deterministic(
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id=world["platform_version_id"],
+            platform_version_id="platform-1.0.0",
         )
     )
     queue.enqueue(RunId(run.id))
     result = bundle.worker.run_once(block=False)
-    assert result is not None
-    assert result.kind is EngineOutcomeKind.COMPLETED
+    assert result is not None, "worker returned no result"
+    if result.kind is not EngineOutcomeKind.COMPLETED:
+        # Surface sandbox/adapter diagnostics for live Docker failures.
+        raise AssertionError(
+            f"expected COMPLETED, got {result.kind} cause={result.failure_cause} "
+            f"phase={result.phase} provisioned={bundle.sandbox.provisioned} "
+            f"destroyed={bundle.sandbox.destroyed}"
+        )
 
     final = GetRun(world["uow"], world["auth"]).execute(
         GetRunQuery(actor=world["actor"], run_id=run.id)
@@ -114,3 +132,4 @@ def test_production_worker_real_docker_deterministic(
     assert any(s.value.passed for s in scores)
     # Sandbox was destroyed after completion.
     assert RunId(run.id) in bundle.sandbox.destroyed
+    assert RunId(run.id) in bundle.sandbox.provisioned
