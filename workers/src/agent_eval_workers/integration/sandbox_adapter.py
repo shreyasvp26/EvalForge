@@ -15,7 +15,6 @@ from agent_eval_sandbox.models import (
     NetworkPolicy,
     SandboxHandle,
     SandboxSpec,
-    SandboxState,
 )
 
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
@@ -127,11 +126,10 @@ class ManagedSandboxAdapter:
         if handle is None:
             return
         try:
-            if handle.state not in {SandboxState.STOPPED, SandboxState.DESTROYED}:
-                try:
-                    handle = self.manager.stop(handle)
-                except Exception:  # noqa: BLE001 — best-effort stop before destroy
-                    pass
+            # Do not call manager.stop() first: default stop grace uses the
+            # execution timeout (often 300s) and sleep-infinity sandboxes ignore
+            # SIGTERM. ensure_destroyed already stops with a short grace then
+            # force-removes.
             self.manager.destroy(handle)
         except Exception:  # noqa: BLE001 — teardown must not mask original failure
             pass

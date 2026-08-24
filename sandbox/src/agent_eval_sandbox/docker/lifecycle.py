@@ -88,9 +88,10 @@ def stop_container(
     if handle.state is SandboxState.STOPPED:
         return handle
 
-    stop_timeout = (
-        timeout if timeout is not None else handle.spec.resources.timeout_seconds
-    )
+    # Stop grace is independent of execution timeout (often 300s). Long-lived
+    # entrypoints like `sleep infinity` ignore SIGTERM; keep grace short so
+    # teardown reaches force-remove promptly.
+    stop_timeout = timeout if timeout is not None else 10.0
     try:
         engine.stop_container(handle.container_id, timeout=float(stop_timeout))
     except Exception as exc:  # noqa: BLE001
