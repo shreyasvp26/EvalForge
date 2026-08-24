@@ -1,32 +1,24 @@
 import type { ReactNode } from "react";
 
-import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthHero } from "@/components/auth/auth-hero";
+import { AuthLandingBackground } from "@/components/auth/auth-landing-background";
+import { AuthLandingHeader } from "@/components/auth/auth-landing-header";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative grid min-h-dvh bg-background text-foreground lg:grid-cols-2">
-      <AuthBrandPanel />
+    <div className="ef-auth-landing relative min-h-dvh overflow-x-hidden">
+      <AuthLandingBackground />
 
-      <div className="relative flex min-h-dvh flex-col">
-        <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
-          <ThemeToggle />
+      <div className="relative z-10 flex min-h-dvh flex-col">
+        <AuthLandingHeader />
+
+        <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(380px,440px)] lg:items-stretch xl:grid-cols-[minmax(0,1.2fr)_440px]">
+          <AuthHero />
+
+          <div className="flex flex-1 flex-col justify-center px-6 pb-12 sm:px-10 lg:px-8 lg:pb-0 xl:px-10 xl:pr-16">
+            {children}
+          </div>
         </div>
-
-        {/* Mobile brand strip */}
-        <div
-          className="border-b border-border px-6 py-8 lg:hidden"
-          style={{ background: "var(--ef-auth-mesh)" }}
-        >
-          <p className="font-mono text-[length:var(--ef-text-caption)] tracking-[0.16em] uppercase text-accent">
-            EvalForge
-          </p>
-          <h1 className="mt-2 text-[length:var(--ef-text-section)] font-semibold leading-tight">
-            Evaluation control plane
-          </h1>
-        </div>
-
-        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
       </div>
     </div>
   );
