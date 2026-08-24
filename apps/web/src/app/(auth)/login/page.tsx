@@ -2,7 +2,6 @@
 
 import {
   Alert,
-  ArrowRight,
   Button,
   Eye,
   EyeOff,
@@ -33,6 +32,9 @@ function safeNextPath(raw: string | null): string {
   if (raw.startsWith("/login")) return readUserPreferences().landingPage;
   return raw;
 }
+
+const authInputClassName =
+  "h-11 border-[var(--ef-auth-input-border)] bg-[var(--ef-auth-input-bg)] backdrop-blur-sm placeholder:text-muted-foreground/70 focus-visible:ring-[var(--ef-auth-primary)] focus-visible:ring-offset-0";
 
 function LoginForm() {
   const { login, error, clearError } = useAuth();
@@ -89,28 +91,29 @@ function LoginForm() {
   const displayError = formError ?? error;
 
   return (
-    <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:px-14 xl:px-20">
-      <div className="mx-auto w-full max-w-[22rem] motion-safe:animate-[ef-fade-up_0.5s_ease-out_both]">
+    <div className="mx-auto w-full max-w-[420px] motion-safe:animate-[ef-fade-up_0.8s_ease-out_0.2s_both]">
+      <div
+        className="rounded-[var(--ef-radius-dialog)] border border-[var(--ef-auth-card-border)] p-8 shadow-[0_24px_80px_rgb(0_0_0/0.35),inset_0_1px_0_var(--ef-auth-card-highlight)] backdrop-blur-xl sm:p-9"
+        style={{ background: "var(--ef-auth-card-bg)" }}
+      >
         <div className="mb-8 space-y-2">
-          <Heading level={1} variant="page">
+          <Heading level={1} variant="page" className="text-[length:var(--ef-text-section)]">
             Welcome back
           </Heading>
           <Text variant="secondary">Sign in to your EvalForge workspace.</Text>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          className="space-y-5 rounded-[var(--ef-radius-dialog)] border border-border bg-card p-6 shadow-ef-md"
-          noValidate
-        >
+        <form onSubmit={onSubmit} className="space-y-6" noValidate>
           {displayError ? (
             <Alert variant="danger" title="Sign in failed">
               {displayError}
             </Alert>
           ) : null}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-muted-foreground">
+              Email
+            </Label>
             <Input
               id="email"
               name="email"
@@ -119,7 +122,7 @@ function LoginForm() {
               autoFocus
               value={email}
               disabled={submitting}
-              className="h-10"
+              className={authInputClassName}
               onChange={(event) => {
                 setEmail(event.target.value);
                 if (fieldErrors.email) {
@@ -138,8 +141,10 @@ function LoginForm() {
             ) : null}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-muted-foreground">
+              Password
+            </Label>
             <div className="relative">
               <Input
                 id="password"
@@ -148,7 +153,7 @@ function LoginForm() {
                 autoComplete="current-password"
                 value={password}
                 disabled={submitting}
-                className="h-10 pr-10"
+                className={`${authInputClassName} pr-11`}
                 onChange={(event) => {
                   setPassword(event.target.value);
                   if (fieldErrors.password) {
@@ -167,7 +172,7 @@ function LoginForm() {
                 label={showPassword ? "Hide password" : "Show password"}
                 size="sm"
                 type="button"
-                className="absolute right-1 top-1/2 -translate-y-1/2"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   setShowPassword((value) => !value);
                 }}
@@ -180,10 +185,10 @@ function LoginForm() {
 
           <Button
             type="submit"
-            className="h-10 w-full"
+            variant="ghost"
+            className="ef-auth-primary-fill h-11 w-full text-[length:var(--ef-text-body)] font-semibold shadow-[0_4px_24px_var(--ef-auth-primary-glow)] transition-[filter,box-shadow] duration-[var(--ef-duration-normal)] hover:bg-transparent"
             size="lg"
             loading={submitting}
-            rightIcon={ArrowRight}
           >
             Sign in
           </Button>
@@ -195,13 +200,11 @@ function LoginForm() {
 
 function LoginFormFallback() {
   return (
-    <div className="flex flex-1 flex-col justify-center px-6 py-10">
-      <div className="mx-auto w-full max-w-[22rem] space-y-2">
-        <Heading level={1} variant="page">
-          Welcome back
-        </Heading>
-        <Text variant="secondary">Loading sign-in form…</Text>
-      </div>
+    <div className="mx-auto w-full max-w-[420px] space-y-2 px-6">
+      <Heading level={1} variant="page">
+        Welcome back
+      </Heading>
+      <Text variant="secondary">Loading sign-in form…</Text>
     </div>
   );
 }
