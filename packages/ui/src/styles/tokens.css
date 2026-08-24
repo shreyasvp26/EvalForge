@@ -84,10 +84,24 @@
   --ef-input: #ffffff;
   --ef-input-foreground: #111113;
 
-  /* Accent — calm blue-gray; foreground must remain high-contrast on accent */
-  --ef-accent: #2f3f50;
+  /* Layered surfaces */
+  --ef-surface-base: #f7f7f8;
+  --ef-surface-raised: #ffffff;
+  --ef-surface-overlay: #ffffff;
+  --ef-surface-inset: #efeff1;
+
+  /* Accent — deep indigo-slate; high contrast on actions */
+  --ef-accent: #1e3a5f;
+  --ef-accent-strong: #152a45;
   --ef-accent-foreground: #f7f7f8;
-  --ef-accent-muted: #e8eef3;
+  --ef-accent-muted: #e4ebf3;
+  --ef-accent-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+  --ef-accent-glow: rgb(30 58 95 / 0.18);
+
+  /* Auth atmosphere */
+  --ef-auth-mesh: radial-gradient(ellipse 80% 60% at 20% 20%, rgb(30 58 95 / 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 80% 70%, rgb(45 74 111 / 0.08) 0%, transparent 50%),
+    var(--ef-surface-base);
 
   /* Semantic status */
   --ef-success: #0f7a45;
@@ -133,9 +147,21 @@
   --ef-input: #111113;
   --ef-input-foreground: #f2f2f3;
 
-  --ef-accent: #c5d0db;
-  --ef-accent-foreground: #0b0b0c;
-  --ef-accent-muted: #1a222b;
+  --ef-surface-base: #0b0b0c;
+  --ef-surface-raised: #111113;
+  --ef-surface-overlay: #141416;
+  --ef-surface-inset: #161618;
+
+  --ef-accent: #7eb6f0;
+  --ef-accent-strong: #5a9fd8;
+  --ef-accent-foreground: #0a1420;
+  --ef-accent-muted: #132235;
+  --ef-accent-gradient: linear-gradient(135deg, #4a7ab0 0%, #7eb6f0 100%);
+  --ef-accent-glow: rgb(126 182 240 / 0.15);
+
+  --ef-auth-mesh: radial-gradient(ellipse 70% 55% at 15% 15%, rgb(74 122 176 / 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 85% 75%, rgb(126 182 240 / 0.1) 0%, transparent 50%),
+    var(--ef-surface-base);
 
   --ef-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
   --ef-shadow-md: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.35);

@@ -25,6 +25,7 @@ export {
   Copy,
   ExternalLink,
   Eye,
+  EyeOff,
   FileText,
   Filter,
   FlaskConical,

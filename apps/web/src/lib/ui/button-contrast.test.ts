@@ -20,12 +20,10 @@ function contrastRatio(fg: string, bg: string): number {
 
 describe("primary button accent contrast", () => {
   it("light theme accent meets AA for normal text", () => {
-    // Mirrors packages/ui/src/styles/tokens.css :root
-    expect(contrastRatio("#f7f7f8", "#2f3f50")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#f7f7f8", "#1e3a5f")).toBeGreaterThanOrEqual(4.5);
   });
 
   it("dark theme accent meets AA for normal text", () => {
-    // Mirrors packages/ui/src/styles/tokens.css .dark
-    expect(contrastRatio("#0b0b0c", "#c5d0db")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#0a1420", "#7eb6f0")).toBeGreaterThanOrEqual(4.5);
   });
 });
