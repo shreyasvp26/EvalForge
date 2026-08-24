@@ -13,6 +13,7 @@ import time
 from typing import cast
 
 from agent_eval_infrastructure import RuntimeProfile, build_infrastructure
+from agent_eval_infrastructure.queue.redis_cancellation import RedisRunCancellationStore
 from agent_eval_infrastructure.queue.redis_run_queue import RedisRunQueue
 from agent_eval_shared.config import Environment, LogLevel
 from agent_eval_shared.log import configure_logging, get_logger
@@ -20,6 +21,7 @@ from agent_eval_shared.metrics import configure_metrics
 from agent_eval_shared.tracing import configure_tracing, shutdown_tracing
 from redis import Redis
 
+from agent_eval_workers.cancellation.redis_registry import RedisCancellationRegistry
 from agent_eval_workers.integration.process import build_production_worker
 from agent_eval_workers.queue_redis import RedisWorkerQueue
 
@@ -69,6 +71,12 @@ def run() -> None:
     )
     worker_queue = RedisWorkerQueue(run_queue)
 
+    cancel_store = RedisRunCancellationStore(
+        client,
+        key_prefix=os.environ.get("RUN_CANCEL_KEY_PREFIX", "evalforge:cancel"),
+    )
+    cancellation = RedisCancellationRegistry(cancel_store)
+
     timeout_raw = os.environ.get("WORKER_EXECUTION_TIMEOUT_SECONDS")
     execution_timeout = float(timeout_raw) if timeout_raw else None
 
@@ -79,6 +87,8 @@ def run() -> None:
         events=infra.events,
         worker_id=worker_id,
         execution_timeout_seconds=execution_timeout,
+        cancellation=cancellation,
+        object_storage=infra.object_storage,
     )
     worker = bundle.worker
 

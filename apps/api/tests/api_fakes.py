@@ -182,6 +182,8 @@ class FakeContainer:
         self.memberships = MagicMock()
         self.identity = MagicMock()
         self.infrastructure = MagicMock()
+        self.infrastructure.redis = None
+        self.infrastructure.run_queue = MagicMock()
         self._ready = True
 
     def dispose(self) -> None:

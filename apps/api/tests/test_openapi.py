@@ -25,6 +25,7 @@ def test_openapi_generated(client) -> None:
     assert "/v1/runs" in paths
     assert "/v1/runs/{run_id}/events" in paths
     assert "/v1/runs/{run_id}/artifacts" in paths
+    assert "/v1/runs/{run_id}/artifacts/{artifact_id}/content" in paths
     assert "/v1/runs/{run_id}/scores" in paths
     assert "/v1/system/info" in paths
     # Tagged operation summaries present

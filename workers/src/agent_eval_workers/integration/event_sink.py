@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import Protocol
 
 from agent_eval_adapters.sdk.models import (
     EmittedArtifact,
@@ -12,6 +13,7 @@ from agent_eval_adapters.sdk.models import (
     EmittedProgress,
 )
 from agent_eval_domain.common.ids import RunId
+from agent_eval_shared.log import get_logger
 
 from agent_eval_workers.event_pipeline.models import (
     IncomingArtifact,
@@ -19,17 +21,26 @@ from agent_eval_workers.event_pipeline.models import (
 )
 from agent_eval_workers.mocks.stream import EventStreamPort
 
+logger = get_logger("agent_eval_workers.integration.event_sink")
+
+
+class ArtifactObjectStore(Protocol):
+    """Minimal put surface — Infrastructure ObjectStorage satisfies this."""
+
+    def put(self, key: str, data: bytes, *, content_type: str) -> object: ...
+
 
 @dataclass
 class PipelineEventSink:
     """Bridge Adapter SDK ``EventSink`` → Worker event pipeline.
 
-    Stores artifact bytes as opaque metadata references (storage_key) — no
-    repository or object-store access from the Adapter side.
+    When ``object_storage`` is set, artifact bytes are uploaded before metadata
+    is recorded. Without storage (unit tests), metadata-only refs are kept.
     """
 
     stream: EventStreamPort
     run_id: RunId
+    object_storage: ArtifactObjectStore | None = None
     errors: list[tuple[str, Mapping[str, object] | None]] = field(default_factory=list)
     progress: list[EmittedProgress] = field(default_factory=list)
 
@@ -50,6 +61,26 @@ class PipelineEventSink:
         kind = artifact.kind
         if kind == "payload":
             kind = "other"
+        if self.object_storage is not None:
+            self.object_storage.put(
+                storage_key,
+                artifact.content,
+                content_type=artifact.content_type,
+            )
+            logger.info(
+                "artifact_bytes_stored",
+                run_id=self.run_id.value,
+                artifact_id=artifact.artifact_id,
+                storage_key=storage_key,
+                size_bytes=len(artifact.content),
+            )
+        else:
+            logger.warning(
+                "artifact_bytes_not_stored",
+                run_id=self.run_id.value,
+                artifact_id=artifact.artifact_id,
+                detail="object_storage not configured; metadata only",
+            )
         self.stream.submit_artifact(
             IncomingArtifact(
                 run_id=self.run_id,

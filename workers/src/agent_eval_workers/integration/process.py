@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from typing import Protocol
 
 from agent_eval_adapters.claude_code import ClaudeCodeAdapter
 from agent_eval_adapters.sdk.adapter import Adapter
@@ -41,6 +42,7 @@ from agent_eval_sandbox.manager import SandboxManager
 from agent_eval_sandbox.ports import DockerEngine
 from agent_eval_shared.log import get_logger
 
+from agent_eval_workers.cancellation.ports import CancellationPort
 from agent_eval_workers.cancellation.registry import InMemoryCancellationRegistry
 from agent_eval_workers.checkpoints.manager import CheckpointManager
 from agent_eval_workers.checkpoints.memory import InMemoryCheckpointStore
@@ -57,7 +59,10 @@ from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolve
 from agent_eval_workers.integration.grading_scheduler import GraderSdkScheduler
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.integration.run_status import ApplicationRunStatus
-from agent_eval_workers.integration.sandbox_adapter import ManagedSandboxAdapter
+from agent_eval_workers.integration.sandbox_adapter import (
+    ManagedSandboxAdapter,
+    sandbox_environment_from_allowlist,
+)
 from agent_eval_workers.integration.worker_auth import WorkerAuthorization
 from agent_eval_workers.lifecycle.machine import RunLifecycle
 from agent_eval_workers.lifecycle.orchestrator import LifecycleOrchestrator
@@ -72,12 +77,16 @@ AdapterFactory = Callable[[], Adapter]
 StreamSource = Callable[[object], Iterator[str]]
 
 
+class _ArtifactStore(Protocol):
+    def put(self, key: str, data: bytes, *, content_type: str) -> object: ...
+
+
 @dataclass(slots=True)
 class ProductionWorkerBundle:
     """Assembled process-level worker + shared ports (for tests / introspection)."""
 
     worker: WorkerRuntime
-    cancellation: InMemoryCancellationRegistry
+    cancellation: CancellationPort
     sandbox: ManagedSandboxAdapter
     adapter: SdkAdapterBridge
     grading: GraderSdkScheduler
@@ -98,12 +107,14 @@ def select_docker_engine(*, mode: str | None = None) -> tuple[DockerEngine, str]
         )
         return FakeDockerEngine(), "fake"
     if resolved == "docker":
+        logger.info("worker_sandbox_engine_docker")
         return DockerPyEngine.from_env(), "docker"
     # auto
     try:
         engine = DockerPyEngine.from_env()
         # Cheap probe — list containers (or ping). Fail closed to fake.
         engine.client.ping()
+        logger.info("worker_sandbox_engine_auto_docker")
         return engine, "docker"
     except Exception as exc:  # noqa: BLE001 — intentional fallback
         logger.warning(
@@ -143,19 +154,20 @@ def build_production_lifecycle_factory(
     actor: Actor | None = None,
     auth: object | None = None,
     adapter_factory: AdapterFactory | None = None,
-    cancellation: InMemoryCancellationRegistry | None = None,
+    cancellation: CancellationPort | None = None,
+    object_storage: _ArtifactStore | None = None,
 ) -> tuple[
     LifecycleFactory,
     ManagedSandboxAdapter,
     SdkAdapterBridge,
     GraderSdkScheduler,
     ApplicationRunStatus,
-    InMemoryCancellationRegistry,
+    CancellationPort,
 ]:
     """Construct the LifecycleOrchestrator factory used by WorkerRuntime."""
     system_actor = actor or Actor(id="system-worker")
     worker_auth = auth or WorkerAuthorization(system_actor_id=system_actor.id)
-    cancel = cancellation or InMemoryCancellationRegistry()
+    cancel: CancellationPort = cancellation or InMemoryCancellationRegistry()
     sandbox_registry = RunSandboxRegistry()
     manager = SandboxManager(runtime=DockerSandbox(engine=docker_engine))
     sandbox = ManagedSandboxAdapter(manager=manager, registry=sandbox_registry)
@@ -189,7 +201,9 @@ def build_production_lifecycle_factory(
         sandboxes=sandbox_registry,
         manager=manager,
         adapter_factory=factory,
-        cancellation=cancel,
+        cancellation=cancel,  # type: ignore[arg-type]
+        object_storage=object_storage,
+        environment=sandbox_environment_from_allowlist(),
         run_metadata_factory=run_metadata_factory,
     )
 
@@ -245,6 +259,8 @@ def build_production_worker(
     execution_timeout_seconds: float | None = None,
     sandbox_mode: str | None = None,
     adapter_mode: str | None = None,
+    cancellation: CancellationPort | None = None,
+    object_storage: _ArtifactStore | None = None,
 ) -> ProductionWorkerBundle:
     """Wire a production WorkerRuntime against an injected WorkerQueuePort."""
     system_actor = actor or Actor(id=os.environ.get("WORKER_ACTOR_ID", "system-worker"))
@@ -264,7 +280,7 @@ def build_production_worker(
         adapter,
         grading,
         status,
-        cancellation,
+        resolved_cancellation,
     ) = build_production_lifecycle_factory(
         uow_factory=uow_factory,
         ids=ids,
@@ -273,13 +289,15 @@ def build_production_worker(
         actor=system_actor,
         auth=auth,
         adapter_factory=factory,
+        cancellation=cancellation,
+        object_storage=object_storage,
     )
 
     worker = WorkerRuntime(
         worker_id=worker_id,
         queue=queue,
         checkpoints=CheckpointManager(InMemoryCheckpointStore()),
-        cancellation=cancellation,
+        cancellation=resolved_cancellation,
         lifecycle_factory=lifecycle_factory,
         retry_policy=RetryPolicy(max_attempts=max_attempts),
         clock=SystemClock(),
@@ -287,7 +305,7 @@ def build_production_worker(
     )
     return ProductionWorkerBundle(
         worker=worker,
-        cancellation=cancellation,
+        cancellation=resolved_cancellation,
         sandbox=sandbox,
         adapter=adapter,
         grading=grading,
