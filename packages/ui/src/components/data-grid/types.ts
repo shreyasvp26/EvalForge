@@ -14,7 +14,12 @@ import type { ReactNode } from "react";
  * Generic DataGrid contract. No domain types — consumers supply TData + columns.
  */
 export interface DataGridProps<TData> {
-  columns: ColumnDef<TData>[];
+  /**
+   * Column defs from `createColumnHelper` — value generics vary per column.
+   * `any` matches TanStack Table's recommended consumer typing with exactOptionalPropertyTypes.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TanStack ColumnDef value variance
+  columns: ColumnDef<TData, any>[];
   data: TData[];
   getRowId?: (originalRow: TData, index: number) => string;
 
