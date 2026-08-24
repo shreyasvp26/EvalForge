@@ -6,7 +6,7 @@ const password = process.env["E2E_PASSWORD"] ?? "evalforge-admin";
 test.describe("critical product path", () => {
   test("login → overview → project → run → run detail", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 
     // Stale presence cookie without JWT must not trap on Restoring session.
     await page.context().addCookies([
@@ -17,16 +17,16 @@ test.describe("critical product path", () => {
       },
     ]);
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible({
       timeout: 8_000,
     });
     await expect(page.getByText("Restoring session")).toHaveCount(0);
 
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Evaluation overview" })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByRole("region", { name: "Evaluation health" })).toBeVisible();
