@@ -8,12 +8,13 @@ import type { Suite } from "@/lib/api/suites";
 import {
   formatScoreValue,
   isLiveRunStatus,
+  runPassSignal,
   runStatusBadge,
   runStatusLabel,
   truncateId,
 } from "@/features/runs/utils";
 
-export { formatScoreValue, runStatusBadge, runStatusLabel, truncateId };
+export { formatScoreValue, runPassSignal, runStatusBadge, runStatusLabel, truncateId };
 
 export const dashboardQueryKey = ["dashboard"] as const;
 
@@ -76,14 +77,6 @@ export function scoreOutcomeLabel(outcome: ScoreOutcome): string {
   if (outcome === "passed") return "Passed";
   if (outcome === "failed") return "Failed";
   return "Partial";
-}
-
-/** Aggregate pass/fail from a run's scores when available. */
-export function runPassSignal(run: Run): boolean | null {
-  if (run.scores.length === 0) return null;
-  if (run.scores.every((score) => score.value.passed === true)) return true;
-  if (run.scores.some((score) => score.value.passed === false)) return false;
-  return null;
 }
 
 export function primaryScoreLabel(run: Run): string | null {

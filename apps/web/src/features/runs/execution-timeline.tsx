@@ -11,12 +11,13 @@ import {
   Text,
   toast,
 } from "@agent-eval/ui";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   eventHeadline,
   eventStatusBadge,
   eventSummary,
+  formatDurationMs,
   formatRunTime,
   groupEvents,
   isLiveRunStatus,
@@ -28,6 +29,8 @@ import type { ExecutionEvent, RunStatus } from "@/lib/api/runs";
 export interface ExecutionTimelineProps {
   events: ExecutionEvent[];
   status: RunStatus;
+  /** ISO timestamp used as t=0 for relative offsets. */
+  startedAt?: string;
   isLoading?: boolean;
   errorMessage?: string | null;
   onRetry?: () => void;
@@ -36,6 +39,7 @@ export interface ExecutionTimelineProps {
 export function ExecutionTimeline({
   events,
   status,
+  startedAt,
   isLoading = false,
   errorMessage = null,
   onRetry,
@@ -46,6 +50,12 @@ export function ExecutionTimeline({
   const latestId = sorted[sorted.length - 1]?.id ?? null;
   const latestRef = useRef<HTMLLIElement | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const originMs = useMemo(() => {
+    const origin = startedAt ?? sorted[0]?.occurred_at;
+    if (!origin) return null;
+    const ms = new Date(origin).getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }, [startedAt, sorted]);
 
   useEffect(() => {
     if (!live || !latestId) return;
@@ -150,7 +160,16 @@ export function ExecutionTimeline({
                             <Text as="span" variant="caption" className="tabular-nums">
                               #{String(event.sequence)}
                             </Text>
-                            <Text as="span" variant="caption" className="tabular-nums">
+                            <Text as="span" variant="caption" className="font-mono tabular-nums">
+                              {originMs === null
+                                ? formatRunTime(event.occurred_at)
+                                : `+${formatDurationMs(Math.max(0, new Date(event.occurred_at).getTime() - originMs))}`}
+                            </Text>
+                            <Text
+                              as="span"
+                              variant="caption"
+                              className="tabular-nums text-muted-foreground"
+                            >
                               {formatRunTime(event.occurred_at)}
                             </Text>
                           </Cluster>

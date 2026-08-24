@@ -86,18 +86,31 @@ export function ScoreViewer({
                     aria-hidden
                   />
                   <div className="min-w-0 flex-1 space-y-2">
-                    <Cluster gap={2} className="items-center">
-                      <Badge status={scoreResultBadge(score.value)}>
-                        {formatScoreValue(score.value)}
-                      </Badge>
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <Text
                         as="span"
                         variant="body"
-                        className="font-medium font-mono text-[length:var(--ef-text-caption)]"
+                        className="text-[length:var(--ef-text-section)] font-semibold tabular-nums leading-none"
                       >
-                        {truncateId(score.grader_id, 16)}
+                        {score.value.numeric !== null
+                          ? score.value.numeric.toFixed(2)
+                          : formatScoreValue(score.value)}
                       </Text>
-                    </Cluster>
+                      <Badge status={scoreResultBadge(score.value)}>
+                        {score.value.passed === true
+                          ? "PASS"
+                          : score.value.passed === false
+                            ? "FAIL"
+                            : formatScoreValue(score.value)}
+                      </Badge>
+                    </div>
+                    <Text
+                      as="span"
+                      variant="body"
+                      className="font-medium font-mono text-[length:var(--ef-text-caption)]"
+                    >
+                      {truncateId(score.grader_id, 20)}
+                    </Text>
                     <Text variant="caption" className="font-mono">
                       version {truncateId(score.grader_version_id, 16)}
                     </Text>

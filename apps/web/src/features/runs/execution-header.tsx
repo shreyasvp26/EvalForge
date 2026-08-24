@@ -1,6 +1,7 @@
 "use client";
 
-import { Badge, Button, Cluster, Text } from "@agent-eval/ui";
+import { Button, Cluster, Text, toast } from "@agent-eval/ui";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -8,25 +9,38 @@ import {
   elapsedMsSince,
   formatDurationMs,
   formatRunDate,
+  formatScoreValue,
   isLiveRunStatus,
   recentActivityLabel,
   runFinishedAt,
+  runPassSignal,
   runStartedAt,
-  runStatusBadge,
-  runStatusLabel,
   truncateId,
 } from "./utils";
 
 import type { ExecutionEvent, Run } from "@/lib/api/runs";
 
+import { StatusBadge } from "@/components/status/status-badge";
+
 export interface ExecutionHeaderProps {
   run: Run;
   events: ExecutionEvent[];
+  projectName?: string;
+  caseLabel?: string;
+  agentLabel?: string;
   onCancel?: () => void;
   onCopyId?: () => void;
 }
 
-export function ExecutionHeader({ run, events, onCancel, onCopyId }: ExecutionHeaderProps) {
+export function ExecutionHeader({
+  run,
+  events,
+  projectName,
+  caseLabel,
+  agentLabel,
+  onCancel,
+  onCopyId,
+}: ExecutionHeaderProps) {
   const live = isLiveRunStatus(run.status);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -48,35 +62,75 @@ export function ExecutionHeader({ run, events, onCancel, onCopyId }: ExecutionHe
       ? new Date(finishedAt).getTime() - new Date(startedAt).getTime()
       : elapsedMsSince(startedAt, nowMs);
   const recent = recentActivityLabel(events);
+  const passed = runPassSignal(run);
+  const primaryScore = run.scores[0];
 
   return (
-    <div className="space-y-4 rounded-[var(--ef-radius-panel)] border border-border bg-card/40 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-2">
+    <div className="overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-card">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
+        <div className="space-y-3">
           <Cluster gap={2} className="items-center">
-            <Badge status={runStatusBadge(run.status)}>{runStatusLabel(run.status)}</Badge>
-            {live ? <Badge status="running">Live</Badge> : null}
-            {run.is_partially_graded ? <Badge status="warning">Partially graded</Badge> : null}
+            <StatusBadge status={run.status} passed={passed} />
+            {live ? (
+              <Text
+                as="span"
+                variant="caption"
+                className="rounded-[var(--ef-radius-control)] bg-running-muted px-2 py-0.5 font-mono uppercase tracking-[0.1em] text-running"
+              >
+                Live · polling
+              </Text>
+            ) : null}
+            {run.is_partially_graded ? (
+              <Text
+                as="span"
+                variant="caption"
+                className="rounded-[var(--ef-radius-control)] bg-warning-muted px-2 py-0.5 text-warning"
+              >
+                Partially graded
+              </Text>
+            ) : null}
           </Cluster>
-          <Text as="div" variant="caption" className="font-mono tabular-nums">
-            {truncateId(run.id, 24)}
-          </Text>
+          <div>
+            <Text as="div" variant="caption" className="font-mono uppercase tracking-[0.12em]">
+              Run
+            </Text>
+            <Text as="div" variant="body" className="mt-1 font-mono tabular-nums">
+              {truncateId(run.id, 28)}
+            </Text>
+          </div>
         </div>
-        <Cluster gap={2}>
-          {canCancelRun(run.status) && onCancel ? (
-            <Button type="button" variant="danger" size="sm" onClick={onCancel}>
-              Cancel
-            </Button>
+
+        <div className="flex flex-col items-end gap-3">
+          {primaryScore ? (
+            <div className="text-right">
+              <Text as="div" variant="caption" className="font-mono uppercase tracking-[0.12em]">
+                Score
+              </Text>
+              <Text
+                as="div"
+                variant="body"
+                className="mt-1 text-[length:var(--ef-text-page)] font-semibold tabular-nums leading-none"
+              >
+                {formatScoreValue(primaryScore.value)}
+              </Text>
+            </div>
           ) : null}
-          {onCopyId ? (
-            <Button type="button" variant="outline" size="sm" onClick={onCopyId}>
-              Copy ID
-            </Button>
-          ) : null}
-        </Cluster>
+          <Cluster gap={2}>
+            {canCancelRun(run.status) && onCancel ? (
+              <Button type="button" variant="danger" size="sm" onClick={onCancel}>
+                Cancel
+              </Button>
+            ) : null}
+            {onCopyId ? (
+              <Button type="button" variant="outline" size="sm" onClick={onCopyId}>
+                Copy ID
+              </Button>
+            ) : null}
+          </Cluster>
+        </div>
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid gap-0 sm:grid-cols-2 lg:grid-cols-4">
         <ChromeStat label="Started" value={formatRunDate(startedAt)} />
         <ChromeStat
           label="Finished"
@@ -89,18 +143,17 @@ export function ExecutionHeader({ run, events, onCancel, onCopyId }: ExecutionHe
         <ChromeStat label="Recent activity" value={recent ?? "Waiting for events"} />
       </dl>
 
-      <div className="border-t border-border pt-3">
-        <Text as="div" variant="caption" className="mb-2">
-          Pinned versions
-        </Text>
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
-          <PinChip label="project" value={truncateId(run.pins.project_id, 10)} />
-          <PinChip label="case" value={truncateId(run.pins.case_version_id, 10)} />
-          <PinChip label="prompt" value={truncateId(run.pins.prompt_version_id, 10)} />
-          <PinChip label="agent" value={truncateId(run.pins.agent_version_id, 10)} />
-          <PinChip label="adapter" value={truncateId(run.pins.adapter_version_id, 10)} />
-          <PinChip label="graders" value={String(run.pins.grader_version_ids.length)} />
-        </div>
+      <div className="grid gap-3 border-t border-border px-4 py-3 sm:grid-cols-3 sm:px-5">
+        <ContextLink
+          label="Project"
+          value={projectName ?? truncateId(run.pins.project_id, 12)}
+          href={`/projects/${run.pins.project_id}`}
+        />
+        <ContextLink label="Case" value={caseLabel ?? truncateId(run.pins.case_version_id, 12)} />
+        <ContextLink
+          label="Agent"
+          value={agentLabel ?? truncateId(run.pins.agent_version_id, 12)}
+        />
       </div>
     </div>
   );
@@ -108,21 +161,47 @@ export function ExecutionHeader({ run, events, onCancel, onCopyId }: ExecutionHe
 
 function ChromeStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
-      <Text as="div" variant="caption">
+    <div className="border-border px-4 py-3 sm:border-r sm:px-5 sm:last:border-r-0">
+      <Text as="div" variant="caption" className="font-mono uppercase tracking-[0.1em]">
         {label}
       </Text>
-      <Text as="div" variant="body" className="tabular-nums">
+      <Text as="div" variant="body" className="mt-1 tabular-nums">
         {value}
       </Text>
     </div>
   );
 }
 
-function PinChip({ label, value }: { label: string; value: string }) {
+function ContextLink({ label, value, href }: { label: string; value: string; href?: string }) {
   return (
-    <Text as="span" variant="caption" className="font-mono">
-      <span className="text-muted-foreground">{label}</span> {value}
-    </Text>
+    <div className="min-w-0">
+      <Text as="div" variant="caption" className="font-mono uppercase tracking-[0.1em]">
+        {label}
+      </Text>
+      {href ? (
+        <Link
+          href={href}
+          className="mt-1 block truncate text-[length:var(--ef-text-body)] text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {value}
+        </Link>
+      ) : (
+        <Text as="div" variant="body" className="mt-1 truncate">
+          {value}
+        </Text>
+      )}
+    </div>
+  );
+}
+
+/** Convenience for copy toast wiring in stories/tests. */
+export function copyRunId(runId: string) {
+  return navigator.clipboard.writeText(runId).then(
+    () => {
+      toast.success("Run ID copied");
+    },
+    () => {
+      toast.error("Could not copy run ID");
+    },
   );
 }

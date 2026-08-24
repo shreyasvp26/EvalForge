@@ -1,11 +1,13 @@
 "use client";
 
-import { Badge, Button, Text } from "@agent-eval/ui";
+import { Button, Text } from "@agent-eval/ui";
 import { createColumnHelper } from "@tanstack/react-table";
 
-import { canCancelRun, formatRunDate, runStatusBadge, runStatusLabel, truncateId } from "./utils";
+import { canCancelRun, formatRunDate, formatScoreValue, runPassSignal, truncateId } from "./utils";
 
 import type { Run } from "@/lib/api/runs";
+
+import { StatusBadge } from "@/components/status/status-badge";
 
 const columnHelper = createColumnHelper<Run>();
 
@@ -18,9 +20,23 @@ export function createRunColumns(options: {
   return [
     columnHelper.accessor("status", {
       header: "Status",
-      cell: (info) => (
-        <Badge status={runStatusBadge(info.getValue())}>{runStatusLabel(info.getValue())}</Badge>
-      ),
+      cell: (info) => {
+        const run = info.row.original;
+        return <StatusBadge status={run.status} passed={runPassSignal(run)} size="sm" />;
+      },
+    }),
+    columnHelper.display({
+      id: "score",
+      header: "Score",
+      enableSorting: false,
+      cell: (info) => {
+        const score = info.row.original.scores[0];
+        return (
+          <Text as="span" variant="caption" className="font-mono tabular-nums">
+            {score ? formatScoreValue(score.value) : "—"}
+          </Text>
+        );
+      },
     }),
     columnHelper.display({
       id: "project",
@@ -57,16 +73,6 @@ export function createRunColumns(options: {
       cell: (info) => (
         <Text as="span" variant="caption" className="tabular-nums">
           {formatRunDate(info.getValue())}
-        </Text>
-      ),
-    }),
-    columnHelper.display({
-      id: "duration",
-      header: "Duration",
-      enableSorting: false,
-      cell: () => (
-        <Text as="span" variant="caption" className="tabular-nums text-muted-foreground">
-          —
         </Text>
       ),
     }),

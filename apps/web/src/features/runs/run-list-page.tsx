@@ -182,12 +182,12 @@ export function RunListPage() {
   return (
     <PageLayout width="full">
       <PageHeader
-        eyebrow="Execution"
+        eyebrow="Evaluation"
         title="Runs"
-        description="Pinned evaluation executions across projects. Launch a run to queue agent work against immutable version pins."
+        description="Pinned evaluation executions. Status, score, and context at a glance."
         actions={
           <Button asChild leftIcon={Plus}>
-            <Link href="/runs/new">New run</Link>
+            <Link href="/runs/new">Launch run</Link>
           </Button>
         }
       />
