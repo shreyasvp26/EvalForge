@@ -74,13 +74,18 @@ class RedisRunQueue:
     def claim_run(self, *, block: bool = True) -> ClaimedRun | None:
         """Move one task from pending to processing (Worker hook)."""
         if block:
-            raw = self._client.blmove(
-                self._pending,
-                self._processing,
-                self._claim_timeout_seconds,
-                src="LEFT",
-                dest="RIGHT",
-            )
+            try:
+                raw = self._client.blmove(
+                    self._pending,
+                    self._processing,
+                    self._claim_timeout_seconds,
+                    src="LEFT",
+                    dest="RIGHT",
+                )
+            except TimeoutError:
+                # redis-py may surface idle BLMOVE waits as socket TimeoutError
+                # when client socket_timeout ≈ block timeout. Treat as idle.
+                return None
         else:
             raw = self._client.lmove(
                 self._pending,
@@ -108,5 +113,14 @@ class RedisRunQueue:
 
 
 def create_redis_client(redis_url: str) -> Redis:
-    """Build a redis-py client from configuration (decode responses as str)."""
-    return Redis.from_url(redis_url, decode_responses=True)
+    """Build a redis-py client from configuration (decode responses as str).
+
+    ``socket_timeout`` is left ``None`` so blocking queue claims (BLMOVE) can
+    wait for the full claim timeout without racing the client socket timer.
+    """
+    return Redis.from_url(
+        redis_url,
+        decode_responses=True,
+        socket_timeout=None,
+        socket_connect_timeout=5.0,
+    )

@@ -47,18 +47,25 @@ def run() -> None:
 
     infra = build_infrastructure(profile=RuntimeProfile.PRODUCTION)
     redis_url = os.environ.get("REDIS_URL", infra.settings.redis_url)
-    client = Redis.from_url(redis_url, decode_responses=True)
+    claim_timeout = float(
+        os.environ.get(
+            "RUN_QUEUE_CLAIM_TIMEOUT_SECONDS",
+            str(infra.settings.run_queue_claim_timeout_seconds),
+        )
+    )
+    # socket_timeout must exceed BLMOVE block time or idle waits raise TimeoutError.
+    client = Redis.from_url(
+        redis_url,
+        decode_responses=True,
+        socket_timeout=None,
+        socket_connect_timeout=5.0,
+    )
     run_queue = RedisRunQueue(
         client,
         key_prefix=os.environ.get(
             "RUN_QUEUE_KEY_PREFIX", infra.settings.run_queue_key_prefix
         ),
-        claim_timeout_seconds=float(
-            os.environ.get(
-                "RUN_QUEUE_CLAIM_TIMEOUT_SECONDS",
-                str(infra.settings.run_queue_claim_timeout_seconds),
-            )
-        ),
+        claim_timeout_seconds=claim_timeout,
     )
     worker_queue = RedisWorkerQueue(run_queue)
 

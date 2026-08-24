@@ -46,8 +46,10 @@ Build context is the monorepo root (workspace packages + `uv.lock`).
 
 ## Notes
 
-- Workers claim from Redis via `RedisWorkerQueue`. The default process entry uses
-  the chassis lifecycle factory; attach the production harness (Sandbox /
-  Adapter / Graders) for full execution in your environment.
-- Mount the Docker socket into `workers` when running real Sandbox executions.
+- Workers claim from Redis via `RedisWorkerQueue` and execute through
+  `build_production_worker` → `LifecycleOrchestrator` (Sandbox / Adapter /
+  Graders / Application). See `workers/README.md` for
+  `WORKER_SANDBOX_ENGINE` / `WORKER_ADAPTER_MODE`.
+- Mount the Docker socket into `workers` and set `WORKER_SANDBOX_ENGINE=docker`
+  when running real Sandbox executions.
 - Web UI image remains deferred (`Dockerfile.web.placeholder`).

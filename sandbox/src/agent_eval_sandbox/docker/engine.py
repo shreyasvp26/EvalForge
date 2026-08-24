@@ -37,7 +37,11 @@ class DockerPyEngine:
         network_mode: str | None = None,
     ) -> str:
         api = self.client.api
-        host_cfg = api.create_host_config(**_host_config_kwargs(host_config))
+        # network_mode belongs on HostConfig, not create_container kwargs.
+        host_config_payload = dict(host_config)
+        if network_mode is not None:
+            host_config_payload["NetworkMode"] = network_mode
+        host_cfg = api.create_host_config(**_host_config_kwargs(host_config_payload))
         kwargs: dict[str, Any] = {
             "image": image,
             "command": command,
@@ -50,8 +54,6 @@ class DockerPyEngine:
         }
         if name is not None:
             kwargs["name"] = name
-        if network_mode is not None:
-            kwargs["network_mode"] = network_mode
         if networking_config is not None:
             endpoints = networking_config.get("EndpointsConfig", {})
             kwargs["networking_config"] = api.create_networking_config(
@@ -164,6 +166,7 @@ def _host_config_kwargs(host_config: Mapping[str, object]) -> dict[str, Any]:
         "StorageOpt": "storage_opt",
         "Mounts": "mounts",
         "Dns": "dns",
+        "NetworkMode": "network_mode",
     }
     kwargs: dict[str, Any] = {}
     for key, value in host_config.items():

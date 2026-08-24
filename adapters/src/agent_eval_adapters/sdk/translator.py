@@ -212,13 +212,9 @@ class DefaultTranslator:
         observation: NativeObservation,
         action: NormalizedAction,
     ) -> str:
-        stamp = observation.timestamp.astimezone(UTC).strftime("%Y%m%dT%H%M%S%f")
-        # Include a short content fingerprint so same-timestamp siblings differ.
-        fingerprint = str(hash(repr(action)))[-8:]
-        return (
-            f"{context.run.run_id}-{observation.kind.value}-"
-            f"{type(action).__name__}-{stamp}-{fingerprint}"
-        )
+        del observation, action
+        # Must fit DB ``String(64)`` PKs. Full run_id + kind + timestamp overflows.
+        return f"evt-{context.run.run_id[:8]}-{uuid4().hex[:16]}"
 
 
 def observation_now(
