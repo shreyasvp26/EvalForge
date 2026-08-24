@@ -52,8 +52,24 @@ Worker → Execution Engine → Docker Sandbox → Claude Code Adapter →
 Event Persistence → Objective + Rubric Graders → Application scores →
 Run Completed.
 
-Still deferred: additional vendor adapters, Redis worker-queue adapter,
-live SSE networking, frontend.
+**Phase 1 process wiring** — `evalforge-worker` uses
+`build_production_worker()` so Redis claims execute the production
+LifecycleOrchestrator against SQLAlchemy UoW (not the bare chassis
+lifecycle). Local defaults:
+
+| Env                     | Default         | Notes                                               |
+| ----------------------- | --------------- | --------------------------------------------------- |
+| `WORKER_SANDBOX_ENGINE` | `auto`          | `docker` when daemon reachable, else `fake`         |
+| `WORKER_ADAPTER_MODE`   | `deterministic` | Injected Claude NDJSON via real `ClaudeCodeAdapter` |
+| `WORKER_ACTOR_ID`       | `system-worker` | Trusted worker Actor (`WorkerAuthorization`)        |
+
+```bash
+uv run evalforge-worker
+uv run pytest workers/tests/test_process_worker.py
+```
+
+Still deferred: live SSE networking, richer pin→adapter registry, artifact
+byte download API, frontend redesign.
 
 ## Production execution pipeline (Phase 11)
 
