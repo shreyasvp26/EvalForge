@@ -5,8 +5,8 @@ import { AuthFeatureGrid } from "@/components/auth/auth-feature-grid";
 /** Left hero — product identity, headline, and feature grid. */
 export function AuthHero() {
   return (
-    <section className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12 xl:px-16 xl:py-16">
-      <div className="mx-auto w-full max-w-2xl space-y-8 lg:mx-0">
+    <section className="flex flex-col justify-center py-6 sm:py-8 lg:py-10 xl:py-12">
+      <div className="w-full max-w-2xl space-y-8 lg:max-w-none lg:pr-6 xl:pr-10">
         <div className="space-y-5 motion-safe:animate-[ef-fade-up_0.7s_ease-out_both]">
           <h1 className="text-[clamp(2.5rem,5vw,4.25rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
             <span className="block text-foreground">Evaluate.</span>

@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 /** Top bar — brand lockup, tagline, theme toggle. */
 export function AuthLandingHeader() {
   return (
-    <header className="relative z-20 flex items-center justify-between gap-4 px-6 py-5 sm:px-10 lg:px-12 xl:px-16">
+    <header className="relative z-20 flex items-center justify-between gap-4 py-5 lg:py-6">
       <AuthBrandLockup />
       <div className="flex items-center gap-3 sm:gap-4">
         <Text variant="caption" className="hidden text-muted-foreground sm:inline">
