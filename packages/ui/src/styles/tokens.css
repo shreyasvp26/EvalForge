@@ -117,11 +117,20 @@
   --ef-auth-feature-bg: rgb(99 102 241 / 0.08);
   --ef-auth-feature-border: rgb(99 102 241 / 0.14);
   --ef-auth-code-fade: rgb(99 102 241 / 0.04);
-  --ef-auth-vignette: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgb(17 17 19 / 0.08) 100%);
-  --ef-auth-bg-depth: radial-gradient(ellipse 120% 80% at 50% 100%, rgb(99 102 241 / 0.08) 0%, transparent 55%);
+  --ef-auth-vignette: radial-gradient(
+    ellipse 90% 80% at 50% 50%,
+    transparent 40%,
+    rgb(17 17 19 / 0.08) 100%
+  );
+  --ef-auth-bg-depth: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgb(99 102 241 / 0.08) 0%,
+    transparent 55%
+  );
 
   /* Auth atmosphere (legacy alias) */
-  --ef-auth-mesh: radial-gradient(ellipse 80% 60% at 20% 20%, rgb(99 102 241 / 0.1) 0%, transparent 55%),
+  --ef-auth-mesh:
+    radial-gradient(ellipse 80% 60% at 20% 20%, rgb(99 102 241 / 0.1) 0%, transparent 55%),
     radial-gradient(ellipse 60% 50% at 80% 70%, rgb(168 85 247 / 0.08) 0%, transparent 50%),
     var(--ef-auth-bg-base);
 
@@ -200,10 +209,19 @@
   --ef-auth-feature-bg: rgb(139 92 246 / 0.12);
   --ef-auth-feature-border: rgb(167 139 250 / 0.18);
   --ef-auth-code-fade: rgb(139 92 246 / 0.06);
-  --ef-auth-vignette: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 40%, rgb(0 0 0 / 0.35) 100%);
-  --ef-auth-bg-depth: radial-gradient(ellipse 120% 80% at 50% 100%, rgb(15 10 30 / 0.9) 0%, transparent 55%);
+  --ef-auth-vignette: radial-gradient(
+    ellipse 90% 80% at 50% 50%,
+    transparent 40%,
+    rgb(0 0 0 / 0.35) 100%
+  );
+  --ef-auth-bg-depth: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgb(15 10 30 / 0.9) 0%,
+    transparent 55%
+  );
 
-  --ef-auth-mesh: radial-gradient(ellipse 70% 55% at 15% 15%, rgb(99 102 241 / 0.22) 0%, transparent 55%),
+  --ef-auth-mesh:
+    radial-gradient(ellipse 70% 55% at 15% 15%, rgb(99 102 241 / 0.22) 0%, transparent 55%),
     radial-gradient(ellipse 55% 45% at 85% 75%, rgb(168 85 247 / 0.16) 0%, transparent 50%),
     var(--ef-auth-bg-base);
 
