@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from agent_eval_domain.common.ids import RunId
-from agent_eval_shared.log import bind_context, clear_context
+from agent_eval_shared.log import bind_context, clear_context, get_logger
 from agent_eval_shared.metrics import observe_worker_task
 from agent_eval_shared.tracing import start_span
 
@@ -28,6 +28,8 @@ from agent_eval_workers.lifecycle.phases import OrchestrationPhase
 from agent_eval_workers.lifecycle.triggers import FailureCause
 from agent_eval_workers.worker.queue import ClaimedTask, WorkerQueuePort
 from agent_eval_workers.worker.retry import RetryAction, RetryPolicy
+
+logger = get_logger("agent_eval_workers.worker.runtime")
 
 
 class WorkerState(StrEnum):
@@ -102,7 +104,40 @@ class WorkerRuntime:
                     "run.id": task.run_id.value,
                 },
             ):
-                result = self._process(task)
+                try:
+                    result = self._process(task)
+                except Exception:
+                    # Unexpected chassis failures must not abandon the claim or
+                    # kill the process. Finalize as terminal WORKER_FAILURE.
+                    logger.exception(
+                        "worker_task_unhandled_error",
+                        run_id=task.run_id.value,
+                        worker_id=self.worker_id,
+                    )
+                    try:
+                        final_lifecycle = self.lifecycle_factory(
+                            task.run_id,
+                            OrchestrationPhase.CLAIMED,
+                        )
+                        result = ExecutionEngine(
+                            lifecycle=final_lifecycle,
+                            checkpoints=self.checkpoints,
+                            cancellation=self.cancellation,
+                            clock=self.clock,
+                            run_id=task.run_id,
+                            attempt=1,
+                        ).finalize_failure(FailureCause.WORKER_FAILURE)
+                    except Exception:
+                        logger.exception(
+                            "worker_finalize_failure_also_failed",
+                            run_id=task.run_id.value,
+                        )
+                        self.queue.ack(task)
+                        return EngineResult(
+                            kind=EngineOutcomeKind.FAILED,
+                            phase=OrchestrationPhase.FAILED,
+                            failure_cause=FailureCause.WORKER_FAILURE,
+                        )
             self._settle(task, result)
             observe_worker_task(
                 outcome=result.kind.value,

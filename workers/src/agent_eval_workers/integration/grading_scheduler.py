@@ -19,6 +19,7 @@ from agent_eval_workers.integration.run_reader import ApplicationRunReader
 from agent_eval_workers.integration.score_sink import ApplicationScoreSink
 
 GraderFactory = Callable[[], Grader]
+GraderSpecResolver = Callable[[RunId], Sequence["GraderInvocationSpec"]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +48,7 @@ class GraderSdkScheduler:
     get_artifacts: object
     record_score: object
     graders: Sequence[GraderInvocationSpec] = ()
+    grader_resolver: GraderSpecResolver | None = None
     scores: list[ProducedScore] = field(default_factory=list)
     failures: list[tuple[str, str, str]] = field(default_factory=list)
     scheduled: list[RunId] = field(default_factory=list)
@@ -65,8 +67,13 @@ class GraderSdkScheduler:
             record_score=self.record_score,
             actor=self.actor,
         )
+        specs = (
+            tuple(self.grader_resolver(run_id))
+            if self.grader_resolver is not None
+            else tuple(self.graders)
+        )
         invocations: list[tuple[str, Grader, GradingContext]] = []
-        for spec in self.graders:
+        for spec in specs:
             context = GradingContext(
                 reader=reader,
                 grader_id=GraderId(spec.grader_id),

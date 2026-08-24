@@ -1,7 +1,8 @@
 """Background Worker process entry — claim loop over Redis.
 
-Composition root for the Execution Plane process. Wires Infrastructure queue
-adapters into ``WorkerRuntime`` without importing the API Layer.
+Composition root for the Execution Plane process. Wires Infrastructure +
+production LifecycleOrchestrator (Sandbox / Adapter / Graders / Application)
+into ``WorkerRuntime`` without importing the API Layer.
 """
 
 from __future__ import annotations
@@ -19,11 +20,8 @@ from agent_eval_shared.metrics import configure_metrics
 from agent_eval_shared.tracing import configure_tracing, shutdown_tracing
 from redis import Redis
 
-from agent_eval_workers.cancellation.registry import InMemoryCancellationRegistry
-from agent_eval_workers.checkpoints.manager import CheckpointManager
-from agent_eval_workers.checkpoints.memory import InMemoryCheckpointStore
+from agent_eval_workers.integration.process import build_production_worker
 from agent_eval_workers.queue_redis import RedisWorkerQueue
-from agent_eval_workers.worker.runtime import WorkerRuntime, default_lifecycle_factory
 
 logger = get_logger("agent_eval_workers.main")
 
@@ -48,26 +46,34 @@ def run() -> None:
     )
 
     infra = build_infrastructure(profile=RuntimeProfile.PRODUCTION)
-    redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+    redis_url = os.environ.get("REDIS_URL", infra.settings.redis_url)
     client = Redis.from_url(redis_url, decode_responses=True)
     run_queue = RedisRunQueue(
         client,
-        key_prefix=os.environ.get("RUN_QUEUE_KEY_PREFIX", "evalforge:runs"),
+        key_prefix=os.environ.get(
+            "RUN_QUEUE_KEY_PREFIX", infra.settings.run_queue_key_prefix
+        ),
         claim_timeout_seconds=float(
-            os.environ.get("RUN_QUEUE_CLAIM_TIMEOUT_SECONDS", "5")
+            os.environ.get(
+                "RUN_QUEUE_CLAIM_TIMEOUT_SECONDS",
+                str(infra.settings.run_queue_claim_timeout_seconds),
+            )
         ),
     )
     worker_queue = RedisWorkerQueue(run_queue)
-    checkpoints = CheckpointManager(InMemoryCheckpointStore())
-    cancellation = InMemoryCancellationRegistry()
 
-    worker = WorkerRuntime(
-        worker_id=worker_id,
+    timeout_raw = os.environ.get("WORKER_EXECUTION_TIMEOUT_SECONDS")
+    execution_timeout = float(timeout_raw) if timeout_raw else None
+
+    bundle = build_production_worker(
         queue=worker_queue,
-        checkpoints=checkpoints,
-        cancellation=cancellation,
-        lifecycle_factory=default_lifecycle_factory,
+        uow_factory=infra.uow_factory,
+        ids=infra.ids,
+        events=infra.events,
+        worker_id=worker_id,
+        execution_timeout_seconds=execution_timeout,
     )
+    worker = bundle.worker
 
     stopping = False
 
@@ -80,10 +86,21 @@ def run() -> None:
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
 
-    logger.info("worker_started", worker_id=worker_id)
+    logger.info(
+        "worker_started",
+        worker_id=worker_id,
+        sandbox_mode=bundle.sandbox_mode,
+        adapter_mode=bundle.adapter_mode,
+        actor_id=bundle.actor.id,
+    )
     try:
         while not stopping and worker.state.value != "stopped":
-            result = worker.run_once(block=True)
+            try:
+                result = worker.run_once(block=True)
+            except Exception:
+                # Never let one malformed run kill the process.
+                logger.exception("worker_run_once_unhandled_error", worker_id=worker_id)
+                result = None
             if result is None and not stopping:
                 time.sleep(0.05)
     finally:

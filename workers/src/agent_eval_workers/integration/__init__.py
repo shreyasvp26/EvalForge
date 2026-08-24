@@ -9,21 +9,37 @@ from agent_eval_workers.integration.composition import (
     default_claude_factory,
     rebuild_production_worker,
 )
+from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolver
 from agent_eval_workers.integration.grading_scheduler import (
     GraderInvocationSpec,
     GraderSdkScheduler,
 )
+from agent_eval_workers.integration.process import (
+    ProductionWorkerBundle,
+    build_production_lifecycle_factory,
+    build_production_worker,
+    select_adapter_factory,
+    select_docker_engine,
+)
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.integration.sandbox_adapter import ManagedSandboxAdapter
+from agent_eval_workers.integration.worker_auth import WorkerAuthorization
 
 __all__ = [
     "GraderInvocationSpec",
     "GraderSdkScheduler",
     "ManagedSandboxAdapter",
+    "PinBasedGraderResolver",
     "ProductionHarness",
+    "ProductionWorkerBundle",
     "RunSandboxRegistry",
     "SdkAdapterBridge",
+    "WorkerAuthorization",
     "build_production_harness",
+    "build_production_lifecycle_factory",
+    "build_production_worker",
     "default_claude_factory",
     "rebuild_production_worker",
+    "select_adapter_factory",
+    "select_docker_engine",
 ]
