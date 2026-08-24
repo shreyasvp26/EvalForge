@@ -161,6 +161,11 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
             <Cluster gap={2}>
               {!isDeprecated ? (
                 <>
+                  <Button asChild>
+                    <Link href={`/runs/new?project=${encodeURIComponent(projectId)}`}>
+                      Launch run
+                    </Link>
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -172,6 +177,7 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
                   </Button>
                   <Button
                     type="button"
+                    variant="outline"
                     onClick={() => {
                       setCaseDraftOpen(true);
                     }}
@@ -182,7 +188,8 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
               ) : null}
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void navigator.clipboard.writeText(caseItem.id).then(
                     () => {
@@ -202,9 +209,9 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <Section
-            title="Overview"
+            title="Evaluation definition"
             className="lg:col-span-2"
-            description="Case identity and linked prompt."
+            description="What this case evaluates and its current lifecycle state."
           >
             <dl className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
@@ -229,18 +236,6 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
                   {caseItem.id}
                 </Text>
               </div>
-              <div className="space-y-1">
-                <Text as="div" variant="caption">
-                  Prompt ID
-                </Text>
-                <Text
-                  as="div"
-                  variant="body"
-                  className="break-all font-mono text-[length:var(--ef-text-caption)]"
-                >
-                  {caseItem.prompt_id}
-                </Text>
-              </div>
               <div className="space-y-1 sm:col-span-2">
                 <Text as="div" variant="caption">
                   Description
@@ -252,7 +247,7 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
             </dl>
           </Section>
 
-          <Section title="Metadata" description="Lifecycle timestamps from the Control Plane.">
+          <Section title="Lifecycle" description="Created time and version counts from the API.">
             <dl className="space-y-4">
               <div className="space-y-1">
                 <Text as="div" variant="caption">
@@ -278,159 +273,155 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
                   {String(caseItem.prompt_versions.length)}
                 </Text>
               </div>
-            </dl>
-          </Section>
-
-          <Section
-            title="Active versions"
-            className="lg:col-span-3"
-            description="Published case and prompt versions used for new evaluation work."
-          >
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-3 rounded-[var(--ef-radius-panel)] border border-border p-4">
-                <Text as="div" variant="caption">
-                  Active case version
-                </Text>
-                {currentCaseVersion ? (
-                  <div className="space-y-2">
-                    <Cluster gap={2} className="items-center">
-                      <Text as="span" variant="body" className="font-medium">
-                        Version {String(currentCaseVersion.version_number)}
-                      </Text>
-                      <Badge status={versionStatusBadge(currentCaseVersion.status)}>
-                        {versionStatusLabel(currentCaseVersion.status)}
-                      </Badge>
-                    </Cluster>
-                    <Text variant="secondary" className="line-clamp-3">
-                      {currentCaseVersion.description}
-                    </Text>
-                    <Text variant="caption" className="font-mono">
-                      {currentCaseVersion.commit_sha}
-                    </Text>
-                  </div>
-                ) : (
-                  <Text variant="secondary">
-                    No active case version. Publish a draft to establish the task definition.
-                  </Text>
-                )}
-              </div>
-              <div className="space-y-3 rounded-[var(--ef-radius-panel)] border border-border p-4">
-                <Text as="div" variant="caption">
-                  Active prompt version
-                </Text>
-                {currentPromptVersion ? (
-                  <div className="space-y-2">
-                    <Cluster gap={2} className="items-center">
-                      <Text as="span" variant="body" className="font-medium">
-                        Version {String(currentPromptVersion.version_number)}
-                      </Text>
-                      <Badge status={versionStatusBadge(currentPromptVersion.status)}>
-                        {versionStatusLabel(currentPromptVersion.status)}
-                      </Badge>
-                    </Cluster>
-                    <Text
-                      variant="secondary"
-                      className="line-clamp-4 font-mono text-[length:var(--ef-text-caption)]"
-                    >
-                      {currentPromptVersion.content}
-                    </Text>
-                  </div>
-                ) : (
-                  <Text variant="secondary">
-                    No active prompt version. Publish a prompt draft, or publish a case version that
-                    pins a draft (auto-publishes the prompt).
-                  </Text>
-                )}
-              </div>
-            </div>
-          </Section>
-
-          <Section
-            title="Prompt versions"
-            className="lg:col-span-3"
-            description="Draft → Active (publish) → Superseded. Prompt content is versioned independently of case versions."
-            actions={
-              !isDeprecated ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setPromptDraftOpen(true);
-                  }}
-                >
-                  Create prompt draft
-                </Button>
-              ) : null
-            }
-          >
-            <PromptVersionCards caseItem={caseItem} versions={promptVersions} />
-          </Section>
-
-          <Section
-            title="Case versions"
-            className="lg:col-span-3"
-            description="Draft → Active (publish) → Superseded. Each version pins a repository checkout and a prompt version."
-            actions={
-              !isDeprecated ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setCaseDraftOpen(true);
-                  }}
-                >
-                  Create case draft
-                </Button>
-              ) : null
-            }
-          >
-            <CaseVersionCards caseItem={caseItem} versions={caseVersions} />
-          </Section>
-
-          <Section title="Quick actions" description="Common case operations.">
-            <Cluster gap={2} className="flex-col items-stretch sm:items-start">
-              <Button asChild variant="outline" className="justify-start">
-                <Link href={`/projects/${projectId}/cases`}>Back to cases</Link>
-              </Button>
               {!isDeprecated ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="justify-start"
-                    onClick={() => {
-                      setPromptDraftOpen(true);
-                    }}
-                  >
-                    Create prompt draft
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="justify-start"
-                    onClick={() => {
-                      setCaseDraftOpen(true);
-                    }}
-                  >
-                    Create case draft
-                  </Button>
+                <div className="pt-1">
                   <Button
                     type="button"
                     variant="danger"
-                    className="justify-start"
+                    size="sm"
                     onClick={() => {
                       setDeprecateOpen(true);
                     }}
                   >
                     Deprecate case
                   </Button>
-                </>
+                </div>
               ) : (
                 <Text variant="secondary">This case is deprecated; new drafts are blocked.</Text>
               )}
-            </Cluster>
+            </dl>
+          </Section>
+
+          <Section
+            title="Prompt"
+            className="lg:col-span-3"
+            description="Linked prompt and the active published content used for evaluation."
+          >
+            <dl className="mb-6 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Text as="div" variant="caption">
+                  Prompt ID
+                </Text>
+                <Text
+                  as="div"
+                  variant="body"
+                  className="break-all font-mono text-[length:var(--ef-text-caption)]"
+                >
+                  {caseItem.prompt_id}
+                </Text>
+              </div>
+              <div className="space-y-1">
+                <Text as="div" variant="caption">
+                  Active prompt version
+                </Text>
+                {currentPromptVersion ? (
+                  <Cluster gap={2} className="items-center">
+                    <Text as="span" variant="body" className="font-medium">
+                      Version {String(currentPromptVersion.version_number)}
+                    </Text>
+                    <Badge status={versionStatusBadge(currentPromptVersion.status)}>
+                      {versionStatusLabel(currentPromptVersion.status)}
+                    </Badge>
+                  </Cluster>
+                ) : (
+                  <Text variant="secondary">No active prompt version.</Text>
+                )}
+              </div>
+            </dl>
+            {currentPromptVersion ? (
+              <div className="rounded-[var(--ef-radius-panel)] border border-border p-4">
+                <Text as="div" variant="caption" className="mb-2">
+                  Content
+                </Text>
+                <Text
+                  variant="secondary"
+                  className="whitespace-pre-wrap font-mono text-[length:var(--ef-text-caption)]"
+                >
+                  {currentPromptVersion.content}
+                </Text>
+              </div>
+            ) : (
+              <Text variant="secondary">
+                Publish a prompt draft, or publish a case version that pins a draft (auto-publishes
+                the prompt).
+              </Text>
+            )}
+          </Section>
+
+          <Section
+            title="Active case version"
+            className="lg:col-span-3"
+            description="Published case version used for new evaluation work."
+          >
+            {currentCaseVersion ? (
+              <div className="space-y-2 rounded-[var(--ef-radius-panel)] border border-border p-4">
+                <Cluster gap={2} className="items-center">
+                  <Text as="span" variant="body" className="font-medium">
+                    Version {String(currentCaseVersion.version_number)}
+                  </Text>
+                  <Badge status={versionStatusBadge(currentCaseVersion.status)}>
+                    {versionStatusLabel(currentCaseVersion.status)}
+                  </Badge>
+                </Cluster>
+                <Text variant="secondary">{currentCaseVersion.description}</Text>
+                <Text variant="caption" className="font-mono">
+                  {currentCaseVersion.commit_sha}
+                </Text>
+              </div>
+            ) : (
+              <Text variant="secondary">
+                No active case version. Publish a draft to establish the task definition.
+              </Text>
+            )}
+          </Section>
+
+          <Section
+            title="Versions"
+            className="lg:col-span-3"
+            description="Prompt and case version history. Draft → Active (publish) → Superseded."
+          >
+            <div className="space-y-8">
+              <div>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <Text as="div" variant="body" className="font-medium">
+                    Prompt versions
+                  </Text>
+                  {!isDeprecated ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setPromptDraftOpen(true);
+                      }}
+                    >
+                      Create prompt draft
+                    </Button>
+                  ) : null}
+                </div>
+                <PromptVersionCards caseItem={caseItem} versions={promptVersions} />
+              </div>
+              <div>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <Text as="div" variant="body" className="font-medium">
+                    Case versions
+                  </Text>
+                  {!isDeprecated ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setCaseDraftOpen(true);
+                      }}
+                    >
+                      Create case draft
+                    </Button>
+                  ) : null}
+                </div>
+                <CaseVersionCards caseItem={caseItem} versions={caseVersions} />
+              </div>
+            </div>
           </Section>
         </div>
       </FadeIn>

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Button,
-  DataGrid,
-  DataGridPagination,
-  DataGridSearch,
-  FolderKanban,
-  Plus,
-} from "@agent-eval/ui";
+import { Button, DataGrid, DataGridPagination, DataGridSearch, Plus } from "@agent-eval/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -68,7 +61,7 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
       <PageHeader
         eyebrow="Workspace"
         title="Projects"
-        description="Organize evaluation work into projects. Open a project to manage settings and related resources."
+        description="Evaluation workspaces for cases, suites, and runs. Open a project to launch and inspect evaluations."
         actions={
           <Button
             type="button"
@@ -124,7 +117,7 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all projects."
-                : "Create your first project to start organizing suites, cases, and runs."
+                : "Create a project to define cases, group them into suites, and launch evaluation runs."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (
@@ -144,28 +137,15 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
             }}
             aria-label="Projects"
             toolbar={
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <DataGridSearch
-                  value={globalFilter}
-                  onValueChange={(value) => {
-                    setGlobalFilter(value);
-                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                  }}
-                  placeholder="Search projects…"
-                  className="max-w-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftIcon={FolderKanban}
-                  onClick={() => {
-                    setCreateOpen(true);
-                  }}
-                >
-                  New project
-                </Button>
-              </div>
+              <DataGridSearch
+                value={globalFilter}
+                onValueChange={(value) => {
+                  setGlobalFilter(value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                placeholder="Search projects…"
+                className="max-w-sm"
+              />
             }
             footer={
               projects.length > 0 ? (
