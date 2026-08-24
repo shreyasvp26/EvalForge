@@ -39,6 +39,7 @@ from agent_eval_sandbox.docker.engine import DockerPyEngine
 from agent_eval_sandbox.docker.fake import FakeDockerEngine
 from agent_eval_sandbox.docker.sandbox import DockerSandbox
 from agent_eval_sandbox.manager import SandboxManager
+from agent_eval_sandbox.models import ExecutionRequest
 from agent_eval_sandbox.ports import DockerEngine
 from agent_eval_shared.log import get_logger
 
@@ -52,6 +53,7 @@ from agent_eval_workers.event_pipeline.pipeline import (
     UseCaseEventWriter,
 )
 from agent_eval_workers.event_pipeline.projector import ProjectionHub
+from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.execution_engine.lifecycle_driver import LifecycleDriver
 from agent_eval_workers.integration.adapter_bridge import SdkAdapterBridge
 from agent_eval_workers.integration.composition import default_claude_factory
@@ -67,6 +69,7 @@ from agent_eval_workers.integration.worker_auth import WorkerAuthorization
 from agent_eval_workers.lifecycle.machine import RunLifecycle
 from agent_eval_workers.lifecycle.orchestrator import LifecycleOrchestrator
 from agent_eval_workers.lifecycle.phases import OrchestrationPhase
+from agent_eval_workers.lifecycle.triggers import FailureCause
 from agent_eval_workers.worker.queue import WorkerQueuePort
 from agent_eval_workers.worker.retry import RetryPolicy
 from agent_eval_workers.worker.runtime import LifecycleFactory, WorkerRuntime
@@ -171,6 +174,22 @@ def build_production_lifecycle_factory(
     sandbox_registry = RunSandboxRegistry()
     manager = SandboxManager(runtime=DockerSandbox(engine=docker_engine))
     sandbox = ManagedSandboxAdapter(manager=manager, registry=sandbox_registry)
+
+    def _verify_sandbox_ready(run_id: RunId) -> None:
+        """Prove the provisioned container accepts exec (real Docker path)."""
+        handle = sandbox.handle_for(run_id)
+        result = manager.execute(
+            handle,
+            ExecutionRequest(command=("true",)),
+        )
+        if result.timed_out or result.exit_code != 0:
+            raise RecoverableExecutionError(
+                f"Sandbox workspace verify failed for {run_id.value} "
+                f"(exit={result.exit_code}, timed_out={result.timed_out})",
+                cause=FailureCause.SANDBOX_FAILURE,
+            )
+
+    sandbox.after_provision = _verify_sandbox_ready
 
     writer = UseCaseEventWriter(
         record_event_uc=RecordExecutionEvent(uow_factory, worker_auth, events),

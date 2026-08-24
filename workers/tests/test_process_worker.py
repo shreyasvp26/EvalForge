@@ -205,3 +205,49 @@ def test_process_worker_continues_after_failure(world) -> None:
         GetRunQuery(actor=world["actor"], run_id=second.id)
     )
     assert dto.status == "completed"
+
+
+def test_select_adapter_factory_claude() -> None:
+    factory, mode = select_adapter_factory(mode="claude")
+    assert mode == "claude"
+    adapter = factory()
+    assert adapter.stream_source is None
+
+
+def test_sandbox_env_allowlist_never_dumps_full_environ(monkeypatch) -> None:
+    monkeypatch.setenv("SECRET_SHOULD_NOT_LEAK", "super-secret")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("WORKER_SANDBOX_ENV_ALLOWLIST", "ANTHROPIC_API_KEY")
+    from agent_eval_workers.integration.sandbox_adapter import (
+        sandbox_environment_from_allowlist,
+    )
+
+    env = sandbox_environment_from_allowlist()
+    assert env == {"ANTHROPIC_API_KEY": "sk-test"}
+    assert "SECRET_SHOULD_NOT_LEAK" not in env
+
+
+def test_process_worker_stores_artifact_bytes(world) -> None:
+    from agent_eval_infrastructure.storage.memory import InMemoryObjectStorage
+
+    run = _create_queued_run(world)
+    queue = InMemoryWorkerQueue()
+    queue.enqueue(RunId(run.id))
+    storage = InMemoryObjectStorage()
+
+    bundle = build_production_worker(
+        queue=queue,
+        uow_factory=world["uow"],
+        ids=world["ids"],
+        events=world["events"],
+        docker_engine=FakeDockerEngine(),
+        adapter_factory=default_claude_factory(),
+        actor=Actor(id="system-worker"),
+        auth=WorkerAuthorization(),
+        object_storage=storage,
+        sandbox_mode="fake",
+        adapter_mode="deterministic",
+    )
+    result = bundle.worker.run_once(block=False)
+    assert result is not None
+    assert result.kind is EngineOutcomeKind.COMPLETED

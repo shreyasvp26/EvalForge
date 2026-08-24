@@ -170,14 +170,25 @@ Python package: `workers/` → `agent_eval_workers`.
   `StartRun` / `StartGrading` / `RecordScore` / `CompleteRun`. Engine stays
   Docker-unaware; Workers stay Claude-unaware outside composition.
   Integration tests mock only `MockJudgeProvider`. See `workers/README.md`.
-- **Process wiring (Phase 1 execution loop):** `evalforge-worker`
-  (`agent_eval_workers.main`) now uses `build_production_worker` so Redis
+- **Process wiring (Phase 1 / Phase 2):** `evalforge-worker`
+  (`agent_eval_workers.main`) uses `build_production_worker` so Redis
   claims drive `LifecycleOrchestrator` against real Application UoW /
-  pin-resolved objective graders. Defaults for local stacks without Docker
-  / Claude CLI: `WORKER_SANDBOX_ENGINE=auto` (falls back to
-  `FakeDockerEngine`) and `WORKER_ADAPTER_MODE=deterministic` (injected
-  Claude stream through the real adapter). Start with
-  `uv run evalforge-worker`. Cover with `uv run pytest workers/tests/test_process_worker.py`.
+  pin-resolved objective graders / object storage artifacts.
+  - **Compose / production-like:** `WORKER_SANDBOX_ENGINE=docker` (Docker
+    socket mounted), `WORKER_ADAPTER_MODE=deterministic` by default,
+    `WORKER_SANDBOX_IMAGE=evalforge/sandbox:local`.
+  - **Local without Docker:** `WORKER_SANDBOX_ENGINE=auto|fake` falls back
+    to `FakeDockerEngine`; deterministic Claude stream remains available.
+  - **Live Claude CLI:** `WORKER_ADAPTER_MODE=claude` +
+    `ANTHROPIC_API_KEY` (allow-listed into the sandbox) + CLI in the
+    sandbox image + `WORKER_SANDBOX_NETWORK=bridge`.
+  - Cancellation: API publishes Redis cancel signals
+    (`RUN_CANCEL_KEY_PREFIX`); workers observe cooperatively.
+  - Start: `uv run evalforge-worker` or
+    `docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up --build`.
+  - Cover with `uv run pytest workers/tests/test_process_worker.py` and
+    optional `uv run pytest workers/tests -m integration` (live Docker).
+  - See `infrastructure/docker/README.md`.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
 - Prefer `uv run pytest workers/tests` for worker-only feedback.
