@@ -70,6 +70,7 @@ class InfrastructureContainer:
     events: DomainEventDispatcher
     idempotency: IdempotencyStore
     profile: RuntimeProfile
+    redis: object | None = None
 
     def dispose(self) -> None:
         """Release pooled database connections (call at process shutdown)."""
@@ -104,10 +105,11 @@ def build_infrastructure(
         run_queue: RunQueue = InMemoryRunQueue()
         object_storage: ObjectStorage = InMemoryObjectStorage()
         idempotency: IdempotencyStore = InMemoryIdempotencyStore()
+        redis_client: object | None = None
     else:
-        redis = create_redis_client(cfg.redis_url)
+        redis_client = create_redis_client(cfg.redis_url)
         run_queue = RedisRunQueue(
-            redis,
+            redis_client,
             key_prefix=cfg.run_queue_key_prefix,
             claim_timeout_seconds=cfg.run_queue_claim_timeout_seconds,
         )
@@ -119,7 +121,7 @@ def build_infrastructure(
             force_path_style=cfg.object_storage_force_path_style,
         )
         object_storage = S3CompatibleObjectStorage(s3, bucket=cfg.object_storage_bucket)
-        idempotency = RedisIdempotencyStore(redis)
+        idempotency = RedisIdempotencyStore(redis_client)
 
     return InfrastructureContainer(
         settings=cfg,
@@ -132,4 +134,5 @@ def build_infrastructure(
         events=events,
         idempotency=idempotency,
         profile=resolved,
+        redis=redis_client,
     )

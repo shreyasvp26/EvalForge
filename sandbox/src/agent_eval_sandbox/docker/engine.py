@@ -99,9 +99,13 @@ class DockerPyEngine:
             return int(exit_code), stdout, stderr
 
         try:
-            with ThreadPoolExecutor(max_workers=1) as pool:
+            pool = ThreadPoolExecutor(max_workers=1)
+            try:
                 future = pool.submit(_run)
                 exit_code, stdout, stderr = future.result(timeout=host_timeout)
+            finally:
+                # Never block forever on a stuck docker-py exec thread.
+                pool.shutdown(wait=False, cancel_futures=True)
         except FuturesTimeoutError as exc:
             raise SandboxTimeoutError(
                 f"Sandbox exec exceeded timeout of {timeout_seconds}s",
@@ -120,7 +124,9 @@ class DockerPyEngine:
                 cause=exc,
             ) from exc
 
-        timed_out = exit_code == 124 and timeout_seconds is not None
+        # GNU coreutils ``timeout`` exits 124 on expiry; BusyBox ``timeout -s KILL``
+        # typically surfaces 128+9=137 when the wrapped command is killed.
+        timed_out = timeout_seconds is not None and exit_code in {124, 137}
         return exit_code, stdout, stderr, timed_out
 
     def get_archive(self, container_id: str, path: str) -> bytes:

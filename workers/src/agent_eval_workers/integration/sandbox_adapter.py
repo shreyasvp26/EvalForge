@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import os
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from uuid import uuid4
 
 from agent_eval_domain.common.ids import RunId
 from agent_eval_sandbox.exceptions import SandboxError
 from agent_eval_sandbox.manager import SandboxManager
-from agent_eval_sandbox.models import SandboxHandle, SandboxSpec, SandboxState
+from agent_eval_sandbox.models import (
+    NetworkMode,
+    NetworkPolicy,
+    SandboxHandle,
+    SandboxSpec,
+)
 
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.integration.registry import RunSandboxRegistry
@@ -17,13 +24,60 @@ from agent_eval_workers.lifecycle.triggers import FailureCause
 SpecFactory = Callable[[RunId], SandboxSpec]
 ProvisionHook = Callable[[RunId], None]
 
+# Default production/local Compose image (see infrastructure/docker/Dockerfile.sandbox).
+DEFAULT_SANDBOX_IMAGE = "evalforge/sandbox:local"
+
+
+def sandbox_image_from_env() -> str:
+    return os.environ.get("WORKER_SANDBOX_IMAGE", DEFAULT_SANDBOX_IMAGE).strip() or (
+        DEFAULT_SANDBOX_IMAGE
+    )
+
+
+def sandbox_environment_from_allowlist(
+    *,
+    allowlist: str | None = None,
+    source: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    """Inject only explicitly allowed variables into the sandbox.
+
+    Never pass the full host environment into an agent container.
+    """
+    raw = allowlist
+    if raw is None:
+        raw = os.environ.get(
+            "WORKER_SANDBOX_ENV_ALLOWLIST",
+            "ANTHROPIC_API_KEY,PATH,HOME,TERM",
+        )
+    keys = [k.strip() for k in raw.split(",") if k.strip()]
+    env_source = source if source is not None else os.environ
+    out: dict[str, str] = {}
+    for key in keys:
+        value = env_source.get(key)
+        if value is not None and value != "":
+            out[key] = value
+    return out
+
+
+def sandbox_network_from_env() -> NetworkPolicy:
+    """Default deny. Bridge only when live Claude (or tools) need egress."""
+    mode_raw = os.environ.get("WORKER_SANDBOX_NETWORK", "none").strip().lower()
+    if mode_raw in {"bridge", "default"}:
+        return NetworkPolicy(mode=NetworkMode.BRIDGE)
+    return NetworkPolicy(mode=NetworkMode.NONE)
+
 
 def default_sandbox_spec(run_id: RunId) -> SandboxSpec:
+    # Include a unique suffix so deterministic test IDs (and rapid retries) never
+    # collide on Docker container names left behind after cleanup races.
+    unique = uuid4().hex[:8]
     return SandboxSpec(
-        image="agent-eval/sandbox:test",
+        image=sandbox_image_from_env(),
         working_dir="/workspace",
-        labels={"run_id": run_id.value},
-        name=f"run-{run_id.value}"[:63],
+        environment=sandbox_environment_from_allowlist(),
+        labels={"run_id": run_id.value, "evalforge.component": "sandbox"},
+        name=f"run-{run_id.value}-{unique}"[:63],
+        network=sandbox_network_from_env(),
     )
 
 
@@ -72,11 +126,10 @@ class ManagedSandboxAdapter:
         if handle is None:
             return
         try:
-            if handle.state not in {SandboxState.STOPPED, SandboxState.DESTROYED}:
-                try:
-                    handle = self.manager.stop(handle)
-                except Exception:  # noqa: BLE001 — best-effort stop before destroy
-                    pass
+            # Do not call manager.stop() first: default stop grace uses the
+            # execution timeout (often 300s) and sleep-infinity sandboxes ignore
+            # SIGTERM. ensure_destroyed already stops with a short grace then
+            # force-removes.
             self.manager.destroy(handle)
         except Exception:  # noqa: BLE001 — teardown must not mask original failure
             pass

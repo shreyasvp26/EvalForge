@@ -52,24 +52,33 @@ Worker → Execution Engine → Docker Sandbox → Claude Code Adapter →
 Event Persistence → Objective + Rubric Graders → Application scores →
 Run Completed.
 
-**Phase 1 process wiring** — `evalforge-worker` uses
+**Phase 2 process wiring** — `evalforge-worker` uses
 `build_production_worker()` so Redis claims execute the production
-LifecycleOrchestrator against SQLAlchemy UoW (not the bare chassis
-lifecycle). Local defaults:
+LifecycleOrchestrator against SQLAlchemy UoW, MinIO artifact bytes, and
+Redis cancel signals.
 
-| Env                     | Default         | Notes                                               |
-| ----------------------- | --------------- | --------------------------------------------------- |
-| `WORKER_SANDBOX_ENGINE` | `auto`          | `docker` when daemon reachable, else `fake`         |
-| `WORKER_ADAPTER_MODE`   | `deterministic` | Injected Claude NDJSON via real `ClaudeCodeAdapter` |
-| `WORKER_ACTOR_ID`       | `system-worker` | Trusted worker Actor (`WorkerAuthorization`)        |
+| Env                            | Compose default                    | Notes                                                         |
+| ------------------------------ | ---------------------------------- | ------------------------------------------------------------- |
+| `WORKER_SANDBOX_ENGINE`        | `docker`                           | Real `DockerPyEngine` via socket; use `fake`/`auto` for tests |
+| `WORKER_ADAPTER_MODE`          | `deterministic`                    | Injected Claude NDJSON; set `claude` for live CLI             |
+| `WORKER_SANDBOX_IMAGE`         | `evalforge/sandbox:local`          | Built by Compose `sandbox-image`                              |
+| `WORKER_SANDBOX_NETWORK`       | `none`                             | Use `bridge` for live Claude egress                           |
+| `WORKER_SANDBOX_ENV_ALLOWLIST` | `ANTHROPIC_API_KEY,PATH,HOME,TERM` | Never pass full host env                                      |
+| `WORKER_SANDBOX_VERIFY`        | `0`                                | Opt-in post-provision workspace exec (`true`)                 |
+| `WORKER_ACTOR_ID`              | `system-worker`                    | Trusted worker Actor                                          |
 
 ```bash
 uv run evalforge-worker
 uv run pytest workers/tests/test_process_worker.py
+uv run pytest workers/tests -m "not integration"
+# Live DockerSandbox e2e (optional; Compose + sandbox/tests cover the path):
+EVALFORGE_LIVE_WORKER_DOCKER=1 uv run pytest workers/tests/test_docker_production_integration.py -m integration
 ```
 
-Still deferred: live SSE networking, richer pin→adapter registry, artifact
-byte download API, frontend redesign.
+Still deferred: live SSE networking, richer pin→adapter registry, frontend redesign.
+
+Live Claude provider execution requires credentials + CLI in the sandbox image;
+without them, DockerSandbox + deterministic adapter remain the verified path.
 
 ## Production execution pipeline (Phase 11)
 

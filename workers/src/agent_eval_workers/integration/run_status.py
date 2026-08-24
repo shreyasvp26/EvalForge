@@ -81,7 +81,14 @@ class ApplicationRunStatus:
             self.cancelled.append(run_id)
 
     def project_cancelled(self, run_id: RunId) -> None:
-        self.cancel_run.execute(  # type: ignore[attr-defined]
-            CancelRunCommand(actor=self.actor, run_id=run_id.value, reason="cancelled")
-        )
+        # Idempotent: API may have already persisted CANCELLED (queued cancel)
+        # while the worker still observes the Redis cancel signal.
+        try:
+            self.cancel_run.execute(  # type: ignore[attr-defined]
+                CancelRunCommand(
+                    actor=self.actor, run_id=run_id.value, reason="cancelled"
+                )
+            )
+        except Exception:  # noqa: BLE001 — already terminal / race with API cancel
+            pass
         self.cancelled.append(run_id)

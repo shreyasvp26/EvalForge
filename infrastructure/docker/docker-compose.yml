@@ -3,7 +3,16 @@
 # From repository root:
 #   docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up --build
 #
-# Startup order: postgres + redis + minio (healthy) → migrate → api → workers.
+# Startup order:
+#   postgres + redis + minio (healthy)
+#     → migrate + minio-init + sandbox-image
+#     → api (healthy) → workers + web
+#
+# Real Docker execution (default for workers in this stack):
+#   WORKER_SANDBOX_ENGINE=docker + Docker socket mount + evalforge/sandbox:local
+# Deterministic adapter remains the default (no Claude credentials required).
+# Set WORKER_ADAPTER_MODE=claude only when the sandbox image has the Claude CLI
+# and ANTHROPIC_API_KEY is injected explicitly.
 
 name: evalforge
 
@@ -77,6 +86,16 @@ services:
         exit 0
     restart: "no"
 
+  sandbox-image:
+    image: ${WORKER_SANDBOX_IMAGE:-evalforge/sandbox:local}
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.sandbox
+      args:
+        EVALFORGE_INSTALL_CLAUDE_CLI: ${EVALFORGE_INSTALL_CLAUDE_CLI:-0}
+    entrypoint: ["true"]
+    restart: "no"
+
   migrate:
     build:
       context: ../..
@@ -84,7 +103,7 @@ services:
     working_dir: /app
     command: ["alembic", "-c", "infrastructure/alembic.ini", "upgrade", "head"]
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://evalforge:evalforge@postgres:5432/evalforge}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-evalforge}:${POSTGRES_PASSWORD:-evalforge}@postgres:5432/${POSTGRES_DB:-evalforge}
       ENVIRONMENT: ${ENVIRONMENT:-production}
     depends_on:
       postgres:
@@ -102,16 +121,19 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://evalforge:evalforge@postgres:5432/evalforge}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      OBJECT_STORAGE_ENDPOINT_URL: ${OBJECT_STORAGE_ENDPOINT_URL:-http://minio:9000}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-evalforge}:${POSTGRES_PASSWORD:-evalforge}@postgres:5432/${POSTGRES_DB:-evalforge}
+      REDIS_URL: redis://redis:6379/0
+      OBJECT_STORAGE_ENDPOINT_URL: http://minio:9000
       OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-minioadmin}
       OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-minioadmin}
       OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-evalforge-artifacts}
       OBJECT_STORAGE_FORCE_PATH_STYLE: ${OBJECT_STORAGE_FORCE_PATH_STYLE:-true}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       METRICS_ENABLED: ${METRICS_ENABLED:-true}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      # Shared with workers — API publishes cancel intent; workers observe it.
+      RUN_CANCEL_KEY_PREFIX: ${RUN_CANCEL_KEY_PREFIX:-evalforge:cancel}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
@@ -142,14 +164,30 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://evalforge:evalforge@postgres:5432/evalforge}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      OBJECT_STORAGE_ENDPOINT_URL: ${OBJECT_STORAGE_ENDPOINT_URL:-http://minio:9000}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-evalforge}:${POSTGRES_PASSWORD:-evalforge}@postgres:5432/${POSTGRES_DB:-evalforge}
+      REDIS_URL: redis://redis:6379/0
+      OBJECT_STORAGE_ENDPOINT_URL: http://minio:9000
       OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-minioadmin}
       OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-minioadmin}
       OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-evalforge-artifacts}
       OBJECT_STORAGE_FORCE_PATH_STYLE: ${OBJECT_STORAGE_FORCE_PATH_STYLE:-true}
       WORKER_ID: ${WORKER_ID:-worker-1}
+      # Production-like Compose defaults: real Docker sandbox, deterministic adapter.
+      # Override WORKER_ADAPTER_MODE=claude when CLI + credentials are available.
+      WORKER_SANDBOX_ENGINE: ${WORKER_SANDBOX_ENGINE:-docker}
+      WORKER_ADAPTER_MODE: ${WORKER_ADAPTER_MODE:-deterministic}
+      WORKER_SANDBOX_IMAGE: ${WORKER_SANDBOX_IMAGE:-evalforge/sandbox:local}
+      WORKER_EXECUTION_TIMEOUT_SECONDS: ${WORKER_EXECUTION_TIMEOUT_SECONDS:-300}
+      WORKER_SANDBOX_VERIFY: ${WORKER_SANDBOX_VERIFY:-0}
+      RUN_CANCEL_KEY_PREFIX: ${RUN_CANCEL_KEY_PREFIX:-evalforge:cancel}
+      # Explicit allow-list for sandbox env injection (never pass full host env).
+      WORKER_SANDBOX_ENV_ALLOWLIST: ${WORKER_SANDBOX_ENV_ALLOWLIST:-ANTHROPIC_API_KEY,PATH,HOME,TERM}
+    volumes:
+      # Docker-out-of-Docker: workers drive the host Docker daemon for sandboxes.
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      # Docker Desktop / Linux: allow the worker user to talk to the socket.
+      - "${DOCKER_GID:-0}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -157,10 +195,52 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
       migrate:
+        condition: service_completed_successfully
+      sandbox-image:
         condition: service_completed_successfully
       api:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import socket; s=socket.create_connection((''redis'',6379),2); s.close()"',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    profiles: ["full", "web"]
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "fetch(''http://127.0.0.1:3000'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     restart: unless-stopped
 
 volumes:

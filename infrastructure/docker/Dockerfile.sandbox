@@ -1,0 +1,43 @@
+# syntax=docker/dockerfile:1
+# EvalForge agent sandbox image — isolated workspace for DockerSandbox runs.
+#
+# Used by workers via WORKER_SANDBOX_IMAGE (default: evalforge/sandbox:local).
+# Deterministic / FakeDocker tests do not require this image.
+#
+# Live Claude Code CLI (optional): install after build or extend this Dockerfile.
+# Credentials must be injected explicitly at runtime — never bake secrets in.
+
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        python3 \
+        coreutils \
+        findutils \
+        grep \
+        sed \
+        tar \
+        gzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional Claude Code CLI — installed only when EVALFORGE_INSTALL_CLAUDE_CLI=1
+# at build time (requires network). Default image stays lean for deterministic runs.
+ARG EVALFORGE_INSTALL_CLAUDE_CLI=0
+RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ]; then \
+      apt-get update \
+      && apt-get install -y --no-install-recommends nodejs npm \
+      && npm install -g @anthropic-ai/claude-code \
+      && rm -rf /var/lib/apt/lists/* /root/.npm; \
+    fi
+
+RUN mkdir -p /workspace \
+    && chmod 777 /workspace
+
+WORKDIR /workspace
+
+# Keep the container alive so DockerSandbox can exec commands into it.
+CMD ["sleep", "infinity"]

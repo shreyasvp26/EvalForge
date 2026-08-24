@@ -6,9 +6,11 @@ Worker lifecycle use cases (StartRun, Record*, etc.) are not exposed here.
 
 from __future__ import annotations
 
+import os
 from typing import Annotated
 
 from agent_eval_application.commands.run import CancelRunCommand, CreateRunCommand
+from agent_eval_application.errors import NotFoundApplicationError
 from agent_eval_application.queries.queries import (
     GetRunArtifactsQuery,
     GetRunEventsQuery,
@@ -16,9 +18,13 @@ from agent_eval_application.queries.queries import (
     GetRunScoresQuery,
     ListRunsByProjectQuery,
 )
+from agent_eval_domain.common.ids import RunId
+from agent_eval_infrastructure.queue.redis_cancellation import RedisRunCancellationStore
+from agent_eval_infrastructure.queue.redis_run_queue import RedisRunQueue
 from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi.responses import Response
 
-from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.dependencies import ActorDep, ContainerDep, ServicesDep
 from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.run import (
@@ -109,12 +115,15 @@ def cancel_run(
     run_id: str,
     actor: ActorDep,
     services: ServicesDep,
+    container: ContainerDep,
     body: CancelRunRequest | None = None,
 ) -> RunResponse:
     reason = body.reason if body is not None else None
     dto = services.cancel_run.execute(
         CancelRunCommand(actor=actor, run_id=run_id, reason=reason)
     )
+    # Fan-out cancel intent to workers (Redis) and drop pending queue entry.
+    _publish_cancel_signal(container, run_id)
     return RunResponse.from_dto(dto)
 
 
@@ -157,6 +166,48 @@ def list_run_artifacts(
 
 
 @router.get(
+    "/{run_id}/artifacts/{artifact_id}/content",
+    summary="Download Run Artifact bytes",
+    tags=["runs", "artifacts"],
+    responses={200: {"content": {"application/octet-stream": {}}}},
+)
+def download_run_artifact(
+    run_id: str,
+    artifact_id: str,
+    actor: ActorDep,
+    services: ServicesDep,
+    container: ContainerDep,
+) -> Response:
+    # AuthZ via GetRunArtifacts (project membership) then filter by id.
+    items = services.get_run_artifacts.execute(
+        GetRunArtifactsQuery(actor=actor, run_id=run_id)
+    )
+    match = next((a for a in items if a.id == artifact_id), None)
+    if match is None:
+        raise NotFoundApplicationError(
+            f"Artifact {artifact_id!r} not found for run {run_id!r}",
+            entity="Artifact",
+            entity_id=artifact_id,
+        )
+    try:
+        payload = container.infrastructure.object_storage.get(match.storage_key)
+    except LookupError as exc:
+        raise NotFoundApplicationError(
+            f"Artifact bytes missing for {artifact_id!r}",
+            entity="Artifact",
+            entity_id=artifact_id,
+        ) from exc
+    return Response(
+        content=payload,
+        media_type=match.content_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{artifact_id}"',
+            "X-EvalForge-Checksum": match.checksum,
+        },
+    )
+
+
+@router.get(
     "/{run_id}/scores",
     response_model=CollectionResponse[ScoreResponse],
     summary="List Run Scores",
@@ -173,3 +224,19 @@ def list_run_scores(
     )
     responses = [ScoreResponse.from_dto(s) for s in items]
     return params.apply(responses)
+
+
+def _publish_cancel_signal(container: object, run_id: str) -> None:
+    """Best-effort Redis cancel + dequeue. Domain cancel already succeeded."""
+    infra = getattr(container, "infrastructure", None)
+    if infra is None:
+        return
+    redis = getattr(infra, "redis", None)
+    run_queue = getattr(infra, "run_queue", None)
+    if redis is None:
+        return
+    prefix = os.environ.get("RUN_CANCEL_KEY_PREFIX", "evalforge:cancel")
+    store = RedisRunCancellationStore(redis, key_prefix=prefix)
+    store.request_cancel(RunId(run_id))
+    if isinstance(run_queue, RedisRunQueue):
+        run_queue.dequeue_pending(RunId(run_id))

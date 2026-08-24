@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from typing import Protocol
 
 from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.context import ExecutionConfig, ExecutionContext
@@ -23,7 +24,6 @@ from agent_eval_sandbox.models import ExecutionRequest, ExecutionResult, Sandbox
 from agent_eval_shared.metrics import observe_adapter_run
 from agent_eval_shared.tracing import start_span
 
-from agent_eval_workers.cancellation.registry import InMemoryCancellationRegistry
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.integration.event_sink import PipelineEventSink
 from agent_eval_workers.integration.registry import RunSandboxRegistry
@@ -33,6 +33,10 @@ from agent_eval_workers.mocks.stream import EventStreamPort
 AdapterFactory = Callable[[], Adapter]
 AdapterHook = Callable[[RunId], None]
 RunMetadataFactory = Callable[[RunId], RunMetadata]
+
+
+class _ArtifactStore(Protocol):
+    def put(self, key: str, data: bytes, *, content_type: str) -> object: ...
 
 
 @dataclass
@@ -53,11 +57,11 @@ class ManagerSandboxExec:
 class RegistryCancellation:
     """Adapter cancellation signal backed by the Worker cancel registry."""
 
-    registry: InMemoryCancellationRegistry
+    registry: object
     run_id: RunId
 
     def is_cancelled(self) -> bool:
-        return self.registry.is_cancel_requested(self.run_id)
+        return bool(self.registry.is_cancel_requested(self.run_id))  # type: ignore[attr-defined]
 
 
 @dataclass
@@ -93,7 +97,8 @@ class SdkAdapterBridge:
     sandboxes: RunSandboxRegistry
     manager: SandboxManager
     adapter_factory: AdapterFactory
-    cancellation: InMemoryCancellationRegistry | None = None
+    cancellation: object | None = None
+    object_storage: _ArtifactStore | None = None
     run_metadata_factory: RunMetadataFactory = field(default=default_run_metadata)
     prompt: str = "solve the case"
     working_directory: str = "/workspace"
@@ -110,7 +115,11 @@ class SdkAdapterBridge:
     def start(self, run_id: RunId) -> None:
         try:
             handle = self.sandboxes.get(run_id)
-            sink = PipelineEventSink(stream=self.stream, run_id=run_id)
+            sink = PipelineEventSink(
+                stream=self.stream,
+                run_id=run_id,
+                object_storage=self.object_storage,
+            )
             adapter = self.adapter_factory()
             cancel: CancellationPort | None = None
             if self.cancellation is not None:

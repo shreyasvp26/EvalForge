@@ -74,6 +74,17 @@ def test_list_run_artifacts(client, services, auth_headers) -> None:
     assert response.json()["items"][0]["storage_key"] == "runs/run-1/art-1"
 
 
+def test_download_run_artifact(client, services, auth_headers, container) -> None:
+    container.infrastructure.object_storage.get.return_value = b"artifact-bytes"
+    response = client.get(
+        "/v1/runs/run-1/artifacts/art-1/content",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    assert response.content == b"artifact-bytes"
+    container.infrastructure.object_storage.get.assert_called_once()
+
+
 def test_list_run_scores(client, services, auth_headers) -> None:
     response = client.get("/v1/runs/run-1/scores", headers=auth_headers)
     assert response.status_code == 200

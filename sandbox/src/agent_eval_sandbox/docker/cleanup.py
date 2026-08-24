@@ -19,24 +19,22 @@ def ensure_destroyed(
     engine: DockerEngine,
     handle: SandboxHandle,
 ) -> SandboxHandle:
-    """Best-effort stop + force destroy. Never leaves a live container behind."""
-    current = handle
-    if current.state is SandboxState.DESTROYED:
-        return current
+    """Force-destroy the sandbox. Never leaves a live container behind.
 
-    if current.state is SandboxState.STARTED:
-        try:
-            current = lifecycle.stop_container(engine, current, timeout=5.0)
-        except Exception:  # noqa: BLE001 — destroy still required
-            pass
+    Skips a long graceful stop: sandbox entrypoints are typically
+    ``sleep infinity`` (or similar) and ignore SIGTERM, so stop-then-remove
+    only adds multi-second latency before the inevitable force-remove.
+    """
+    if handle.state is SandboxState.DESTROYED:
+        return handle
 
     try:
-        return lifecycle.destroy_container(engine, current)
+        return lifecycle.destroy_container(engine, handle)
     except SandboxCleanupError:
         # Retry once with force remove semantics already applied.
         try:
-            engine.remove_container(current.container_id, force=True)
-            return current.with_state(SandboxState.DESTROYED)
+            engine.remove_container(handle.container_id, force=True)
+            return handle.with_state(SandboxState.DESTROYED)
         except Exception as exc:  # noqa: BLE001
             raise SandboxCleanupError(
                 f"Failed to ensure destruction of sandbox {handle.id}: {exc}",
