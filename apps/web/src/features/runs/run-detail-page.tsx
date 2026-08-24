@@ -166,12 +166,17 @@ export function RunDetailPage({ runId }: { runId: string }) {
       <FadeIn>
         <PageHeader
           eyebrow="Evaluation"
-          title="Run detail"
-          description={
-            polling.isLive
-              ? "Observability cockpit — refreshing while queued, running, or grading."
-              : "Immutable execution record with timeline, scores, and artifacts."
+          title={
+            passed === true ? "Passed" : passed === false ? "Failed" : runStatusLabel(run.status)
           }
+          description={[
+            agentLabel,
+            projectQuery.data?.name,
+            caseLabel,
+            polling.isLive ? "Live observability" : "Immutable execution record",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
           actions={
             <Button asChild variant="outline">
               <Link href={`/runs/new?project=${encodeURIComponent(pins.project_id)}`}>

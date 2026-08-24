@@ -8,6 +8,7 @@ import {
   Cluster,
   Icon,
   ScrollArea,
+  Skeleton,
   Text,
   toast,
 } from "@agent-eval/ui";
@@ -25,6 +26,8 @@ import {
 } from "./utils";
 
 import type { ExecutionEvent, RunStatus } from "@/lib/api/runs";
+
+import { PanelEmpty } from "@/components/patterns/panel-empty";
 
 export interface ExecutionTimelineProps {
   events: ExecutionEvent[];
@@ -59,11 +62,24 @@ export function ExecutionTimeline({
 
   useEffect(() => {
     if (!live || !latestId) return;
-    latestRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    latestRef.current?.scrollIntoView({
+      behavior: prefersReduced ? "auto" : "smooth",
+      block: "nearest",
+    });
   }, [live, latestId, sorted.length]);
 
   if (isLoading) {
-    return <Text variant="secondary">Loading events…</Text>;
+    return (
+      <div className="space-y-3" aria-busy aria-label="Loading execution events">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-[92%]" />
+        <Skeleton className="h-10 w-[85%]" />
+      </div>
+    );
   }
 
   if (errorMessage) {
@@ -81,9 +97,14 @@ export function ExecutionTimeline({
 
   if (sorted.length === 0) {
     return (
-      <Text variant="secondary">
-        {live ? "Waiting for the first execution event…" : "No events recorded for this run."}
-      </Text>
+      <PanelEmpty
+        title={live ? "Waiting for execution events" : "No events recorded"}
+        description={
+          live
+            ? "The timeline will stream tool calls, shell commands, and messages as they happen."
+            : "This run finished without recorded execution events."
+        }
+      />
     );
   }
 
@@ -108,7 +129,11 @@ export function ExecutionTimeline({
         <div className="space-y-6">
           {groups.map((group) => (
             <section key={group.id} className="space-y-3">
-              <Text as="div" variant="caption" className="uppercase tracking-wide">
+              <Text
+                as="div"
+                variant="caption"
+                className="font-mono uppercase tracking-[0.12em] text-muted-foreground"
+              >
                 {group.label}
               </Text>
               <ol className="relative space-y-0 border-l border-border pl-6">
@@ -120,6 +145,10 @@ export function ExecutionTimeline({
                     Object.keys(event.action).length > 0 ||
                     event.artifact_ids.length > 0 ||
                     Object.keys(event.metadata).length > 0;
+                  const offsetLabel =
+                    originMs === null
+                      ? formatRunTime(event.occurred_at)
+                      : `+${formatDurationMs(Math.max(0, new Date(event.occurred_at).getTime() - originMs))}`;
 
                   return (
                     <li
@@ -130,14 +159,15 @@ export function ExecutionTimeline({
                       <span
                         className={
                           isLatest && live
-                            ? "absolute -left-[1.625rem] top-1.5 h-2.5 w-2.5 rounded-full border border-border bg-running-muted"
-                            : "absolute -left-[1.625rem] top-1.5 h-2.5 w-2.5 rounded-full border border-border bg-card"
+                            ? "absolute -left-[1.625rem] top-1.5 h-2.5 w-2.5 animate-pulse rounded-full border border-running bg-running motion-reduce:animate-none"
+                            : "absolute -left-[1.625rem] top-1.5 h-2.5 w-2.5 rounded-full border border-border bg-background"
                         }
                         aria-hidden
                       />
                       <button
                         type="button"
-                        className="flex w-full items-start gap-2 text-left"
+                        className="flex w-full items-start gap-2 rounded-[var(--ef-radius-control)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-expanded={isOpen}
                         onClick={() => {
                           setExpanded((current) => ({
                             ...current,
@@ -152,18 +182,20 @@ export function ExecutionTimeline({
                           aria-hidden
                         />
                         <div className="min-w-0 flex-1 space-y-1">
-                          <Cluster gap={2} className="items-center">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <Text
+                              as="span"
+                              variant="caption"
+                              className="w-16 shrink-0 font-mono tabular-nums text-muted-foreground"
+                            >
+                              {offsetLabel}
+                            </Text>
                             <Badge status={eventStatusBadge(event.kind)}>{event.kind}</Badge>
                             <Text as="span" variant="body" className="font-medium">
                               {eventHeadline(event)}
                             </Text>
                             <Text as="span" variant="caption" className="tabular-nums">
                               #{String(event.sequence)}
-                            </Text>
-                            <Text as="span" variant="caption" className="font-mono tabular-nums">
-                              {originMs === null
-                                ? formatRunTime(event.occurred_at)
-                                : `+${formatDurationMs(Math.max(0, new Date(event.occurred_at).getTime() - originMs))}`}
                             </Text>
                             <Text
                               as="span"
@@ -172,7 +204,7 @@ export function ExecutionTimeline({
                             >
                               {formatRunTime(event.occurred_at)}
                             </Text>
-                          </Cluster>
+                          </div>
                           {summary && !isOpen ? (
                             <Text
                               variant="secondary"
@@ -185,7 +217,7 @@ export function ExecutionTimeline({
                       </button>
 
                       {isOpen && hasDetails ? (
-                        <div className="mt-2 ml-6 space-y-2">
+                        <div className="mt-2 ml-6 space-y-2 border-l border-border/60 pl-3">
                           {summary ? (
                             <pre className="max-h-48 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-3 font-mono text-[length:var(--ef-text-caption)] whitespace-pre-wrap break-words">
                               {summary}

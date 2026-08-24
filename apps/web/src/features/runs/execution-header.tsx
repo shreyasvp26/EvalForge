@@ -66,8 +66,8 @@ export function ExecutionHeader({
   const primaryScore = run.scores[0];
 
   return (
-    <div className="overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-card">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
+    <div className="overflow-hidden border-b border-border pb-1">
+      <div className="flex flex-wrap items-start justify-between gap-4 py-1">
         <div className="space-y-3">
           <Cluster gap={2} className="items-center">
             <StatusBadge status={run.status} passed={passed} />
@@ -109,7 +109,7 @@ export function ExecutionHeader({
               <Text
                 as="div"
                 variant="body"
-                className="mt-1 text-[length:var(--ef-text-page)] font-semibold tabular-nums leading-none"
+                className="mt-1 text-[length:var(--ef-text-display)] font-semibold tabular-nums leading-none tracking-tight"
               >
                 {formatScoreValue(primaryScore.value)}
               </Text>
@@ -130,7 +130,7 @@ export function ExecutionHeader({
         </div>
       </div>
 
-      <dl className="grid gap-0 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="mt-4 grid gap-0 border-y border-border sm:grid-cols-2 lg:grid-cols-4">
         <ChromeStat label="Started" value={formatRunDate(startedAt)} />
         <ChromeStat
           label="Finished"
@@ -143,7 +143,7 @@ export function ExecutionHeader({
         <ChromeStat label="Recent activity" value={recent ?? "Waiting for events"} />
       </dl>
 
-      <div className="grid gap-3 border-t border-border px-4 py-3 sm:grid-cols-3 sm:px-5">
+      <div className="grid gap-3 py-3 sm:grid-cols-3">
         <ContextLink
           label="Project"
           value={projectName ?? truncateId(run.pins.project_id, 12)}
@@ -161,7 +161,7 @@ export function ExecutionHeader({
 
 function ChromeStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border-border px-4 py-3 sm:border-r sm:px-5 sm:last:border-r-0">
+    <div className="border-border px-0 py-3 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0">
       <Text as="div" variant="caption" className="font-mono uppercase tracking-[0.1em]">
         {label}
       </Text>
