@@ -65,8 +65,9 @@ export function EvaluationHealthStrip({ health }: { health: EvaluationHealth }) 
             Evaluation health
           </Text>
           <Text as="p" variant="caption" className="mt-0.5">
-            From {String(health.sampledRuns)} recent run
-            {health.sampledRuns === 1 ? "" : "s"} across sampled projects
+            {health.sampledRuns === 1
+              ? "From 1 recent run across sampled projects"
+              : `From ${String(health.sampledRuns)} recent runs across sampled projects`}
           </Text>
         </div>
         <Link

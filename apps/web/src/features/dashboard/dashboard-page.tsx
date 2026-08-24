@@ -89,6 +89,25 @@ export function DashboardPage() {
 
           <div className="grid gap-8 lg:grid-cols-3">
             <Section
+              title="Active execution"
+              description="Queued, running, and grading right now."
+              className="lg:col-span-1"
+            >
+              <ActiveExecution
+                runs={snapshot.activeRuns}
+                projectNameById={snapshot.projectNameById}
+              />
+            </Section>
+
+            <Section
+              title="Needs attention"
+              description="Failed runs and completed runs with failing scores."
+              className="lg:col-span-2"
+            >
+              <RecentFailures runs={snapshot.failures} projectNameById={snapshot.projectNameById} />
+            </Section>
+
+            <Section
               title="Recent evaluations"
               className="lg:col-span-2"
               description="Latest runs across sampled projects."
@@ -104,27 +123,8 @@ export function DashboardPage() {
               />
             </Section>
 
-            <Section title="Next steps" description="Jump into the evaluation workflow.">
+            <Section title="Workflow" description="Jump into the evaluation model.">
               <QuickActions />
-            </Section>
-
-            <Section
-              title="Active execution"
-              description="Queued, running, and grading."
-              className="lg:col-span-1"
-            >
-              <ActiveExecution
-                runs={snapshot.activeRuns}
-                projectNameById={snapshot.projectNameById}
-              />
-            </Section>
-
-            <Section
-              title="Recent failures"
-              description="Failed runs and completed runs with failing scores."
-              className="lg:col-span-2"
-            >
-              <RecentFailures runs={snapshot.failures} projectNameById={snapshot.projectNameById} />
             </Section>
 
             <Section
@@ -137,7 +137,8 @@ export function DashboardPage() {
           </div>
 
           <Text variant="caption" className="block text-muted-foreground">
-            Counts sample up to eight recent projects. Open Projects or Runs for the full inventory.
+            Health and feeds sample up to eight recent projects — open Projects or Runs for the full
+            inventory.
           </Text>
         </div>
       </FadeIn>

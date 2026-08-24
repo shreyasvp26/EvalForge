@@ -1,12 +1,13 @@
 "use client";
 
-import { Text } from "@agent-eval/ui";
+import { Play } from "@agent-eval/ui";
 import Link from "next/link";
 
 import { formatDashboardDate, primaryScoreLabel, runPassSignal, truncateId } from "./utils";
 
 import type { Run } from "@/lib/api/runs";
 
+import { PanelEmpty } from "@/components/patterns/panel-empty";
 import { StatusBadge } from "@/components/status/status-badge";
 
 export function RecentEvaluations({
@@ -17,7 +18,15 @@ export function RecentEvaluations({
   projectNameById: Record<string, string>;
 }) {
   if (runs.length === 0) {
-    return <Text variant="secondary">No evaluations yet. Launch a run to populate this feed.</Text>;
+    return (
+      <PanelEmpty
+        icon={Play}
+        title="No evaluations yet"
+        description="Create a case, choose an agent and grader, then launch your first evaluation."
+        actionHref="/runs/new"
+        actionLabel="Create evaluation"
+      />
+    );
   }
 
   return (
@@ -49,11 +58,11 @@ export function RecentEvaluations({
             const score = primaryScoreLabel(run);
             const passed = runPassSignal(run);
             return (
-              <tr key={run.id} className="border-b border-border last:border-b-0">
-                <td className="px-3 py-2.5">
+              <tr key={run.id} className="border-b border-border last:border-b-0 hover:bg-muted/30">
+                <td className="px-3 py-2">
                   <StatusBadge status={run.status} passed={passed} size="sm" />
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-2">
                   <Link
                     href={`/runs/${run.id}`}
                     className="font-mono text-[length:var(--ef-text-caption)] text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -61,7 +70,7 @@ export function RecentEvaluations({
                     {truncateId(run.id, 14)}
                   </Link>
                 </td>
-                <td className="max-w-[12rem] truncate px-3 py-2.5">
+                <td className="max-w-[12rem] truncate px-3 py-2">
                   <Link
                     href={`/projects/${run.pins.project_id}`}
                     className="text-[length:var(--ef-text-body)] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -69,10 +78,10 @@ export function RecentEvaluations({
                     {projectName}
                   </Link>
                 </td>
-                <td className="px-3 py-2.5 font-mono text-[length:var(--ef-text-caption)] tabular-nums">
+                <td className="px-3 py-2 font-mono text-[length:var(--ef-text-caption)] tabular-nums">
                   {score ?? "—"}
                 </td>
-                <td className="px-3 py-2.5 text-[length:var(--ef-text-caption)] tabular-nums text-muted-foreground">
+                <td className="px-3 py-2 text-[length:var(--ef-text-caption)] tabular-nums text-muted-foreground">
                   {formatDashboardDate(run.created_at)}
                 </td>
               </tr>

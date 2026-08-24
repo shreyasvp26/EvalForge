@@ -1,12 +1,13 @@
 "use client";
 
-import { Text } from "@agent-eval/ui";
+import { AlertTriangle, Play, Text } from "@agent-eval/ui";
 import Link from "next/link";
 
 import { formatDashboardDate, runPassSignal, truncateId } from "./utils";
 
 import type { Run } from "@/lib/api/runs";
 
+import { PanelEmpty } from "@/components/patterns/panel-empty";
 import { StatusBadge } from "@/components/status/status-badge";
 
 export function ActiveExecution({
@@ -18,9 +19,13 @@ export function ActiveExecution({
 }) {
   if (runs.length === 0) {
     return (
-      <Text variant="secondary">
-        No active executions. Queued, running, and grading runs appear here.
-      </Text>
+      <PanelEmpty
+        icon={Play}
+        title="No active executions"
+        description="Queued, running, and grading runs appear here while evaluations execute."
+        actionHref="/runs/new"
+        actionLabel="Launch run"
+      />
     );
   }
 
@@ -65,7 +70,15 @@ export function RecentFailures({
   projectNameById: Record<string, string>;
 }) {
   if (runs.length === 0) {
-    return <Text variant="secondary">No recent failures in the sampled window.</Text>;
+    return (
+      <PanelEmpty
+        icon={AlertTriangle}
+        title="Nothing needs attention"
+        description="Failed runs and failing scores in the sampled window will show up here."
+        actionHref="/runs"
+        actionLabel="Browse runs"
+      />
+    );
   }
 
   return (
