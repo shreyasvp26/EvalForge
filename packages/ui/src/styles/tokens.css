@@ -84,8 +84,8 @@
   --ef-input: #ffffff;
   --ef-input-foreground: #111113;
 
-  /* Accent — calm blue-gray, sparse use */
-  --ef-accent: #3f5164;
+  /* Accent — calm blue-gray; foreground must remain high-contrast on accent */
+  --ef-accent: #2f3f50;
   --ef-accent-foreground: #f7f7f8;
   --ef-accent-muted: #e8eef3;
 
@@ -133,7 +133,7 @@
   --ef-input: #111113;
   --ef-input-foreground: #f2f2f3;
 
-  --ef-accent: #9aabbc;
+  --ef-accent: #c5d0db;
   --ef-accent-foreground: #0b0b0c;
   --ef-accent-muted: #1a222b;
 
