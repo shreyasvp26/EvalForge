@@ -11,7 +11,8 @@
     "clean": "rm -rf .next dist",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@agent-eval/shared": "workspace:*",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@agent-eval/config": "workspace:*",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.0.9",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
