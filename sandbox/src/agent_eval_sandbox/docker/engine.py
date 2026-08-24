@@ -137,13 +137,11 @@ def _wrap_with_timeout(
 ) -> list[str]:
     if timeout_seconds is None:
         return command
-    # GNU coreutils timeout — exit 124 on expiry.
-    return [
-        "timeout",
-        "--signal=KILL",
-        f"{timeout_seconds}s",
-        *command,
-    ]
+    # Portable across GNU coreutils and BusyBox (CI uses busybox:1.36).
+    # Avoid GNU-only ``--signal=KILL`` / ``15s`` duration forms.
+    # Exit 124 on expiry is still the conventional timeout status.
+    seconds = max(1, int(timeout_seconds))
+    return ["timeout", "-s", "KILL", str(seconds), *command]
 
 
 def _split_output(output: Any) -> tuple[bytes, bytes]:
