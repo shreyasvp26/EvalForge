@@ -18,6 +18,8 @@ export default [
       "**/.venv/**",
       "**/coverage/**",
       "**/vitest.config.ts",
+      "**/playwright.config.ts",
+      "**/e2e/**",
       "**/postcss.config.mjs",
       "**/next.config.ts",
       "**/next-env.d.ts",
