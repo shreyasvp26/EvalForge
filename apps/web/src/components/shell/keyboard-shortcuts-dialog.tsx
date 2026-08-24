@@ -16,6 +16,7 @@ const shortcuts = [
   { keys: "G then P", action: "Go to Projects" },
   { keys: "G then R", action: "Go to Runs" },
   { keys: "G then A", action: "Go to Agents" },
+  { keys: "G then G", action: "Go to Graders" },
   { keys: "?", action: "Show keyboard shortcuts" },
   { keys: "Esc", action: "Close overlays / drawers" },
 ] as const;

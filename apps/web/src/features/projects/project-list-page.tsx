@@ -22,7 +22,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 import { listProjects } from "@/lib/api/projects";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -67,9 +66,6 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Projects" }]} />
-        }
         eyebrow="Workspace"
         title="Projects"
         description="Organize evaluation work into projects. Open a project to manage settings and related resources."

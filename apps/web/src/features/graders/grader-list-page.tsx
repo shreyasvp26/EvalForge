@@ -22,7 +22,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 import { listGraders } from "@/lib/api/graders";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -64,9 +63,6 @@ export function GraderListPage({ initialCreateOpen = false }: { initialCreateOpe
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Graders" }]} />
-        }
         eyebrow="Platform"
         title="Graders"
         description="Platform catalog of objective and rubric graders. Each grader versions an opaque specification used when scoring runs."

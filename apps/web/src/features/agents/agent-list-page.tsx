@@ -15,7 +15,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { listAgents } from "@/lib/api/agents";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -57,9 +56,6 @@ export function AgentListPage({ initialCreateOpen = false }: { initialCreateOpen
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Agents" }]} />
-        }
         eyebrow="Platform"
         title="Agents"
         description="Platform catalog of coding agents under test. Each agent connects at most one adapter and versions independently."

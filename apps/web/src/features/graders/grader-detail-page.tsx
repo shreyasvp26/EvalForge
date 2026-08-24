@@ -27,7 +27,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 import { getGrader } from "@/lib/api/graders";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -113,15 +112,6 @@ export function GraderDetailPage({ graderId }: { graderId: string }) {
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Graders", href: "/graders" },
-                { label: grader.name },
-              ]}
-            />
-          }
           eyebrow="Grader"
           title={grader.name}
           description={

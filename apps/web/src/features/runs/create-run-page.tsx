@@ -24,7 +24,6 @@ import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
 import { InlineError } from "@/components/patterns/inline-error";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { adapterQueryKey, agentsQueryKey } from "@/features/agents/utils";
 import { casesQueryKey } from "@/features/cases/utils";
 import { gradersQueryKey, versionStatusLabel } from "@/features/graders/utils";
@@ -243,15 +242,6 @@ export function CreateRunPage() {
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Runs", href: "/runs" },
-                { label: "New run" },
-              ]}
-            />
-          }
           eyebrow="Execution"
           title="New run"
           description="Pin immutable versions, then launch. The worker queues immediately after create."

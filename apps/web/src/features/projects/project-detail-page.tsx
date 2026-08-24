@@ -20,7 +20,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 import { getProject } from "@/lib/api/projects";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -111,15 +110,6 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Projects", href: "/projects" },
-                { label: project.name },
-              ]}
-            />
-          }
           eyebrow="Project"
           title={project.name}
           description={

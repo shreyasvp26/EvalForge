@@ -38,7 +38,7 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       className={cn(
         "group flex items-center gap-2 rounded-[var(--ef-radius-control)] text-[length:var(--ef-text-body)] transition-[background-color,color,padding] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        collapsed ? "justify-center px-2 py-2" : "px-2.5 py-2",
+        collapsed ? "justify-center px-2 py-2" : "px-2.5 py-1.5",
         active
           ? "bg-muted font-medium text-foreground shadow-[inset_2px_0_0_0_var(--ef-accent)]"
           : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
@@ -84,7 +84,7 @@ export function Sidebar({
   className,
   collapsed = false,
   onToggleCollapsed,
-  sectionOpen = { workspace: true, system: true },
+  sectionOpen = { workspace: true, evaluation: true, system: true },
   onToggleSection,
   onNavigate,
   showCollapseControl = true,
@@ -93,7 +93,7 @@ export function Sidebar({
     <aside
       className={cn(
         "flex h-full shrink-0 flex-col border-r border-border bg-card transition-[width] duration-[var(--ef-duration-normal)] ease-[var(--ef-ease-standard)]",
-        collapsed ? "w-[52px]" : "w-60",
+        collapsed ? "w-[52px]" : "w-[15.5rem]",
         className,
       )}
       aria-label="Application"
@@ -105,17 +105,33 @@ export function Sidebar({
         )}
       >
         {!collapsed ? (
-          <Text
-            as="span"
-            variant="caption"
-            className="min-w-0 flex-1 truncate font-mono uppercase tracking-[0.14em] text-foreground"
+          <Link
+            href="/"
+            className="min-w-0 flex-1 rounded-[var(--ef-radius-control)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            {...(onNavigate !== undefined ? { onClick: onNavigate } : {})}
           >
-            EvalForge
-          </Text>
+            <Text
+              as="span"
+              variant="caption"
+              className="block truncate font-mono text-[length:var(--ef-text-body)] font-semibold uppercase tracking-[0.16em] text-foreground"
+            >
+              EvalForge
+            </Text>
+            <Text as="span" variant="caption" className="block truncate text-muted-foreground">
+              Evaluation control plane
+            </Text>
+          </Link>
         ) : (
-          <Text as="span" variant="caption" className="font-mono text-foreground" aria-hidden>
-            EF
-          </Text>
+          <Link
+            href="/"
+            aria-label="EvalForge home"
+            className="rounded-[var(--ef-radius-control)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            {...(onNavigate !== undefined ? { onClick: onNavigate } : {})}
+          >
+            <Text as="span" variant="caption" className="font-mono font-semibold text-foreground">
+              EF
+            </Text>
+          </Link>
         )}
         {showCollapseControl && onToggleCollapsed ? (
           <IconButton
@@ -123,16 +139,16 @@ export function Sidebar({
             label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             size="sm"
             onClick={onToggleCollapsed}
-            className={collapsed ? undefined : "ml-auto"}
+            className={collapsed ? undefined : "ml-auto shrink-0"}
           />
         ) : null}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-2 overflow-y-auto p-2" aria-label="Primary">
+      <nav className="flex flex-1 flex-col gap-3 overflow-y-auto p-2" aria-label="Primary">
         {navSections.map((section) => {
           const open = sectionOpen[section.id] ?? true;
           return (
-            <div key={section.id} className="space-y-1">
+            <div key={section.id} className="space-y-0.5">
               {!collapsed ? (
                 <button
                   type="button"
@@ -142,7 +158,10 @@ export function Sidebar({
                     onToggleSection?.(section.id);
                   }}
                 >
-                  <Text variant="table" className="flex-1">
+                  <Text
+                    variant="caption"
+                    className="flex-1 font-mono uppercase tracking-[0.12em] text-muted-foreground"
+                  >
                     {section.label}
                   </Text>
                   <Icon
@@ -174,8 +193,10 @@ export function Sidebar({
       </nav>
 
       {!collapsed ? (
-        <div className="border-t border-border p-3">
-          <Text variant="caption">Press ? for shortcuts</Text>
+        <div className="space-y-1 border-t border-border p-3">
+          <Text variant="caption" className="block text-muted-foreground">
+            Press <kbd className="font-mono">?</kbd> for shortcuts
+          </Text>
         </div>
       ) : null}
     </aside>

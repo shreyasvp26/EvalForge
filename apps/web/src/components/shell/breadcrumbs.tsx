@@ -12,7 +12,7 @@ export interface BreadcrumbsProps {
 }
 
 /**
- * Compact breadcrumb trail for TopBar and PageHeader.
+ * Compact breadcrumb trail for the AppShell TopBar (single source of truth).
  */
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   if (items.length === 0) return null;

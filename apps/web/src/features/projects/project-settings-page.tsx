@@ -23,7 +23,6 @@ import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { InlineError } from "@/components/patterns/inline-error";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 import { getProject, renameProject, updateProjectSettings } from "@/lib/api/projects";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -222,16 +221,6 @@ export function ProjectSettingsPage({ projectId }: { projectId: string }) {
   return (
     <PageLayout>
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs
-            items={[
-              { label: "Workspace", href: "/projects" },
-              { label: "Projects", href: "/projects" },
-              { label: project.name, href: `/projects/${project.id}` },
-              { label: "Settings" },
-            ]}
-          />
-        }
         eyebrow="Project settings"
         title={project.name}
         description="Rename the project, replace opaque settings, or deprecate it."

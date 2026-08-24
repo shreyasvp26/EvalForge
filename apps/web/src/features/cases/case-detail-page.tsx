@@ -30,7 +30,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { projectQueryKey } from "@/features/projects/utils";
 import { getCase } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
@@ -151,18 +150,7 @@ export function CaseDetailPage({ projectId, caseId }: { projectId: string; caseI
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Projects", href: "/projects" },
-                { label: projectName, href: `/projects/${projectId}` },
-                { label: "Cases", href: `/projects/${projectId}/cases` },
-                { label: caseItem.name },
-              ]}
-            />
-          }
-          eyebrow="Case"
+          eyebrow={`Case · ${projectName}`}
           title={caseItem.name}
           description={
             caseItem.description.trim()

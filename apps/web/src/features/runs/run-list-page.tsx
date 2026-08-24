@@ -37,7 +37,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { agentsQueryKey } from "@/features/agents/utils";
 import { casesQueryKey } from "@/features/cases/utils";
 import { projectsQueryKey } from "@/features/projects/utils";
@@ -183,9 +182,6 @@ export function RunListPage() {
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Runs" }]} />
-        }
         eyebrow="Execution"
         title="Runs"
         description="Pinned evaluation executions across projects. Launch a run to queue agent work against immutable version pins."

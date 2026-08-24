@@ -17,7 +17,6 @@ import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { entityStatusLabel as agentStatusLabel } from "@/features/agents/utils";
 import { projectStatusLabel } from "@/features/projects/utils";
 import { ApiError } from "@/lib/api/client";
@@ -62,9 +61,6 @@ export function DashboardPage() {
       <PageLayout>
         <FadeIn>
           <PageHeader
-            breadcrumbs={
-              <Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Overview" }]} />
-            }
             eyebrow="Workspace"
             title="Overview"
             description="What is happening in your evaluation platform right now."
@@ -121,9 +117,6 @@ export function DashboardPage() {
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs items={[{ label: "Workspace", href: "/" }, { label: "Overview" }]} />
-          }
           eyebrow="Workspace"
           title="Overview"
           description="What is happening in your evaluation platform right now."

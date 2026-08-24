@@ -19,7 +19,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 
 export function RunDetailPage({ runId }: { runId: string }) {
@@ -101,15 +100,6 @@ export function RunDetailPage({ runId }: { runId: string }) {
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Runs", href: "/runs" },
-                { label: truncateId(run.id, 12) },
-              ]}
-            />
-          }
           eyebrow="Live execution"
           title={truncateId(run.id, 18)}
           description={

@@ -19,7 +19,7 @@ export function TopBar({
   onOpenShortcuts: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-sm md:gap-3 md:px-4">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-card/80 px-3 backdrop-blur-sm md:gap-3 md:px-4">
       <IconButton
         icon={Menu}
         label="Open navigation"
@@ -27,7 +27,11 @@ export function TopBar({
         onClick={onOpenMobileNav}
       />
       <div className="min-w-0 flex-1">
-        {breadcrumbs ?? <Text variant="caption">Workspace</Text>}
+        {breadcrumbs ?? (
+          <Text variant="caption" className="font-mono uppercase tracking-[0.12em]">
+            EvalForge
+          </Text>
+        )}
       </div>
       <IconButton
         icon={Search}

@@ -26,7 +26,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { projectQueryKey } from "@/features/projects/utils";
 import { ApiError } from "@/lib/api/client";
 import { getProject } from "@/lib/api/projects";
@@ -143,18 +142,7 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Projects", href: "/projects" },
-                { label: projectName, href: `/projects/${projectId}` },
-                { label: "Suites", href: `/projects/${projectId}/suites` },
-                { label: suite.name },
-              ]}
-            />
-          }
-          eyebrow="Suite"
+          eyebrow={`Suite · ${projectName}`}
           title={suite.name}
           description={
             suite.description.trim() ? suite.description : "No description provided for this suite."
