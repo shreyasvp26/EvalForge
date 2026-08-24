@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal, cast
 
 from pydantic import AliasChoices, Field
@@ -14,12 +15,64 @@ from agent_eval_shared.errors import ConfigurationError
 LogLevel = Literal["critical", "error", "warning", "info", "debug"]
 Environment = Literal["development", "test", "production"]
 
+_REPO_MARKERS = ("pnpm-workspace.yaml", "uv.lock", "pyproject.toml")
+
+
+def find_repo_root(start: Path | None = None) -> Path | None:
+    """Walk upward from ``start`` (default: CWD) looking for monorepo markers."""
+    current = (start or Path.cwd()).resolve()
+    for directory in (current, *current.parents):
+        if any((directory / marker).exists() for marker in _REPO_MARKERS):
+            # Prefer the workspace root (pnpm-workspace) when several pyprojects exist.
+            if (directory / "pnpm-workspace.yaml").exists() or (
+                directory / "uv.lock"
+            ).exists():
+                return directory
+    # Fallback: nearest pyproject that also contains apps/ + infrastructure/.
+    current = (start or Path.cwd()).resolve()
+    for directory in (current, *current.parents):
+        if (
+            (directory / "pyproject.toml").exists()
+            and (directory / "apps").is_dir()
+            and (directory / "infrastructure").is_dir()
+        ):
+            return directory
+    return None
+
+
+def resolve_env_file() -> str | None:
+    """Return the canonical ``.env`` path (repo root), independent of CWD.
+
+    Falls back to CWD ``.env`` when the repository root cannot be detected so
+    ad-hoc scripts keep working. Returns ``None`` when no file exists (pydantic
+    then relies on process environment only).
+    """
+    candidates: list[Path] = []
+    # Prefer locating the monorepo from this package's install path.
+    package_root = find_repo_root(Path(__file__).resolve())
+    if package_root is not None:
+        candidates.append(package_root / ".env")
+    cwd_root = find_repo_root(Path.cwd())
+    if cwd_root is not None:
+        candidates.append(cwd_root / ".env")
+    candidates.append(Path.cwd() / ".env")
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        if resolved.is_file():
+            return str(resolved)
+    return None
+
 
 class BaseSettings(PydanticBaseSettings):
     """Baseline settings shared by API and workers. Extend per service."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=resolve_env_file(),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,

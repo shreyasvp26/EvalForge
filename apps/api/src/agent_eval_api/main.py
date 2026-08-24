@@ -14,6 +14,7 @@ from agent_eval_shared.log import configure_logging
 from agent_eval_shared.metrics import configure_metrics
 from agent_eval_shared.tracing import configure_tracing, shutdown_tracing
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
 from agent_eval_api.composition import ApiContainer, build_api_container
@@ -101,7 +102,7 @@ def create_app(
         ),
     )
     # Starlette applies middleware LIFO (last added = outermost):
-    # correlation → body limit → rate limit → auth → security → gzip
+    # cors → correlation → body limit → rate limit → auth → security → gzip
     # → timing → logging → metrics (inner).
     app.add_middleware(RequestMetricsMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
@@ -119,6 +120,15 @@ def create_app(
         max_body_bytes=api_settings.max_request_body_bytes,
     )
     app.add_middleware(CorrelationIdMiddleware)
+    cors_origins = api_settings.cors_origin_list()
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
     register_exception_handlers(app)
 
     app.include_router(health.router)

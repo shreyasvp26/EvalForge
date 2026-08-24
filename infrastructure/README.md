@@ -58,7 +58,8 @@ Infrastructure owns: repositories, Unit of Work, run queue, object storage,
 ID generation, event dispatch, idempotency, and composition root.
 
 **Migrations (Phase 14.1):** Alembic lives in `infrastructure/migrations/`.
-Apply with `cd infrastructure && uv run alembic upgrade head`.
+Apply with `uv run alembic -c infrastructure/alembic.ini upgrade head`
+(from the repository root; `script_location` uses `%(here)s`).
 
 **Not in this package:** FastAPI, Workers, Execution Engine, Adapter/Grader
 implementations, or Authorization policy.

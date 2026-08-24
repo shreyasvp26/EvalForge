@@ -4,6 +4,11 @@ const TOKEN_KEY = "evalforge.auth.token";
 const EXPIRES_AT_KEY = "evalforge.auth.expires_at";
 const SESSION_COOKIE = "evalforge.auth";
 
+function writeSessionCookie(maxAgeSeconds: number): void {
+  const maxAge = Math.max(60, Math.floor(maxAgeSeconds));
+  document.cookie = `${SESSION_COOKIE}=1; Path=/; Max-Age=${String(maxAge)}; SameSite=Lax`;
+}
+
 export function readAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   try {
@@ -26,8 +31,32 @@ export function persistAccessToken(token: string, expiresInSeconds: number): voi
   window.localStorage.setItem(TOKEN_KEY, token);
   window.localStorage.setItem(EXPIRES_AT_KEY, String(expiresAt));
   // Presence cookie for Next.js middleware route gating (not the credential).
-  const maxAge = Math.max(60, expiresInSeconds);
-  document.cookie = `${SESSION_COOKIE}=1; Path=/; Max-Age=${String(maxAge)}; SameSite=Lax`;
+  writeSessionCookie(expiresInSeconds);
+}
+
+/**
+ * Re-align the middleware presence cookie with localStorage.
+ * A JWT can outlive / lose the cookie (cleared site data, expired Max-Age,
+ * privacy tools). Without this, GuestOnly redirects to `/` and middleware
+ * bounces back to `/login`, leaving a permanent dark "Redirecting" overlay.
+ */
+export function syncSessionCookie(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const token = window.localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      document.cookie = `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+      return;
+    }
+    const expiresAt = Number(window.localStorage.getItem(EXPIRES_AT_KEY) ?? "0");
+    if (expiresAt > Date.now()) {
+      writeSessionCookie((expiresAt - Date.now()) / 1000);
+      return;
+    }
+    writeSessionCookie(60);
+  } catch {
+    // Ignore quota / private-mode cookie failures; auth state still lives in memory.
+  }
 }
 
 export function clearAccessToken(): void {

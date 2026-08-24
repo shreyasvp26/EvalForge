@@ -20,6 +20,10 @@ from agent_eval_domain.repositories import (
 from sqlalchemy.orm import Session
 
 from agent_eval_infrastructure.database.session import SessionFactory
+from agent_eval_infrastructure.database.uow_context import (
+    reset_active_uow_session,
+    set_active_uow_session,
+)
 from agent_eval_infrastructure.repositories import (
     SqlAlchemyAdapterRepository,
     SqlAlchemyAgentRepository,
@@ -49,6 +53,7 @@ class SqlAlchemyUnitOfWork:
     def __init__(self, session_factory: SessionFactory) -> None:
         self._session_factory = session_factory
         self._session: Session | None = None
+        self._session_token = None
         self._committed = False
         self._projects: ProjectRepository | None = None
         self._suites: SuiteRepository | None = None
@@ -111,6 +116,7 @@ class SqlAlchemyUnitOfWork:
             )
         session = self._session_factory()
         self._session = session
+        self._session_token = set_active_uow_session(session)
         self._committed = False
         self._projects = SqlAlchemyProjectRepository(session)
         self._suites = SqlAlchemySuiteRepository(session)
@@ -148,6 +154,9 @@ class SqlAlchemyUnitOfWork:
         return repo
 
     def _close(self) -> None:
+        if self._session_token is not None:
+            reset_active_uow_session(self._session_token)
+            self._session_token = None
         if self._session is not None:
             self._session.close()
         self._session = None

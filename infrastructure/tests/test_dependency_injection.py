@@ -97,10 +97,10 @@ def test_redis_idempotency_store() -> None:
 
 def test_production_profile_wires_redis_queue_types(monkeypatch) -> None:
     """Production profile constructs Redis/S3 adapters (clients may be faked)."""
-    monkeypatch.setenv("ENVIRONMENT", "development")
+    monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("DATABASE_URL", "sqlite+pysqlite:///:memory:")
     settings = InfrastructureSettings(
-        environment="development",
+        environment="test",
         database_url="sqlite+pysqlite:///:memory:",
         redis_url="redis://localhost:6379/15",
     )

@@ -15,7 +15,12 @@ import type { ReactNode } from "react";
 
 import { fetchCurrentUser, loginRequest, logoutRequest } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
-import { clearAccessToken, persistAccessToken, readAccessToken } from "@/lib/auth/session";
+import {
+  clearAccessToken,
+  persistAccessToken,
+  readAccessToken,
+  syncSessionCookie,
+} from "@/lib/auth/session";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -42,14 +47,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     cancelledRef.current = false;
     const existing = readAccessToken();
     if (!existing) {
+      // Drop a leftover presence cookie so middleware stops treating this
+      // browser as signed-in when localStorage has no usable token.
+      clearAccessToken();
+      setToken(null);
+      setUser(null);
       setStatus("unauthenticated");
       return;
     }
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, 8_000);
+
     void (async () => {
       try {
-        const profile = await fetchCurrentUser(existing);
+        const profile = await fetchCurrentUser(existing, { signal: controller.signal });
         if (cancelledRef.current) return;
+        syncSessionCookie();
         setToken(existing);
         setUser(profile);
         setStatus("authenticated");
@@ -59,11 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         setUser(null);
         setStatus("unauthenticated");
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     })();
 
     return () => {
       cancelledRef.current = true;
+      controller.abort();
+      window.clearTimeout(timeoutId);
     };
   }, []);
 

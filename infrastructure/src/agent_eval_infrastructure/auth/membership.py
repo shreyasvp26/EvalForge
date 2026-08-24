@@ -19,6 +19,7 @@ from agent_eval_infrastructure.database.mixins import (
     UuidPrimaryKeyMixin,
 )
 from agent_eval_infrastructure.database.session import SessionFactory
+from agent_eval_infrastructure.database.uow_context import get_active_uow_session
 
 
 class ProjectRole(StrEnum):
@@ -93,6 +94,12 @@ class SqlAlchemyMembershipStore:
     session_factory: SessionFactory
 
     def get_role(self, *, actor_id: str, project_id: str) -> ProjectRole | None:
+        active = get_active_uow_session()
+        if active is not None:
+            row = self._get(active, actor_id=actor_id, project_id=project_id)
+            if row is None:
+                return None
+            return ProjectRole(row.role)
         with self.session_factory() as session:
             row = self._get(session, actor_id=actor_id, project_id=project_id)
             if row is None:
@@ -106,19 +113,37 @@ class SqlAlchemyMembershipStore:
         project_id: str,
         role: ProjectRole,
     ) -> None:
+        active = get_active_uow_session()
+        if active is not None:
+            self._upsert_on(active, actor_id=actor_id, project_id=project_id, role=role)
+            return
         with self.session_factory() as session:
-            row = self._get(session, actor_id=actor_id, project_id=project_id)
-            if row is None:
-                session.add(
-                    ProjectMembershipOrm(
-                        project_id=project_id,
-                        actor_id=actor_id,
-                        role=role.value,
-                    )
-                )
-            else:
-                row.role = role.value
+            self._upsert_on(
+                session, actor_id=actor_id, project_id=project_id, role=role
+            )
             session.commit()
+
+    @staticmethod
+    def _upsert_on(
+        session: Session,
+        *,
+        actor_id: str,
+        project_id: str,
+        role: ProjectRole,
+    ) -> None:
+        row = SqlAlchemyMembershipStore._get(
+            session, actor_id=actor_id, project_id=project_id
+        )
+        if row is None:
+            session.add(
+                ProjectMembershipOrm(
+                    project_id=project_id,
+                    actor_id=actor_id,
+                    role=role.value,
+                )
+            )
+        else:
+            row.role = role.value
 
     @staticmethod
     def _get(

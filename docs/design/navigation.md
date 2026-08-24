@@ -74,7 +74,7 @@ Escape closes. Fuzzy matching is client-side (`shouldFilter={false}` + custom sc
 
 - Guest routes: `/login` (outside `(shell)`).
 - Product routes under `(shell)` are gated by `RequireAuth` + Next.js middleware (session cookie presence).
-- JWT access token persists in `localStorage`; session presence cookie `evalforge.auth` enables middleware redirects.
+- JWT access token persists in `localStorage`; session presence cookie `evalforge.auth` gates protected routes in middleware. `/login` stays reachable so a stale cookie cannot loop with client-side `RequireAuth`.
 - Top-bar **UserMenu** and command palette **Sign out** clear the session.
 - Authenticated landing defaults to `/` (Overview); guests may override via Preferences (`evalforge.preferences.landingPage`).
 

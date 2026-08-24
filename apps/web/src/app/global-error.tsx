@@ -1,7 +1,9 @@
 "use client";
 
-import { Button, Text } from "@agent-eval/ui";
-
+/**
+ * Must not import the design system — if the UI package is what crashed,
+ * depending on it here produces a blank (often black) screen.
+ */
 export default function GlobalError({
   error,
   reset,
@@ -11,27 +13,59 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-dvh bg-white text-neutral-900 antialiased">
-        <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-4 px-6 py-16">
-          <Text as="div" variant="body" className="text-xl font-medium">
+      <body
+        style={{
+          margin: 0,
+          minHeight: "100dvh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "ui-sans-serif, system-ui, sans-serif",
+          background: "#f7f7f8",
+          color: "#111113",
+        }}
+      >
+        <div style={{ maxWidth: 28 * 16, padding: 24 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, margin: "0 0 8px" }}>
             EvalForge could not recover
-          </Text>
-          <Text variant="secondary">
+          </h1>
+          <p style={{ margin: "0 0 16px", color: "#63636e", lineHeight: 1.5 }}>
             {error.message ||
               "A critical rendering error occurred. Retry to reload the application."}
-          </Text>
+          </p>
           {error.digest ? (
-            <Text variant="caption" className="font-mono">
+            <p style={{ margin: "0 0 16px", fontFamily: "ui-monospace, monospace", fontSize: 12 }}>
               Digest {error.digest}
-            </Text>
+            </p>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={reset}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={reset}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "none",
+                background: "#3f5164",
+                color: "#f7f7f8",
+                cursor: "pointer",
+              }}
+            >
               Try again
-            </Button>
-            <Button asChild variant="outline">
-              <a href="/">Back to Overview</a>
-            </Button>
+            </button>
+            <a
+              href="/login"
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "1px solid #cfcfd6",
+                background: "#fff",
+                color: "#111113",
+                textDecoration: "none",
+              }}
+            >
+              Back to sign in
+            </a>
           </div>
         </div>
       </body>

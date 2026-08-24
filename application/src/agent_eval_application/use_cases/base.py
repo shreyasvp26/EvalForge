@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from dataclasses import asdict, is_dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import fields, is_dataclass
+from datetime import date, datetime
+from enum import Enum
 from typing import Any
+from uuid import UUID
 
 from agent_eval_domain.common.aggregate import AggregateRoot
 from agent_eval_domain.common.errors import DomainError
@@ -37,9 +40,41 @@ def commit_and_dispatch(
         dispatcher.dispatch(events)
 
 
+def json_safe_idempotency_value(value: object) -> Any:
+    """Convert DTO values into JSON-serializable forms for idempotency storage."""
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, Enum):
+        return value.value
+    if is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: json_safe_idempotency_value(getattr(value, field.name))
+            for field in fields(value)
+        }
+    if isinstance(value, Mapping):
+        return {
+            str(key): json_safe_idempotency_value(item) for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [json_safe_idempotency_value(item) for item in value]
+    msg = f"Cannot serialize idempotency value of type {type(value)!r}"
+    raise TypeError(msg)
+
+
 def dto_to_idempotency_payload(dto: object) -> dict[str, Any]:
+    """Serialize a use-case result DTO into a JSON-safe idempotency payload."""
     if is_dataclass(dto) and not isinstance(dto, type):
-        return asdict(dto)
+        payload = json_safe_idempotency_value(dto)
+        if not isinstance(payload, dict):
+            msg = f"Expected dataclass payload to be a dict, got {type(payload)!r}"
+            raise TypeError(msg)
+        return payload
     msg = f"Cannot serialize result of type {type(dto)!r}"
     raise TypeError(msg)
 

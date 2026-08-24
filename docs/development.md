@@ -34,7 +34,23 @@ TypeScript foundation packages mirror the same idea for the Presentation / SDK p
 
 ## Environment variables
 
-Copy `.env.example` to `.env`. Do not read `process.env` / `os.environ` outside the configuration packages except inside those packages' loaders.
+Copy `.env.example` to `.env` at the **repository root**. Settings loaders resolve
+that file from the monorepo root (not the process CWD), so starting the API from
+`apps/api` still picks up the same configuration.
+
+Local interactive development must use:
+
+| Setting          | Value                                                      |
+| ---------------- | ---------------------------------------------------------- |
+| `ENVIRONMENT`    | `development` (never `test` for the running API/web stack) |
+| `DATABASE_URL`   | PostgreSQL (`postgresql+psycopg://…`)                      |
+| `REDIS_URL`      | Redis (`redis://localhost:6379/0`)                         |
+| `JWT_SECRET_KEY` | ≥ 32 characters; never `change-me-in-production`           |
+
+`ENVIRONMENT=test` is reserved for pytest. Pairing it with a file-backed SQLite
+`DATABASE_URL` (especially under `/tmp/evalforge*.db`) boots MEMORY identity while
+domain APIs hit an empty SQLite database — configuration validation rejects that
+footgun for development/production and for `/tmp/evalforge*` URLs.
 
 Baseline keys today:
 
@@ -44,6 +60,8 @@ Baseline keys today:
 | `LOG_LEVEL`                | Logging verbosity                                |
 | `DATABASE_URL`             | SQLAlchemy PostgreSQL URL                        |
 | `REDIS_URL`                | Redis for run queue / idempotency                |
+| `JWT_SECRET_KEY`           | HS256 signing secret (≥ 32 chars)                |
+| `CORS_ORIGINS`             | Browser origins allowed to call the API          |
 | `OBJECT_STORAGE_*`         | S3-compatible Artifact store (endpoint optional) |
 | `ANTHROPIC_API_KEY`        | Anthropic judge provider (optional)              |
 | `OPENAI_API_KEY`           | OpenAI judge provider (optional)                 |
@@ -53,6 +71,12 @@ Service-specific schemas should **extend** the baseline, not replace it.
 Load Python settings via `agent_eval_shared.config.load_settings` /
 `agent_eval_infrastructure.load_infrastructure_settings` — never ad-hoc
 `os.environ` outside those loaders.
+
+Migrations (from repository root):
+
+```bash
+uv run alembic -c infrastructure/alembic.ini upgrade head
+```
 
 ## Testing
 

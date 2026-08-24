@@ -1,11 +1,10 @@
 "use client";
 
-import { Alert, Button, FadeIn, Heading, Input, Label, Text } from "@agent-eval/ui";
+import { Alert, Button, Heading, Input, Label, Text } from "@agent-eval/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { z } from "zod";
 
-import { GlobalLoading } from "@/components/patterns/global-loading";
 import { InlineError } from "@/components/patterns/inline-error";
 import { readUserPreferences } from "@/features/settings/preferences-store";
 import { ApiError } from "@/lib/api/client";
@@ -78,7 +77,7 @@ function LoginForm() {
   const displayError = formError ?? error;
 
   return (
-    <FadeIn className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
       <div className="mb-8 space-y-2">
         <Text variant="caption" className="tracking-[0.08em] uppercase">
           EvalForge
@@ -161,14 +160,30 @@ function LoginForm() {
           Sign in
         </Button>
       </form>
-    </FadeIn>
+    </div>
+  );
+}
+
+function LoginFormFallback() {
+  return (
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
+      <div className="mb-8 space-y-2">
+        <Text variant="caption" className="tracking-[0.08em] uppercase">
+          EvalForge
+        </Text>
+        <Heading level={1} variant="page">
+          Sign in
+        </Heading>
+        <Text variant="secondary">Loading sign-in form…</Text>
+      </div>
+    </div>
   );
 }
 
 export default function LoginPage() {
   return (
     <GuestOnly>
-      <Suspense fallback={<GlobalLoading label="Loading sign in" />}>
+      <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>
     </GuestOnly>
