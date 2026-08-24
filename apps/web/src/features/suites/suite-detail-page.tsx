@@ -26,7 +26,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { projectQueryKey } from "@/features/projects/utils";
 import { ApiError } from "@/lib/api/client";
 import { getProject } from "@/lib/api/projects";
@@ -143,18 +142,7 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Projects", href: "/projects" },
-                { label: projectName, href: `/projects/${projectId}` },
-                { label: "Suites", href: `/projects/${projectId}/suites` },
-                { label: suite.name },
-              ]}
-            />
-          }
-          eyebrow="Suite"
+          eyebrow={`Suite · ${projectName}`}
           title={suite.name}
           description={
             suite.description.trim() ? suite.description : "No description provided for this suite."
@@ -162,18 +150,27 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
           actions={
             <Cluster gap={2}>
               {!isDeprecated ? (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setDraftOpen(true);
-                  }}
-                >
-                  Create draft
-                </Button>
+                <>
+                  <Button asChild>
+                    <Link href={`/runs/new?project=${encodeURIComponent(projectId)}`}>
+                      Launch run
+                    </Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setDraftOpen(true);
+                    }}
+                  >
+                    Create draft
+                  </Button>
+                </>
               ) : null}
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void navigator.clipboard.writeText(suite.id).then(
                     () => {
@@ -193,9 +190,9 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <Section
-            title="Overview"
+            title="Suite definition"
             className="lg:col-span-2"
-            description="Suite identity and active version summary."
+            description="Grouped case composition for evaluation runs."
           >
             <dl className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
@@ -231,7 +228,7 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
             </dl>
           </Section>
 
-          <Section title="Metadata" description="Lifecycle timestamps from the Control Plane.">
+          <Section title="Lifecycle" description="Created time and version count from the API.">
             <dl className="space-y-4">
               <div className="space-y-1">
                 <Text as="div" variant="caption">
@@ -249,11 +246,14 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
                   {String(suite.versions.length)}
                 </Text>
               </div>
+              {isDeprecated ? (
+                <Text variant="secondary">This suite is deprecated; new drafts are blocked.</Text>
+              ) : null}
             </dl>
           </Section>
 
           <Section
-            title="Active version"
+            title="Active composition"
             className="lg:col-span-3"
             description="The published version used for new evaluation work."
           >
@@ -281,7 +281,7 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
           <Section
             title="Version history"
             className="lg:col-span-3"
-            description="Draft → Active (publish) → Superseded or Retired. Cards show composition for each version."
+            description="Draft → Active (publish) → Superseded or Retired."
             actions={
               !isDeprecated ? (
                 <Button
@@ -298,28 +298,6 @@ export function SuiteDetailPage({ projectId, suiteId }: { projectId: string; sui
             }
           >
             <SuiteVersionCards suite={suite} versions={versions} />
-          </Section>
-
-          <Section title="Quick actions" description="Common suite operations.">
-            <Cluster gap={2} className="flex-col items-stretch sm:items-start">
-              <Button asChild variant="outline" className="justify-start">
-                <Link href={`/projects/${projectId}/suites`}>Back to suites</Link>
-              </Button>
-              {!isDeprecated ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="justify-start"
-                  onClick={() => {
-                    setDraftOpen(true);
-                  }}
-                >
-                  Create draft version
-                </Button>
-              ) : (
-                <Text variant="secondary">This suite is deprecated; new drafts are blocked.</Text>
-              )}
-            </Cluster>
           </Section>
         </div>
       </FadeIn>

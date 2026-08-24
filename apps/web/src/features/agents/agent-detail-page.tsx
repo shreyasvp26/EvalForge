@@ -28,7 +28,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { getAdapter, getAgent } from "@/lib/api/agents";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -124,24 +123,18 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
   const isDeprecated = agent.status === "deprecated";
   const adapter = adapterQuery.data;
   const hasAdapter = Boolean(agent.adapter_id);
+  const activeAdapterVersion = adapter?.active_version_id
+    ? (adapter.versions.find((version) => version.id === adapter.active_version_id) ?? null)
+    : null;
 
   return (
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Agents", href: "/agents" },
-                { label: agent.name },
-              ]}
-            />
-          }
           eyebrow="Agent"
           title={agent.name}
           description={
-            agent.description.trim() ? agent.description : "No description provided for this agent."
+            agent.description.trim() ? agent.description : "Adapters that execute evaluations."
           }
           actions={
             <Cluster gap={2}>
@@ -157,7 +150,8 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
               ) : null}
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void navigator.clipboard.writeText(agent.id).then(
                     () => {
@@ -177,9 +171,9 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-3">
           <Section
-            title="Overview"
+            title="Identity"
             className="lg:col-span-2"
-            description="Agent identity and connection status."
+            description="Stable agent record from the Control Plane."
           >
             <dl className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
@@ -193,6 +187,14 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
                 </div>
               </div>
               <div className="space-y-1">
+                <Text as="div" variant="caption">
+                  Created
+                </Text>
+                <Text as="div" variant="body" className="tabular-nums">
+                  {formatAgentDate(agent.created_at)}
+                </Text>
+              </div>
+              <div className="space-y-1 sm:col-span-2">
                 <Text as="div" variant="caption">
                   Agent ID
                 </Text>
@@ -215,55 +217,47 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
             </dl>
           </Section>
 
-          <Section title="Metadata" description="Lifecycle timestamps from the Control Plane.">
+          <Section title="Versions" description="Published release used when pinning this agent.">
             <dl className="space-y-4">
               <div className="space-y-1">
                 <Text as="div" variant="caption">
-                  Created
-                </Text>
-                <Text as="div" variant="body" className="tabular-nums">
-                  {formatAgentDate(agent.created_at)}
-                </Text>
-              </div>
-              <div className="space-y-1">
-                <Text as="div" variant="caption">
-                  Versions
+                  Version count
                 </Text>
                 <Text as="div" variant="body" className="tabular-nums">
                   {String(agent.versions.length)}
                 </Text>
               </div>
-            </dl>
-          </Section>
-
-          <Section
-            title="Active version"
-            className="lg:col-span-3"
-            description="The published agent release used when targeting this agent on runs."
-          >
-            {current ? (
-              <div className="space-y-2">
-                <Cluster gap={2} className="items-center">
-                  <Text as="span" variant="body" className="font-medium">
-                    Version {String(current.version_number)} · {current.label}
+              <div className="space-y-1">
+                <Text as="div" variant="caption">
+                  Active version
+                </Text>
+                {current ? (
+                  <Cluster gap={2} className="items-center">
+                    <Text as="span" variant="body" className="font-medium">
+                      v{String(current.version_number)} · {current.label}
+                    </Text>
+                    <Badge status={versionStatusBadge(current.status)}>
+                      {versionStatusLabel(current.status)}
+                    </Badge>
+                  </Cluster>
+                ) : (
+                  <Text variant="secondary">None published</Text>
+                )}
+              </div>
+              {current?.release_notes.trim() ? (
+                <div className="space-y-1">
+                  <Text as="div" variant="caption">
+                    Release notes
                   </Text>
-                  <Badge status={versionStatusBadge(current.status)}>
-                    {versionStatusLabel(current.status)}
-                  </Badge>
-                </Cluster>
-                {current.release_notes.trim() ? (
                   <Text variant="secondary" className="whitespace-pre-wrap">
                     {current.release_notes}
                   </Text>
-                ) : (
-                  <Text variant="secondary">No release notes for this version.</Text>
-                )}
-              </div>
-            ) : (
-              <Text variant="secondary">
-                No active agent version. Publish a draft to establish the active release.
-              </Text>
-            )}
+                </div>
+              ) : null}
+              {isDeprecated ? (
+                <Text variant="secondary">This agent is deprecated; new drafts are blocked.</Text>
+              ) : null}
+            </dl>
           </Section>
 
           <Section
@@ -289,9 +283,9 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
           </Section>
 
           <Section
-            title="Connected adapter"
+            title="Usage"
             className="lg:col-span-3"
-            description="Each agent connects to at most one adapter (1:1). Adapters are versioned independently."
+            description="Connected adapter that executes evaluation work for this agent."
             actions={
               !hasAdapter && !isDeprecated ? (
                 <Button
@@ -302,6 +296,10 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
                   }}
                 >
                   Connect adapter
+                </Button>
+              ) : hasAdapter && adapter ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/agents/${agent.id}/adapters/${adapter.id}`}>Open adapter</Link>
                 </Button>
               ) : null
             }
@@ -332,84 +330,54 @@ export function AgentDetailPage({ agentId }: { agentId: string }) {
                 }
               />
             ) : adapter ? (
-              <div className="rounded-[var(--ef-radius-panel)] border border-border bg-card p-4 shadow-ef-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 space-y-2">
-                    <Cluster gap={2} className="items-center">
-                      <Text as="span" variant="body" className="font-medium">
-                        {adapter.name}
-                      </Text>
-                      <Badge status={entityStatusBadge(adapter.status)}>
-                        {entityStatusLabel(adapter.status)}
-                      </Badge>
-                    </Cluster>
-                    <Text variant="caption" className="break-all font-mono text-muted-foreground">
-                      {adapter.id}
+              <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1">
+                  <Text as="div" variant="caption">
+                    Adapter
+                  </Text>
+                  <Cluster gap={2} className="items-center">
+                    <Text as="span" variant="body" className="font-medium">
+                      {adapter.name}
                     </Text>
-                    <Text variant="caption" className="tabular-nums">
-                      {adapter.active_version_id
-                        ? `Active version · ${
-                            adapter.versions.find((v) => v.id === adapter.active_version_id)
-                              ? `v${String(
-                                  adapter.versions.find((v) => v.id === adapter.active_version_id)
-                                    ?.version_number,
-                                )}`
-                              : adapter.active_version_id
-                          }`
-                        : "No active adapter version"}
-                      {` · ${String(adapter.versions.length)} version${adapter.versions.length === 1 ? "" : "s"}`}
-                    </Text>
-                  </div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/agents/${agent.id}/adapters/${adapter.id}`}>Open adapter</Link>
-                  </Button>
+                    <Badge status={entityStatusBadge(adapter.status)}>
+                      {entityStatusLabel(adapter.status)}
+                    </Badge>
+                  </Cluster>
                 </div>
-              </div>
+                <div className="space-y-1">
+                  <Text as="div" variant="caption">
+                    Adapter ID
+                  </Text>
+                  <Text
+                    as="div"
+                    variant="body"
+                    className="break-all font-mono text-[length:var(--ef-text-caption)]"
+                  >
+                    {adapter.id}
+                  </Text>
+                </div>
+                <div className="space-y-1">
+                  <Text as="div" variant="caption">
+                    Active adapter version
+                  </Text>
+                  <Text as="div" variant="body" className="tabular-nums">
+                    {activeAdapterVersion
+                      ? `v${String(activeAdapterVersion.version_number)}`
+                      : (adapter.active_version_id ?? "None published")}
+                  </Text>
+                </div>
+                <div className="space-y-1">
+                  <Text as="div" variant="caption">
+                    Adapter versions
+                  </Text>
+                  <Text as="div" variant="body" className="tabular-nums">
+                    {String(adapter.versions.length)}
+                  </Text>
+                </div>
+              </dl>
             ) : (
               <Text variant="secondary">Adapter record was not found.</Text>
             )}
-          </Section>
-
-          <Section title="Quick actions" description="Common agent operations.">
-            <Cluster gap={2} className="flex-col items-stretch sm:items-start">
-              <Button asChild variant="outline" className="justify-start">
-                <Link href="/agents">Back to agents</Link>
-              </Button>
-              {!isDeprecated ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="justify-start"
-                    onClick={() => {
-                      setAgentDraftOpen(true);
-                    }}
-                  >
-                    Create agent draft
-                  </Button>
-                  {!hasAdapter ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="justify-start"
-                      onClick={() => {
-                        setAdapterOpen(true);
-                      }}
-                    >
-                      Connect adapter
-                    </Button>
-                  ) : adapter ? (
-                    <Button asChild variant="outline" className="justify-start">
-                      <Link href={`/agents/${agent.id}/adapters/${adapter.id}`}>
-                        Manage adapter
-                      </Link>
-                    </Button>
-                  ) : null}
-                </>
-              ) : (
-                <Text variant="secondary">This agent is deprecated; new drafts are blocked.</Text>
-              )}
-            </Cluster>
           </Section>
         </div>
       </FadeIn>

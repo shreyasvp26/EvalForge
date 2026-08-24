@@ -34,9 +34,11 @@ export function ApiSettingsPage() {
   const authLabel =
     status === "authenticated"
       ? "Authenticated"
-      : status === "loading"
+      : status === "restoring"
         ? "Checking…"
-        : "Unauthenticated";
+        : status === "restore_failed"
+          ? "Restore failed"
+          : "Unauthenticated";
 
   const expiryLabel =
     expiresAt === null
@@ -51,7 +53,7 @@ export function ApiSettingsPage() {
       title="API"
       description="Control Plane connection details for this browser session."
     >
-      <Section title="Endpoint">
+      <Section title="Endpoint" description="Where the web client sends authenticated requests.">
         <dl className="space-y-4">
           <CopyRow
             label="API base URL"
@@ -70,7 +72,7 @@ export function ApiSettingsPage() {
         </dl>
       </Section>
 
-      <Section title="Authentication">
+      <Section title="Authentication" description="Local session state used for API calls.">
         <dl className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Text variant="caption">Status</Text>

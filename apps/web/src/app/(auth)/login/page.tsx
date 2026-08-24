@@ -1,6 +1,16 @@
 "use client";
 
-import { Alert, Button, Heading, Input, Label, Text } from "@agent-eval/ui";
+import {
+  Alert,
+  Button,
+  Eye,
+  EyeOff,
+  Heading,
+  IconButton,
+  Input,
+  Label,
+  Text,
+} from "@agent-eval/ui";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { z } from "zod";
@@ -23,6 +33,9 @@ function safeNextPath(raw: string | null): string {
   return raw;
 }
 
+const authInputClassName =
+  "h-11 border-[var(--ef-auth-input-border)] bg-[var(--ef-auth-input-bg)] backdrop-blur-sm placeholder:text-muted-foreground/70 focus-visible:ring-[var(--ef-auth-primary)] focus-visible:ring-offset-0";
+
 function LoginForm() {
   const { login, error, clearError } = useAuth();
   const router = useRouter();
@@ -31,6 +44,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     password?: string;
@@ -77,105 +91,120 @@ function LoginForm() {
   const displayError = formError ?? error;
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
-      <div className="mb-8 space-y-2">
-        <Text variant="caption" className="tracking-[0.08em] uppercase">
-          EvalForge
-        </Text>
-        <Heading level={1} variant="page">
-          Sign in
-        </Heading>
-        <Text variant="secondary">
-          Use your EvalForge credentials to continue to the workspace.
-        </Text>
-      </div>
-
-      <form
-        onSubmit={onSubmit}
-        className="space-y-4 rounded-[var(--ef-radius-panel)] border border-border bg-card p-5 shadow-ef-sm"
-        noValidate
+    <div className="mx-auto w-full max-w-[420px] motion-safe:animate-[ef-fade-up_0.8s_ease-out_0.2s_both]">
+      <div
+        className="rounded-[var(--ef-radius-dialog)] border border-[var(--ef-auth-card-border)] p-8 shadow-[0_24px_80px_rgb(0_0_0/0.35),inset_0_1px_0_var(--ef-auth-card-highlight)] backdrop-blur-xl sm:p-9"
+        style={{ background: "var(--ef-auth-card-bg)" }}
       >
-        {displayError ? (
-          <Alert variant="danger" title="Sign in failed">
-            {displayError}
-          </Alert>
-        ) : null}
-
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            disabled={submitting}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              if (fieldErrors.email) {
-                setFieldErrors((current) => {
-                  const next = { ...current };
-                  delete next.email;
-                  return next;
-                });
-              }
-            }}
-            aria-invalid={fieldErrors.email ? true : undefined}
-            aria-describedby={fieldErrors.email ? "email-error" : undefined}
-          />
-          {fieldErrors.email ? (
-            <InlineError id="email-error">{fieldErrors.email}</InlineError>
-          ) : null}
+        <div className="mb-8 space-y-2">
+          <Heading level={1} variant="page" className="text-[length:var(--ef-text-section)]">
+            Welcome back
+          </Heading>
+          <Text variant="secondary">Sign in to your EvalForge workspace.</Text>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            disabled={submitting}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              if (fieldErrors.password) {
-                setFieldErrors((current) => {
-                  const next = { ...current };
-                  delete next.password;
-                  return next;
-                });
-              }
-            }}
-            aria-invalid={fieldErrors.password ? true : undefined}
-            aria-describedby={fieldErrors.password ? "password-error" : undefined}
-          />
-          {fieldErrors.password ? (
-            <InlineError id="password-error">{fieldErrors.password}</InlineError>
+        <form onSubmit={onSubmit} className="space-y-6" noValidate>
+          {displayError ? (
+            <Alert variant="danger" title="Sign in failed">
+              {displayError}
+            </Alert>
           ) : null}
-        </div>
 
-        <Button type="submit" className="w-full" loading={submitting}>
-          Sign in
-        </Button>
-      </form>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-muted-foreground">
+              Email
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              disabled={submitting}
+              className={authInputClassName}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (fieldErrors.email) {
+                  setFieldErrors((current) => {
+                    const next = { ...current };
+                    delete next.email;
+                    return next;
+                  });
+                }
+              }}
+              aria-invalid={fieldErrors.email ? true : undefined}
+              aria-describedby={fieldErrors.email ? "email-error" : undefined}
+            />
+            {fieldErrors.email ? (
+              <InlineError id="email-error">{fieldErrors.email}</InlineError>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-muted-foreground">
+              Password
+            </Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                value={password}
+                disabled={submitting}
+                className={`${authInputClassName} pr-11`}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (fieldErrors.password) {
+                    setFieldErrors((current) => {
+                      const next = { ...current };
+                      delete next.password;
+                      return next;
+                    });
+                  }
+                }}
+                aria-invalid={fieldErrors.password ? true : undefined}
+                aria-describedby={fieldErrors.password ? "password-error" : undefined}
+              />
+              <IconButton
+                icon={showPassword ? EyeOff : Eye}
+                label={showPassword ? "Hide password" : "Show password"}
+                size="sm"
+                type="button"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setShowPassword((value) => !value);
+                }}
+              />
+            </div>
+            {fieldErrors.password ? (
+              <InlineError id="password-error">{fieldErrors.password}</InlineError>
+            ) : null}
+          </div>
+
+          <Button
+            type="submit"
+            variant="ghost"
+            className="ef-auth-primary-fill h-11 w-full text-[length:var(--ef-text-body)] font-semibold shadow-[0_4px_24px_var(--ef-auth-primary-glow)] transition-[filter,box-shadow] duration-[var(--ef-duration-normal)] hover:bg-transparent"
+            size="lg"
+            loading={submitting}
+          >
+            Sign in
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }
 
 function LoginFormFallback() {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
-      <div className="mb-8 space-y-2">
-        <Text variant="caption" className="tracking-[0.08em] uppercase">
-          EvalForge
-        </Text>
-        <Heading level={1} variant="page">
-          Sign in
-        </Heading>
-        <Text variant="secondary">Loading sign-in form…</Text>
-      </div>
+    <div className="mx-auto w-full max-w-[420px] space-y-2 px-6">
+      <Heading level={1} variant="page">
+        Welcome back
+      </Heading>
+      <Text variant="secondary">Loading sign-in form…</Text>
     </div>
   );
 }

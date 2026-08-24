@@ -32,9 +32,9 @@ export function PreferencesSettingsPage() {
   return (
     <SettingsShell
       title="Preferences"
-      description="Frontend-only preferences stored in this browser."
+      description="Browser-local UI preferences. Nothing here is synced to the Control Plane."
     >
-      <Section title="Appearance" description="Theme follows next-themes (system, light, or dark).">
+      <Section title="Appearance" description="Theme via next-themes (system, light, or dark).">
         <div className="space-y-1.5">
           <Label>Theme</Label>
           <Select

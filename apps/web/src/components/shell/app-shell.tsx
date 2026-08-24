@@ -65,7 +65,7 @@ export function AppShell({
   const autoBreadcrumbs = <Breadcrumbs items={breadcrumbsForPath(pathname)} />;
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+    <div className="flex h-dvh overflow-hidden bg-[var(--ef-surface-base)] text-foreground">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[var(--ef-z-toast)] focus:rounded-[var(--ef-radius-control)] focus:border focus:border-border focus:bg-card focus:px-3 focus:py-2 focus:text-[length:var(--ef-text-body)] focus:text-foreground focus:shadow-ef-md focus:outline-none focus:ring-2 focus:ring-ring"

@@ -20,7 +20,7 @@ export function useRunArtifacts(runId: string, status: RunStatus | undefined, en
     enabled: Boolean(token) && Boolean(runId) && enabled,
     queryFn: async () => {
       if (!token) throw new Error("Missing auth token");
-      return listRunArtifacts(token, runId, { limit: 200, sort: "-created_at" });
+      return listRunArtifacts(token, runId, { limit: 100, sort: "-created_at" });
     },
     refetchInterval: polling.refetchInterval,
   });

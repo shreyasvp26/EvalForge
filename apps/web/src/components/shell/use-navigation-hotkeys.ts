@@ -75,6 +75,7 @@ export function useNavigationHotkeys({
         if (key === "p") router.push("/projects");
         if (key === "r") router.push("/runs");
         if (key === "a") router.push("/agents");
+        if (key === "g") router.push("/graders");
         clearChord();
         return;
       }

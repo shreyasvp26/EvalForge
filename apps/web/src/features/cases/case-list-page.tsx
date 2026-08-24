@@ -26,7 +26,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { projectQueryKey } from "@/features/projects/utils";
 import { listCases } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
@@ -145,16 +144,6 @@ export function CaseListPage({
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs
-            items={[
-              { label: "Workspace", href: "/projects" },
-              { label: "Projects", href: "/projects" },
-              { label: project.name, href: `/projects/${project.id}` },
-              { label: "Cases" },
-            ]}
-          />
-        }
         eyebrow="Cases"
         title="Cases"
         description={`Evaluation cases for ${project.name}. Each case owns prompt versions and versioned task definitions.`}
@@ -203,11 +192,11 @@ export function CaseListPage({
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching cases" : "No cases yet"}
+            emptyTitle={globalFilter.trim() ? "No matching cases" : "Add your first case"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all cases."
-                : "Create a case to define an engineering task and its prompt."
+                : "Define a task and prompt, then publish a case version to use in suites and runs."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (

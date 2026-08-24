@@ -26,7 +26,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { getAdapter, getAgent } from "@/lib/api/agents";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -141,17 +140,7 @@ export function AdapterDetailPage({ agentId, adapterId }: { agentId: string; ada
     <PageLayout>
       <FadeIn>
         <PageHeader
-          breadcrumbs={
-            <Breadcrumbs
-              items={[
-                { label: "Workspace", href: "/projects" },
-                { label: "Agents", href: "/agents" },
-                { label: agentName, href: `/agents/${agentId}` },
-                { label: adapter.name },
-              ]}
-            />
-          }
-          eyebrow="Adapter"
+          eyebrow={`Adapter · ${agentName}`}
           title={adapter.name}
           description="Vendor translation identity connected to this agent. Versioned independently of agent releases."
           actions={

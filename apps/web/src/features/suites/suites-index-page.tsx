@@ -9,7 +9,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { projectsQueryKey } from "@/features/projects/utils";
 import { ApiError } from "@/lib/api/client";
 import { listProjects } from "@/lib/api/projects";
@@ -32,9 +31,6 @@ export function SuitesIndexPage() {
   return (
     <PageLayout>
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Suites" }]} />
-        }
         eyebrow="Workspace"
         title="Suites"
         description="Suites live inside a project. Choose a project to open its suites list."

@@ -45,7 +45,7 @@ export function DialogContent({
       <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-[var(--ef-z-modal)] grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-[var(--ef-radius-dialog)] border border-border bg-card p-5 text-card-foreground shadow-ef-md focus:outline-none",
+          "fixed left-1/2 top-1/2 z-[var(--ef-z-modal)] grid w-[calc(100%-2rem)] max-h-[min(90dvh,56rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-[var(--ef-radius-dialog)] border border-border bg-card p-5 text-card-foreground shadow-ef-md focus:outline-none",
           className,
         )}
         {...props}

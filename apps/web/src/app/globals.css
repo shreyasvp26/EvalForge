@@ -93,3 +93,73 @@ html[data-reduced-motion="true"] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+@keyframes ef-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ef-auth-drift {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes ef-auth-ambient {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  33% {
+    transform: translate3d(2%, -1.5%, 0) scale(1.03);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translate3d(-1.5%, 2%, 0) scale(0.98);
+    opacity: 0.6;
+  }
+}
+
+@keyframes ef-auth-sweep {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateX(-8%) rotate(-8deg);
+  }
+  50% {
+    opacity: 0.55;
+    transform: translateX(8%) rotate(-6deg);
+  }
+}
+
+.ef-auth-landing {
+  background-color: var(--ef-auth-bg-base);
+  color: var(--ef-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe\:animate-\[ef-fade-up_0\.5s_ease-out_both\],
+  .motion-safe\:animate-\[ef-fade-up_0\.6s_ease-out_both\],
+  .motion-safe\:animate-\[ef-fade-up_0\.7s_ease-out_0\.15s_both\],
+  .motion-safe\:animate-\[ef-fade-up_0\.8s_ease-out_0\.1s_both\],
+  .motion-safe\:animate-\[ef-fade-up_0\.8s_ease-out_0\.2s_both\],
+  .motion-safe\:animate-\[ef-fade-up_0\.8s_ease-out_0\.35s_both\],
+  .motion-safe\:animate-\[ef-auth-drift_24s_ease-in-out_infinite\],
+  .motion-safe\:animate-\[ef-auth-ambient_28s_ease-in-out_infinite\],
+  .motion-safe\:animate-\[ef-auth-sweep_36s_ease-in-out_infinite\] {
+    animation: none !important;
+  }
+}

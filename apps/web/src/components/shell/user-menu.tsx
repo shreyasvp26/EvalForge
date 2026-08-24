@@ -61,7 +61,7 @@ export function UserMenu() {
           >
             {initials(user.display_name, user.email)}
           </span>
-          <Text as="span" variant="caption" className="truncate">
+          <Text as="span" variant="caption" className="hidden truncate sm:inline">
             {user.display_name || user.email}
           </Text>
         </button>

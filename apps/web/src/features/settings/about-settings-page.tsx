@@ -38,8 +38,8 @@ export function AboutSettingsPage() {
   });
 
   return (
-    <SettingsShell title="About" description="Build metadata and Control Plane health.">
-      <Section title="EvalForge web">
+    <SettingsShell title="About" description="Build metadata and Control Plane health probes.">
+      <Section title="Web build" description="Frontend package identity for this deployment.">
         <dl className="space-y-3">
           <MetaRow label="Version" value={buildInfo.version} />
           <MetaRow label="Git commit" value={buildInfo.gitCommit} mono />

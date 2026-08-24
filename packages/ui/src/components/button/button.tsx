@@ -14,11 +14,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-foreground hover:opacity-90",
+        // Explicit CSS vars — Tailwind `text-accent-foreground` was resolving to
+        // inherited foreground (dark-on-dark) in the product theme.
+        primary:
+          "ef-accent-fill shadow-[0_1px_2px_var(--ef-accent-glow,rgb(0_0_0/0.1))] hover:brightness-110 active:brightness-95",
         secondary: "bg-muted text-foreground hover:bg-border",
         outline: "border border-border bg-transparent text-foreground hover:bg-muted",
         ghost: "bg-transparent text-foreground hover:bg-muted",
-        danger: "bg-danger text-danger-foreground hover:opacity-90",
+        danger: "bg-[var(--ef-danger)] text-[var(--ef-danger-foreground)] hover:opacity-90",
       },
       size: {
         sm: "h-8 px-3",

@@ -30,6 +30,8 @@ export interface NavItem {
   /** Chord shortcut hint, e.g. "G P" */
   chord?: string;
   keywords?: string[];
+  /** Hide from primary product nav (still reachable via URL / command palette). */
+  engineeringOnly?: boolean;
 }
 
 export interface NavSection {
@@ -38,6 +40,11 @@ export interface NavSection {
   items: NavItem[];
 }
 
+/**
+ * Primary product navigation.
+ * Suites/Cases remain reachable from project workspaces and command palette;
+ * they are not top-level destinations (avoids orphaned project-scoped lists).
+ */
 export const navSections: NavSection[] = [
   {
     id: "workspace",
@@ -48,33 +55,27 @@ export const navSections: NavSection[] = [
         label: "Overview",
         icon: LayoutDashboard,
         chord: "G H",
-        keywords: ["home", "dashboard", "overview", "workspace"],
+        keywords: ["home", "dashboard", "overview", "workspace", "health"],
       },
       {
         href: "/projects",
         label: "Projects",
         icon: FolderKanban,
         chord: "G P",
-        keywords: ["project", "create project"],
+        keywords: ["project", "create project", "workspace"],
       },
-      {
-        href: "/suites",
-        label: "Suites",
-        icon: Layers,
-        keywords: ["suite", "create suite", "composition"],
-      },
-      {
-        href: "/cases",
-        label: "Cases",
-        icon: FlaskConical,
-        keywords: ["case", "create case", "prompt"],
-      },
+    ],
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    items: [
       {
         href: "/runs",
         label: "Runs",
         icon: Play,
         chord: "G R",
-        keywords: ["run", "create run", "new run", "execution"],
+        keywords: ["run", "create run", "new run", "execution", "timeline"],
       },
       {
         href: "/agents",
@@ -87,7 +88,8 @@ export const navSections: NavSection[] = [
         href: "/graders",
         label: "Graders",
         icon: CheckCircle2,
-        keywords: ["grader", "objective", "rubric", "create grader"],
+        chord: "G G",
+        keywords: ["grader", "objective", "rubric", "create grader", "score"],
       },
     ],
   },
@@ -101,17 +103,39 @@ export const navSections: NavSection[] = [
         icon: Settings,
         keywords: ["settings", "preferences", "profile", "account", "api", "about"],
       },
-      {
-        href: "/design-system",
-        label: "Design system",
-        icon: BookOpen,
-        keywords: ["tokens", "components", "gallery"],
-      },
     ],
   },
 ];
 
-export const allNavItems: NavItem[] = navSections.flatMap((section) => section.items);
+/** Project-scoped resources — command palette / deep links only. */
+export const secondaryNavItems: NavItem[] = [
+  {
+    href: "/suites",
+    label: "Suites",
+    icon: Layers,
+    keywords: ["suite", "create suite", "composition"],
+  },
+  {
+    href: "/cases",
+    label: "Cases",
+    icon: FlaskConical,
+    keywords: ["case", "create case", "prompt", "specification"],
+  },
+  {
+    href: "/design-system",
+    label: "Design system",
+    icon: BookOpen,
+    keywords: ["tokens", "components", "gallery"],
+    engineeringOnly: true,
+  },
+];
+
+export const allNavItems: NavItem[] = [
+  ...navSections.flatMap((section) => section.items),
+  ...secondaryNavItems,
+];
+
+export const primaryNavItems: NavItem[] = navSections.flatMap((section) => section.items);
 
 export function findNavItem(href: string): NavItem | undefined {
   return allNavItems.find((item) => item.href === href);
@@ -123,7 +147,7 @@ export function isNavActive(pathname: string, href: string): boolean {
 }
 
 export function breadcrumbsForPath(pathname: string): { label: string; href?: string }[] {
-  const crumbs: { label: string; href?: string }[] = [{ label: "Workspace", href: "/" }];
+  const crumbs: { label: string; href?: string }[] = [{ label: "EvalForge", href: "/" }];
 
   if (pathname === "/") {
     crumbs.push({ label: "Overview" });
@@ -166,6 +190,11 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
     if (rest === "settings") {
       crumbs.push({ label: "Settings" });
     }
+    return crumbs;
+  }
+
+  if (pathname === "/suites" || pathname === "/cases") {
+    crumbs.push({ label: pathname === "/suites" ? "Suites" : "Cases" });
     return crumbs;
   }
 
@@ -232,6 +261,11 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       about: "About",
     };
     crumbs.push({ label: labels[rest] ?? "Page" });
+    return crumbs;
+  }
+
+  if (pathname.startsWith("/design-system")) {
+    crumbs.push({ label: "Design system" });
     return crumbs;
   }
 

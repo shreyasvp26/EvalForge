@@ -20,7 +20,7 @@ export function useRunScores(runId: string, status: RunStatus | undefined, enabl
     enabled: Boolean(token) && Boolean(runId) && enabled,
     queryFn: async () => {
       if (!token) throw new Error("Missing auth token");
-      return listRunScores(token, runId, { limit: 200 });
+      return listRunScores(token, runId, { limit: 100 });
     },
     refetchInterval: polling.refetchInterval,
   });

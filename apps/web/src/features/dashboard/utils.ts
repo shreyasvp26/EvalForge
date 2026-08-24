@@ -7,12 +7,14 @@ import type { Suite } from "@/lib/api/suites";
 
 import {
   formatScoreValue,
+  isLiveRunStatus,
+  runPassSignal,
   runStatusBadge,
   runStatusLabel,
   truncateId,
 } from "@/features/runs/utils";
 
-export { formatScoreValue, runStatusBadge, runStatusLabel, truncateId };
+export { formatScoreValue, runPassSignal, runStatusBadge, runStatusLabel, truncateId };
 
 export const dashboardQueryKey = ["dashboard"] as const;
 
@@ -77,6 +79,62 @@ export function scoreOutcomeLabel(outcome: ScoreOutcome): string {
   return "Partial";
 }
 
+export function primaryScoreLabel(run: Run): string | null {
+  const score = run.scores[0];
+  if (!score) return null;
+  return formatScoreValue(score.value);
+}
+
+export interface EvaluationHealth {
+  /** Runs currently queued, running, or grading (from sampled projects). */
+  active: number;
+  /** Terminal completed runs with all scores passed. */
+  passed: number;
+  /** Terminal failed runs, or completed runs with a failing score. */
+  failed: number;
+  /** Total sampled runs used for these figures. */
+  sampledRuns: number;
+  /** Completed/failed/cancelled among sampled runs. */
+  terminal: number;
+}
+
+export function buildEvaluationHealth(runs: Run[]): EvaluationHealth {
+  let active = 0;
+  let passed = 0;
+  let failed = 0;
+  let terminal = 0;
+
+  for (const run of runs) {
+    if (isLiveRunStatus(run.status)) {
+      active += 1;
+      continue;
+    }
+    if (run.status === "failed") {
+      terminal += 1;
+      failed += 1;
+      continue;
+    }
+    if (run.status === "completed") {
+      terminal += 1;
+      const signal = runPassSignal(run);
+      if (signal === true) passed += 1;
+      else if (signal === false) failed += 1;
+      continue;
+    }
+    if (run.status === "cancelled") {
+      terminal += 1;
+    }
+  }
+
+  return {
+    active,
+    passed,
+    failed,
+    sampledRuns: runs.length,
+    terminal,
+  };
+}
+
 export interface DashboardSummary {
   projects: number;
   projectsHasMore: boolean;
@@ -107,7 +165,10 @@ export interface DashboardSnapshot {
   cases: Case[];
   runs: Run[];
   summary: DashboardSummary;
+  health: EvaluationHealth;
   activity: Run[];
+  activeRuns: Run[];
+  failures: Run[];
   results: DashboardScoreRow[];
   projectNameById: Record<string, string>;
   isEmpty: boolean;
@@ -160,6 +221,15 @@ export function buildDashboardSnapshot(input: {
     runs: input.runs.length,
   };
 
+  const health = buildEvaluationHealth(runs);
+  const activeRuns = runs.filter((run) => isLiveRunStatus(run.status)).slice(0, 6);
+  const failures = runs
+    .filter(
+      (run) =>
+        run.status === "failed" || (run.status === "completed" && runPassSignal(run) === false),
+    )
+    .slice(0, 6);
+
   const isEmpty =
     input.projects.length === 0 &&
     input.agents.length === 0 &&
@@ -177,7 +247,10 @@ export function buildDashboardSnapshot(input: {
     cases,
     runs,
     summary,
+    health,
     activity: runs.slice(0, DASHBOARD_ACTIVITY_LIMIT),
+    activeRuns,
+    failures,
     results: results.slice(0, DASHBOARD_RESULTS_LIMIT),
     projectNameById,
     isEmpty,

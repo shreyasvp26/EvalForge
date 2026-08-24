@@ -1,6 +1,6 @@
 import type { CollectionResponse } from "@/lib/api/projects";
 
-import { apiRequest } from "@/lib/api/client";
+import { ApiError, apiRequest, getApiBaseUrl } from "@/lib/api/client";
 
 export type RunStatus = string;
 
@@ -210,4 +210,46 @@ export async function listRunScores(
     })}`,
     { method: "GET", token },
   );
+}
+
+/** Absolute URL for downloading artifact bytes (requires Authorization header). */
+export function runArtifactContentPath(runId: string, artifactId: string): string {
+  return `/v1/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}/content`;
+}
+
+export async function downloadRunArtifact(
+  token: string,
+  runId: string,
+  artifactId: string,
+): Promise<{ blob: Blob; contentType: string; checksum: string | null }> {
+  const response = await fetch(`${getApiBaseUrl()}${runArtifactContentPath(runId, artifactId)}`, {
+    method: "GET",
+    headers: {
+      Accept: "*/*",
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    let message = `Download failed (${String(response.status)})`;
+    let code = "download_failed";
+    try {
+      const body = (await response.json()) as { error?: { message?: string; code?: string } };
+      if (body.error?.message) message = body.error.message;
+      if (body.error?.code) code = body.error.code;
+    } catch {
+      // non-JSON error body
+    }
+    throw new ApiError(message, {
+      status: response.status,
+      code,
+      retryable: response.status >= 500,
+    });
+  }
+  const blob = await response.blob();
+  return {
+    blob,
+    contentType: response.headers.get("Content-Type") ?? "application/octet-stream",
+    checksum: response.headers.get("X-EvalForge-Checksum"),
+  };
 }

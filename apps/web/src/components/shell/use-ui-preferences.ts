@@ -7,6 +7,12 @@ const SIDEBAR_SECTIONS_KEY = "evalforge.sidebar.sections";
 
 export type SectionOpenState = Record<string, boolean>;
 
+const DEFAULT_SECTIONS: SectionOpenState = {
+  workspace: true,
+  evaluation: true,
+  system: true,
+};
+
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
@@ -20,15 +26,13 @@ function readJson<T>(key: string, fallback: T): T {
 
 export function useUiPreferences() {
   const [collapsed, setCollapsedState] = useState(false);
-  const [sectionOpen, setSectionOpenState] = useState<SectionOpenState>({
-    workspace: true,
-    system: true,
-  });
+  const [sectionOpen, setSectionOpenState] = useState<SectionOpenState>(DEFAULT_SECTIONS);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setCollapsedState(readJson(SIDEBAR_COLLAPSED_KEY, false));
-    setSectionOpenState(readJson(SIDEBAR_SECTIONS_KEY, { workspace: true, system: true }));
+    const stored = readJson<SectionOpenState>(SIDEBAR_SECTIONS_KEY, DEFAULT_SECTIONS);
+    setSectionOpenState({ ...DEFAULT_SECTIONS, ...stored });
     setHydrated(true);
   }, []);
 

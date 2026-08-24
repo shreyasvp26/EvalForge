@@ -19,7 +19,6 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { NotFoundState } from "@/components/patterns/not-found-state";
 import { PermissionDeniedState } from "@/components/patterns/permission-denied-state";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { projectQueryKey } from "@/features/projects/utils";
 import { ApiError } from "@/lib/api/client";
 import { getProject } from "@/lib/api/projects";
@@ -138,16 +137,6 @@ export function SuiteListPage({
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs
-            items={[
-              { label: "Workspace", href: "/projects" },
-              { label: "Projects", href: "/projects" },
-              { label: project.name, href: `/projects/${project.id}` },
-              { label: "Suites" },
-            ]}
-          />
-        }
         eyebrow="Suites"
         title="Suites"
         description={`Evaluation suites for ${project.name}. Each suite versions an ordered composition of case versions.`}
@@ -196,11 +185,11 @@ export function SuiteListPage({
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching suites" : "No suites yet"}
+            emptyTitle={globalFilter.trim() ? "No matching suites" : "Compose your first suite"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all suites."
-                : "Create a suite to start composing ordered evaluation cases."
+                : "Group published case versions in order so runs can evaluate a full set."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (

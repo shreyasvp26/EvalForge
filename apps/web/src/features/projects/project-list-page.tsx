@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Button,
-  DataGrid,
-  DataGridPagination,
-  DataGridSearch,
-  FolderKanban,
-  Plus,
-} from "@agent-eval/ui";
+import { Button, DataGrid, DataGridPagination, DataGridSearch, Plus } from "@agent-eval/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -22,7 +15,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { ApiError } from "@/lib/api/client";
 import { listProjects } from "@/lib/api/projects";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -67,12 +59,9 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Projects" }]} />
-        }
         eyebrow="Workspace"
         title="Projects"
-        description="Organize evaluation work into projects. Open a project to manage settings and related resources."
+        description="Evaluation workspaces for cases, suites, and runs. Open a project to launch and inspect evaluations."
         actions={
           <Button
             type="button"
@@ -124,11 +113,11 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching projects" : "No projects yet"}
+            emptyTitle={globalFilter.trim() ? "No matching projects" : "Start with a project"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all projects."
-                : "Create your first project to start organizing suites, cases, and runs."
+                : "Create a project to define cases, group them into suites, and launch evaluation runs."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (
@@ -148,28 +137,15 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
             }}
             aria-label="Projects"
             toolbar={
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <DataGridSearch
-                  value={globalFilter}
-                  onValueChange={(value) => {
-                    setGlobalFilter(value);
-                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                  }}
-                  placeholder="Search projects…"
-                  className="max-w-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftIcon={FolderKanban}
-                  onClick={() => {
-                    setCreateOpen(true);
-                  }}
-                >
-                  New project
-                </Button>
-              </div>
+              <DataGridSearch
+                value={globalFilter}
+                onValueChange={(value) => {
+                  setGlobalFilter(value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                placeholder="Search projects…"
+                className="max-w-sm"
+              />
             }
             footer={
               projects.length > 0 ? (

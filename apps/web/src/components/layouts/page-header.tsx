@@ -5,33 +5,32 @@ import type { ReactNode } from "react";
 export interface PageHeaderProps {
   title: ReactNode;
   description?: ReactNode;
-  /** Small mono/eyebrow label above the title (e.g. "Workspace"). */
+  /** Small mono/eyebrow label above the title (e.g. "Evaluation"). */
   eyebrow?: ReactNode;
   /** Primary/secondary actions aligned to the right on desktop. */
   actions?: ReactNode;
-  /** Optional breadcrumb row above the title block. */
+  /**
+   * @deprecated Breadcrumbs live in the AppShell TopBar only.
+   * Passing this prop is ignored to avoid duplicate trails.
+   */
   breadcrumbs?: ReactNode;
   className?: string;
 }
 
 /**
  * Page title region with optional eyebrow, description, and action cluster.
+ * Breadcrumbs are owned exclusively by the shell TopBar.
  */
-export function PageHeader({
-  title,
-  description,
-  eyebrow,
-  actions,
-  breadcrumbs,
-  className,
-}: PageHeaderProps) {
+export function PageHeader({ title, description, eyebrow, actions, className }: PageHeaderProps) {
   return (
-    <header className={cn("space-y-4", className)}>
-      {breadcrumbs ? <div className="min-w-0">{breadcrumbs}</div> : null}
+    <header className={cn("space-y-3", className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <Stack gap={2} className="min-w-0 flex-1">
           {eyebrow ? (
-            <Text variant="caption" className="font-mono uppercase tracking-wide">
+            <Text
+              variant="caption"
+              className="font-mono uppercase tracking-[0.14em] text-muted-foreground"
+            >
               {eyebrow}
             </Text>
           ) : null}

@@ -84,10 +84,55 @@
   --ef-input: #ffffff;
   --ef-input-foreground: #111113;
 
-  /* Accent — calm blue-gray, sparse use */
-  --ef-accent: #3f5164;
+  /* Layered surfaces */
+  --ef-surface-base: #f7f7f8;
+  --ef-surface-raised: #ffffff;
+  --ef-surface-overlay: #ffffff;
+  --ef-surface-inset: #efeff1;
+
+  /* Accent — deep indigo-slate; high contrast on actions */
+  --ef-accent: #1e3a5f;
+  --ef-accent-strong: #152a45;
   --ef-accent-foreground: #f7f7f8;
-  --ef-accent-muted: #e8eef3;
+  --ef-accent-muted: #e4ebf3;
+  --ef-accent-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+  --ef-accent-glow: rgb(30 58 95 / 0.18);
+
+  /* Auth landing — light theme */
+  --ef-auth-bg-base: #f4f3f8;
+  --ef-auth-glow-1: rgb(99 102 241 / 0.14);
+  --ef-auth-glow-2: rgb(168 85 247 / 0.12);
+  --ef-auth-glow-3: rgb(236 72 153 / 0.08);
+  --ef-auth-gradient-text: linear-gradient(90deg, #6366f1 0%, #9333ea 45%, #c026d3 100%);
+  --ef-auth-primary: #7c3aed;
+  --ef-auth-primary-hover: #6d28d9;
+  --ef-auth-primary-gradient: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #a855f7 100%);
+  --ef-auth-primary-foreground: #ffffff;
+  --ef-auth-primary-glow: rgb(124 58 237 / 0.35);
+  --ef-auth-card-bg: rgb(255 255 255 / 0.82);
+  --ef-auth-card-border: rgb(17 17 19 / 0.08);
+  --ef-auth-card-highlight: rgb(255 255 255 / 0.9);
+  --ef-auth-input-bg: rgb(255 255 255 / 0.92);
+  --ef-auth-input-border: rgb(17 17 19 / 0.1);
+  --ef-auth-feature-bg: rgb(99 102 241 / 0.08);
+  --ef-auth-feature-border: rgb(99 102 241 / 0.14);
+  --ef-auth-code-fade: rgb(99 102 241 / 0.04);
+  --ef-auth-vignette: radial-gradient(
+    ellipse 90% 80% at 50% 50%,
+    transparent 40%,
+    rgb(17 17 19 / 0.08) 100%
+  );
+  --ef-auth-bg-depth: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgb(99 102 241 / 0.08) 0%,
+    transparent 55%
+  );
+
+  /* Auth atmosphere (legacy alias) */
+  --ef-auth-mesh:
+    radial-gradient(ellipse 80% 60% at 20% 20%, rgb(99 102 241 / 0.1) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 80% 70%, rgb(168 85 247 / 0.08) 0%, transparent 50%),
+    var(--ef-auth-bg-base);
 
   /* Semantic status */
   --ef-success: #0f7a45;
@@ -133,9 +178,52 @@
   --ef-input: #111113;
   --ef-input-foreground: #f2f2f3;
 
-  --ef-accent: #9aabbc;
-  --ef-accent-foreground: #0b0b0c;
-  --ef-accent-muted: #1a222b;
+  --ef-surface-base: #0b0b0c;
+  --ef-surface-raised: #111113;
+  --ef-surface-overlay: #141416;
+  --ef-surface-inset: #161618;
+
+  --ef-accent: #7eb6f0;
+  --ef-accent-strong: #5a9fd8;
+  --ef-accent-foreground: #0a1420;
+  --ef-accent-muted: #132235;
+  --ef-accent-gradient: linear-gradient(135deg, #4a7ab0 0%, #7eb6f0 100%);
+  --ef-accent-glow: rgb(126 182 240 / 0.15);
+
+  /* Auth landing — dark theme (hero experience) */
+  --ef-auth-bg-base: #06060a;
+  --ef-auth-glow-1: rgb(99 102 241 / 0.45);
+  --ef-auth-glow-2: rgb(168 85 247 / 0.38);
+  --ef-auth-glow-3: rgb(236 72 153 / 0.28);
+  --ef-auth-gradient-text: linear-gradient(90deg, #a78bfa 0%, #c084fc 40%, #f0abfc 100%);
+  --ef-auth-primary: #8b5cf6;
+  --ef-auth-primary-hover: #7c3aed;
+  --ef-auth-primary-gradient: linear-gradient(135deg, #6366f1 0%, #9333ea 50%, #a855f7 100%);
+  --ef-auth-primary-foreground: #ffffff;
+  --ef-auth-primary-glow: rgb(139 92 246 / 0.45);
+  --ef-auth-card-bg: rgb(14 14 20 / 0.72);
+  --ef-auth-card-border: rgb(255 255 255 / 0.08);
+  --ef-auth-card-highlight: rgb(255 255 255 / 0.04);
+  --ef-auth-input-bg: rgb(8 8 12 / 0.65);
+  --ef-auth-input-border: rgb(255 255 255 / 0.1);
+  --ef-auth-feature-bg: rgb(139 92 246 / 0.12);
+  --ef-auth-feature-border: rgb(167 139 250 / 0.18);
+  --ef-auth-code-fade: rgb(139 92 246 / 0.06);
+  --ef-auth-vignette: radial-gradient(
+    ellipse 90% 80% at 50% 50%,
+    transparent 40%,
+    rgb(0 0 0 / 0.35) 100%
+  );
+  --ef-auth-bg-depth: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgb(15 10 30 / 0.9) 0%,
+    transparent 55%
+  );
+
+  --ef-auth-mesh:
+    radial-gradient(ellipse 70% 55% at 15% 15%, rgb(99 102 241 / 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 85% 75%, rgb(168 85 247 / 0.16) 0%, transparent 50%),
+    var(--ef-auth-bg-base);
 
   --ef-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
   --ef-shadow-md: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.35);
@@ -175,4 +263,34 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Primary accent fill — gradient via background-image (not Tailwind bg-[]) */
+.ef-accent-fill {
+  background-color: var(--ef-accent);
+  background-image: var(--ef-accent-gradient);
+  color: var(--ef-accent-foreground);
+}
+
+/* Auth landing utilities */
+.ef-auth-gradient-text {
+  background-image: var(--ef-auth-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ef-auth-primary-fill {
+  background-color: var(--ef-auth-primary);
+  background-image: var(--ef-auth-primary-gradient);
+  color: var(--ef-auth-primary-foreground);
+}
+
+.ef-auth-primary-fill:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 0 24px var(--ef-auth-primary-glow);
+}
+
+.ef-auth-primary-fill:active:not(:disabled) {
+  filter: brightness(0.96);
 }

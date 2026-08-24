@@ -37,7 +37,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { agentsQueryKey } from "@/features/agents/utils";
 import { casesQueryKey } from "@/features/cases/utils";
 import { projectsQueryKey } from "@/features/projects/utils";
@@ -183,15 +182,12 @@ export function RunListPage() {
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Runs" }]} />
-        }
-        eyebrow="Execution"
+        eyebrow="Evaluation"
         title="Runs"
-        description="Pinned evaluation executions across projects. Launch a run to queue agent work against immutable version pins."
+        description="Pinned evaluation executions. Status, score, and context at a glance."
         actions={
           <Button asChild leftIcon={Plus}>
-            <Link href="/runs/new">New run</Link>
+            <Link href="/runs/new">Launch run</Link>
           </Button>
         }
       />
@@ -216,8 +212,8 @@ export function RunListPage() {
           <EmptyContent
             fill
             icon={Play}
-            title="No projects yet"
-            description="Create a project before launching evaluation runs."
+            title="Create a project to continue"
+            description="Projects hold cases and suites. Create one, then launch evaluations from Runs."
             action={
               <Button asChild>
                 <Link href="/projects?create=1">Create project</Link>
@@ -245,20 +241,20 @@ export function RunListPage() {
                 ? "Select a project"
                 : globalFilter.trim()
                   ? "No matching runs"
-                  : "No runs yet"
+                  : "No evaluations yet"
             }
             emptyDescription={
               !effectiveProjectId
                 ? "Choose a project to load its evaluation runs."
                 : globalFilter.trim()
                   ? "Try a different search, or clear the filter."
-                  : "Launch a run to pin case, prompt, agent, adapter, and grader versions."
+                  : "Pin a case, agent, and grader, then launch your first evaluation."
             }
             emptyAction={
               effectiveProjectId && !globalFilter.trim() ? (
                 <Button asChild leftIcon={Plus}>
                   <Link href={`/runs/new?project=${encodeURIComponent(effectiveProjectId)}`}>
-                    New run
+                    Create evaluation
                   </Link>
                 </Button>
               ) : undefined

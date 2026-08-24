@@ -30,6 +30,9 @@ import {
 import type { ArtifactTabId } from "./utils";
 import type { Artifact, ExecutionEvent } from "@/lib/api/runs";
 
+import { downloadRunArtifact } from "@/lib/api/runs";
+import { useAuth } from "@/lib/auth/auth-provider";
+
 export interface ArtifactViewerProps {
   artifacts: Artifact[];
   events: ExecutionEvent[];
@@ -149,8 +152,32 @@ export function ArtifactViewer({
 }
 
 function ArtifactPane({ artifact, preview }: { artifact: Artifact; preview: string | null }) {
+  const { token } = useAuth();
+  const [downloading, setDownloading] = useState(false);
   const metadata = artifactMetadataDocument(artifact, preview);
   const viewText = preview ?? metadata;
+
+  async function handleDownloadBytes() {
+    if (!token) {
+      toast.error("Sign in required to download");
+      return;
+    }
+    setDownloading(true);
+    try {
+      const result = await downloadRunArtifact(token, artifact.run_id, artifact.id);
+      const url = URL.createObjectURL(result.blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${artifact.kind}-${truncateId(artifact.id, 8)}`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success("Download started");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Download failed");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="space-y-3 rounded-[var(--ef-radius-panel)] border border-border p-4">
@@ -200,18 +227,29 @@ function ArtifactPane({ artifact, preview }: { artifact: Artifact; preview: stri
                 viewText,
                 preview ? "text/plain" : "application/json",
               );
-              toast.success("Download started");
+              toast.success("Metadata download started");
             }}
           >
-            Download
+            Metadata
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="primary"
+            disabled={downloading}
+            onClick={() => {
+              void handleDownloadBytes();
+            }}
+          >
+            {downloading ? "Downloading…" : "Download"}
           </Button>
         </Cluster>
       </div>
 
       <Text variant="caption">
         {preview
-          ? "Preview assembled from linked execution event summaries (object storage bodies are not exposed yet)."
-          : "Full artifact bytes are not exposed by the Control Plane yet — showing metadata JSON."}
+          ? "Inline preview from linked execution events. Use Download for stored artifact bytes."
+          : "Use Download for stored artifact bytes from object storage."}
       </Text>
 
       <ScrollArea className="h-[min(24rem,50vh)] rounded-[var(--ef-radius-control)] border border-border bg-muted/40">

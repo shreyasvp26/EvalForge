@@ -294,6 +294,14 @@ export function formatScoreValue(value: ScoreValue): string {
   return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
+/** Aggregate pass/fail from a run's scores when available. */
+export function runPassSignal(run: { scores: Score[] }): boolean | null {
+  if (run.scores.length === 0) return null;
+  if (run.scores.every((score) => score.value.passed === true)) return true;
+  if (run.scores.some((score) => score.value.passed === false)) return false;
+  return null;
+}
+
 export function scoreResultBadge(
   value: ScoreValue,
 ): "completed" | "danger" | "warning" | "neutral" | "grading" {
@@ -359,7 +367,7 @@ export function artifactMetadataDocument(artifact: Artifact, preview: string | n
       created_at: artifact.created_at,
       produced_by_grader_version_id: artifact.produced_by_grader_version_id,
       linked_preview: preview,
-      note: "Full artifact bytes are not exposed by the Control Plane REST API yet. This file contains metadata and any linked event summaries.",
+      note: "Use GET /v1/runs/{run_id}/artifacts/{artifact_id}/content for stored bytes. This document is metadata plus linked event summaries.",
     },
     null,
     2,

@@ -19,7 +19,7 @@ export function TopBar({
   onOpenShortcuts: () => void;
 }) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-sm md:gap-3 md:px-4">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-[var(--ef-surface-raised)]/90 px-3 backdrop-blur-md md:gap-3 md:px-4">
       <IconButton
         icon={Menu}
         label="Open navigation"
@@ -27,7 +27,11 @@ export function TopBar({
         onClick={onOpenMobileNav}
       />
       <div className="min-w-0 flex-1">
-        {breadcrumbs ?? <Text variant="caption">Workspace</Text>}
+        {breadcrumbs ?? (
+          <Text variant="caption" className="font-mono uppercase tracking-[0.12em]">
+            EvalForge
+          </Text>
+        )}
       </div>
       <IconButton
         icon={Search}
@@ -38,7 +42,7 @@ export function TopBar({
       <button
         type="button"
         onClick={onOpenCommand}
-        className="hidden h-8 items-center gap-2 rounded-[var(--ef-radius-control)] border border-border bg-card px-2.5 text-muted-foreground transition-colors duration-[var(--ef-duration-fast)] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+        className="hidden h-9 min-w-[12rem] items-center gap-2 rounded-[var(--ef-radius-control)] border border-border bg-muted/30 px-3 text-muted-foreground transition-colors duration-[var(--ef-duration-fast)] hover:border-border-strong hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex lg:min-w-[14rem]"
       >
         <Text as="span" variant="caption">
           Search

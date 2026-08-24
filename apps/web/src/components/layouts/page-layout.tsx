@@ -33,7 +33,7 @@ export function PageLayout({
       className={cn(
         "mx-auto w-full",
         widthMap[width],
-        flush ? "px-0 py-0" : "px-4 py-8 sm:px-6",
+        flush ? "px-0 py-0" : "px-4 py-6 sm:px-6 sm:py-8",
         className,
       )}
       data-page-layout

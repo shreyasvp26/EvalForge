@@ -21,9 +21,9 @@ export function AccountSettingsPage() {
     setExpiresAt(readTokenExpiresAt());
   }, [status]);
 
-  if (status === "loading" || !user) {
+  if (status === "restoring" || status === "restore_failed" || !user) {
     return (
-      <SettingsShell title="Account" description="Session and sign-out.">
+      <SettingsShell title="Session" description="Browser session and sign-out.">
         <DetailSkeleton withInspector={false} />
       </SettingsShell>
     );
@@ -41,10 +41,10 @@ export function AccountSettingsPage() {
 
   return (
     <SettingsShell
-      title="Account"
-      description="Session details for this browser. Credentials never leave the Control Plane auth flow."
+      title="Session"
+      description="Local JWT session for this browser. Credentials stay in the Control Plane auth flow."
     >
-      <Section title="Session">
+      <Section title="Current session">
         <dl className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Text variant="caption">Status</Text>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, DataGrid, DataGridPagination, DataGridSearch, Bot, Plus } from "@agent-eval/ui";
+import { Button, DataGrid, DataGridPagination, DataGridSearch, Plus } from "@agent-eval/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -15,7 +15,6 @@ import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
-import { Breadcrumbs } from "@/components/shell/breadcrumbs";
 import { listAgents } from "@/lib/api/agents";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -57,12 +56,9 @@ export function AgentListPage({ initialCreateOpen = false }: { initialCreateOpen
   return (
     <PageLayout width="full">
       <PageHeader
-        breadcrumbs={
-          <Breadcrumbs items={[{ label: "Workspace", href: "/projects" }, { label: "Agents" }]} />
-        }
         eyebrow="Platform"
         title="Agents"
-        description="Platform catalog of coding agents under test. Each agent connects at most one adapter and versions independently."
+        description="Adapters that execute evaluations."
         actions={
           <Button
             type="button"
@@ -108,11 +104,11 @@ export function AgentListPage({ initialCreateOpen = false }: { initialCreateOpen
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching agents" : "No agents yet"}
+            emptyTitle={globalFilter.trim() ? "No matching agents" : "Register an agent"}
             emptyDescription={
               globalFilter.trim()
-                ? "Try a different search, or clear the filter to see all agents."
-                : "Create an agent to register a coding subject in the platform catalog."
+                ? "Try a different search, or clear the filter."
+                : "Connect an adapter, publish a version, then pin it when you launch evaluations."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (
@@ -123,7 +119,7 @@ export function AgentListPage({ initialCreateOpen = false }: { initialCreateOpen
                     setCreateOpen(true);
                   }}
                 >
-                  Create agent
+                  New agent
                 </Button>
               )
             }
@@ -132,28 +128,15 @@ export function AgentListPage({ initialCreateOpen = false }: { initialCreateOpen
             }}
             aria-label="Agents"
             toolbar={
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <DataGridSearch
-                  value={globalFilter}
-                  onValueChange={(value) => {
-                    setGlobalFilter(value);
-                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                  }}
-                  placeholder="Search agents…"
-                  className="max-w-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftIcon={Bot}
-                  onClick={() => {
-                    setCreateOpen(true);
-                  }}
-                >
-                  New agent
-                </Button>
-              </div>
+              <DataGridSearch
+                value={globalFilter}
+                onValueChange={(value) => {
+                  setGlobalFilter(value);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                placeholder="Search agents…"
+                className="max-w-sm"
+              />
             }
             footer={
               agents.length > 0 ? (
