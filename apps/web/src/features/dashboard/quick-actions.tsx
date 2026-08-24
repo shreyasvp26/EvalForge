@@ -56,9 +56,7 @@ export function QuickActions() {
             <span
               className={cn(
                 "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ef-radius-control)]",
-                action.primary
-                  ? "bg-[var(--ef-accent-gradient)] text-[var(--ef-accent-foreground)]"
-                  : "bg-muted text-muted-foreground",
+                action.primary ? "ef-accent-fill" : "bg-muted text-muted-foreground",
               )}
             >
               <Icon icon={action.icon} size="sm" aria-hidden />

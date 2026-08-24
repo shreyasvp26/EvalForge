@@ -202,3 +202,10 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Primary accent fill — gradient via background-image (not Tailwind bg-[]) */
+.ef-accent-fill {
+  background-color: var(--ef-accent);
+  background-image: var(--ef-accent-gradient);
+  color: var(--ef-accent-foreground);
+}

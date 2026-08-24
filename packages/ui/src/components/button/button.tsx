@@ -17,7 +17,7 @@ const buttonVariants = cva(
         // Explicit CSS vars — Tailwind `text-accent-foreground` was resolving to
         // inherited foreground (dark-on-dark) in the product theme.
         primary:
-          "bg-[var(--ef-accent-gradient,var(--ef-accent))] text-[var(--ef-accent-foreground)] shadow-[0_1px_2px_var(--ef-accent-glow,rgb(0_0_0/0.1))] hover:brightness-110 active:brightness-95",
+          "ef-accent-fill shadow-[0_1px_2px_var(--ef-accent-glow,rgb(0_0_0/0.1))] hover:brightness-110 active:brightness-95",
         secondary: "bg-muted text-foreground hover:bg-border",
         outline: "border border-border bg-transparent text-foreground hover:bg-muted",
         ghost: "bg-transparent text-foreground hover:bg-muted",
