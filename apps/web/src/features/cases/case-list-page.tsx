@@ -192,11 +192,11 @@ export function CaseListPage({
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching cases" : "No cases yet"}
+            emptyTitle={globalFilter.trim() ? "No matching cases" : "Add your first case"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all cases."
-                : "Create a case to define an engineering task and its prompt."
+                : "Define a task and prompt, then publish a case version to use in suites and runs."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (

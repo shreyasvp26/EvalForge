@@ -78,15 +78,20 @@ function LoginForm() {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
-      <div className="mb-8 space-y-2">
-        <Text variant="caption" className="tracking-[0.08em] uppercase">
-          EvalForge
-        </Text>
+      <div className="mb-8 space-y-3">
+        <div className="space-y-1">
+          <Text variant="caption" className="font-mono tracking-[0.16em] uppercase text-foreground">
+            EvalForge
+          </Text>
+          <Text variant="caption" className="text-muted-foreground">
+            Evaluation control plane
+          </Text>
+        </div>
         <Heading level={1} variant="page">
           Sign in
         </Heading>
         <Text variant="secondary">
-          Use your EvalForge credentials to continue to the workspace.
+          Continue to your workspace to launch evaluations and inspect execution.
         </Text>
       </div>
 

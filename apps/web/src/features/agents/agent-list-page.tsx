@@ -104,11 +104,11 @@ export function AgentListPage({ initialCreateOpen = false }: { initialCreateOpen
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching agents" : "No agents yet"}
+            emptyTitle={globalFilter.trim() ? "No matching agents" : "Register an agent"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter."
-                : "Register an agent, connect an adapter, then pin versions on runs."
+                : "Connect an adapter, publish a version, then pin it when you launch evaluations."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (

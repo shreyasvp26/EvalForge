@@ -185,11 +185,11 @@ export function SuiteListPage({
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching suites" : "No suites yet"}
+            emptyTitle={globalFilter.trim() ? "No matching suites" : "Compose your first suite"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all suites."
-                : "Create a suite to start composing ordered evaluation cases."
+                : "Group published case versions in order so runs can evaluate a full set."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (

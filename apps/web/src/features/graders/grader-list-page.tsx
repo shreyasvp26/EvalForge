@@ -104,11 +104,11 @@ export function GraderListPage({ initialCreateOpen = false }: { initialCreateOpe
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching graders" : "No graders yet"}
+            emptyTitle={globalFilter.trim() ? "No matching graders" : "Register a grader"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter."
-                : "Register a grader, publish a specification, then pin it on runs."
+                : "Publish a specification, then pin the grader version on evaluation runs."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (

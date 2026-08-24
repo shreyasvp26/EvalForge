@@ -212,8 +212,8 @@ export function RunListPage() {
           <EmptyContent
             fill
             icon={Play}
-            title="No projects yet"
-            description="Create a project before launching evaluation runs."
+            title="Create a project to continue"
+            description="Projects hold cases and suites. Create one, then launch evaluations from Runs."
             action={
               <Button asChild>
                 <Link href="/projects?create=1">Create project</Link>
@@ -241,20 +241,20 @@ export function RunListPage() {
                 ? "Select a project"
                 : globalFilter.trim()
                   ? "No matching runs"
-                  : "No runs yet"
+                  : "No evaluations yet"
             }
             emptyDescription={
               !effectiveProjectId
                 ? "Choose a project to load its evaluation runs."
                 : globalFilter.trim()
                   ? "Try a different search, or clear the filter."
-                  : "Launch a run to pin case, prompt, agent, adapter, and grader versions."
+                  : "Pin a case, agent, and grader, then launch your first evaluation."
             }
             emptyAction={
               effectiveProjectId && !globalFilter.trim() ? (
                 <Button asChild leftIcon={Plus}>
                   <Link href={`/runs/new?project=${encodeURIComponent(effectiveProjectId)}`}>
-                    New run
+                    Create evaluation
                   </Link>
                 </Button>
               ) : undefined

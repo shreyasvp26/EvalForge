@@ -113,7 +113,7 @@ export function ProjectListPage({ initialCreateOpen = false }: { initialCreateOp
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching projects" : "No projects yet"}
+            emptyTitle={globalFilter.trim() ? "No matching projects" : "Start with a project"}
             emptyDescription={
               globalFilter.trim()
                 ? "Try a different search, or clear the filter to see all projects."
