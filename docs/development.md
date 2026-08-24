@@ -176,18 +176,21 @@ Python package: `workers/` → `agent_eval_workers`.
   pin-resolved objective graders / object storage artifacts.
   - **Compose / production-like:** `WORKER_SANDBOX_ENGINE=docker` (Docker
     socket mounted), `WORKER_ADAPTER_MODE=deterministic` by default,
-    `WORKER_SANDBOX_IMAGE=evalforge/sandbox:local`.
+    `WORKER_SANDBOX_IMAGE=evalforge/sandbox:local`. Core stack via
+    `docker compose ... up`; add `--profile full` for the web UI image.
   - **Local without Docker:** `WORKER_SANDBOX_ENGINE=auto|fake` falls back
     to `FakeDockerEngine`; deterministic Claude stream remains available.
   - **Live Claude CLI:** `WORKER_ADAPTER_MODE=claude` +
     `ANTHROPIC_API_KEY` (allow-listed into the sandbox) + CLI in the
     sandbox image + `WORKER_SANDBOX_NETWORK=bridge`.
+  - Optional `WORKER_SANDBOX_VERIFY=1` runs a post-provision `true` exec.
   - Cancellation: API publishes Redis cancel signals
     (`RUN_CANCEL_KEY_PREFIX`); workers observe cooperatively.
   - Start: `uv run evalforge-worker` or
     `docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up --build`.
   - Cover with `uv run pytest workers/tests/test_process_worker.py` and
-    optional `uv run pytest workers/tests -m integration` (live Docker).
+    optional live Docker: sandbox `-m integration`, or
+    `EVALFORGE_LIVE_WORKER_DOCKER=1` for the worker Docker e2e.
   - See `infrastructure/docker/README.md`.
 - **Must not** contain Adapter translation, Grader scoring, or Domain
   invariants; must not bypass Application for business writes.
