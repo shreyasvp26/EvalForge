@@ -1,24 +1,27 @@
 "use client";
 
-import { Text } from "@agent-eval/ui";
+import { Button, Text } from "@agent-eval/ui";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import type { ReactNode } from "react";
 
 import { GlobalLoading } from "@/components/patterns/global-loading";
+import { SessionRestoreFailure } from "@/components/patterns/session-restore-failure";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { syncSessionCookie } from "@/lib/auth/session";
 
 /**
- * Gates authenticated product routes. Shows a boot overlay while the
- * session is restored, then redirects guests to /login.
+ * Gates authenticated product routes.
  *
- * Never stay on an opaque dark full-viewport overlay indefinitely: cookie/JWT
- * mismatch must resolve to authenticated UI or /login.
+ * States:
+ * - restoring → branded boot panel (never an indefinite black void)
+ * - restore_failed → recoverable CTA
+ * - unauthenticated → redirect to /login
+ * - authenticated → children
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { status } = useAuth();
+  const { status, restoreError, dismissRestoreFailure, retryRestore } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -37,19 +40,42 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     }
   }, [status, router]);
 
-  if (status === "loading") {
+  if (status === "restoring") {
     return <GlobalLoading label="Restoring session" />;
   }
 
+  if (status === "restore_failed") {
+    return (
+      <SessionRestoreFailure
+        message={restoreError}
+        onRetry={() => {
+          void retryRestore();
+        }}
+        onSignIn={() => {
+          dismissRestoreFailure();
+          router.replace("/login");
+        }}
+      />
+    );
+  }
+
   if (status !== "authenticated") {
-    // Keep a light, intentional redirect state — not a dark blocking overlay.
     return (
       <div
-        className="flex min-h-dvh items-center justify-center bg-background px-4"
+        className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background px-4"
         role="status"
         aria-live="polite"
       >
+        <Text
+          variant="caption"
+          className="font-mono uppercase tracking-[0.14em] text-muted-foreground"
+        >
+          EvalForge
+        </Text>
         <Text variant="secondary">Redirecting to sign in…</Text>
+        <Button asChild variant="outline" size="sm">
+          <a href="/login">Sign in</a>
+        </Button>
       </div>
     );
   }

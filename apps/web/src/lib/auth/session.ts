@@ -61,9 +61,17 @@ export function syncSessionCookie(): void {
 
 export function clearAccessToken(): void {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(EXPIRES_AT_KEY);
-  document.cookie = `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  try {
+    window.localStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(EXPIRES_AT_KEY);
+  } catch {
+    // Ignore quota / private-mode failures.
+  }
+  try {
+    document.cookie = `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  } catch {
+    // Ignore cookie write failures.
+  }
 }
 
 /** Epoch ms when the stored access token expires, or null if unknown/absent. */

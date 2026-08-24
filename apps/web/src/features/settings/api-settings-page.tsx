@@ -34,9 +34,11 @@ export function ApiSettingsPage() {
   const authLabel =
     status === "authenticated"
       ? "Authenticated"
-      : status === "loading"
+      : status === "restoring"
         ? "Checking…"
-        : "Unauthenticated";
+        : status === "restore_failed"
+          ? "Restore failed"
+          : "Unauthenticated";
 
   const expiryLabel =
     expiresAt === null

@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 export function ProfileSettingsPage() {
   const { user, status } = useAuth();
 
-  if (status === "loading" || !user) {
+  if (status === "restoring" || status === "restore_failed" || !user) {
     return (
       <SettingsShell title="Profile" description="Your Control Plane identity.">
         <DetailSkeleton withInspector={false} />

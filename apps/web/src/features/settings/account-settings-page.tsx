@@ -21,7 +21,7 @@ export function AccountSettingsPage() {
     setExpiresAt(readTokenExpiresAt());
   }, [status]);
 
-  if (status === "loading" || !user) {
+  if (status === "restoring" || status === "restore_failed" || !user) {
     return (
       <SettingsShell title="Session" description="Browser session and sign-out.">
         <DetailSkeleton withInspector={false} />
