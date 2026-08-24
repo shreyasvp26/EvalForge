@@ -38,9 +38,9 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       className={cn(
         "group flex items-center gap-2 rounded-[var(--ef-radius-control)] text-[length:var(--ef-text-body)] transition-[background-color,color,padding] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        collapsed ? "justify-center px-2 py-2" : "px-2.5 py-1.5",
+        collapsed ? "justify-center px-2 py-2" : "px-3 py-2",
         active
-          ? "bg-muted font-medium text-foreground shadow-[inset_2px_0_0_0_var(--ef-accent)]"
+          ? "bg-accent-muted font-medium text-foreground shadow-[inset_3px_0_0_0_var(--ef-accent)]"
           : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
       )}
       {...(active ? { "aria-current": "page" as const } : {})}
@@ -92,8 +92,8 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "flex h-full shrink-0 flex-col border-r border-border bg-card transition-[width] duration-[var(--ef-duration-normal)] ease-[var(--ef-ease-standard)]",
-        collapsed ? "w-[52px]" : "w-[15.5rem]",
+        "flex h-full shrink-0 flex-col border-r border-border bg-[var(--ef-surface-raised)] transition-[width] duration-[var(--ef-duration-normal)] ease-[var(--ef-ease-standard)]",
+        collapsed ? "w-[52px]" : "w-[16rem]",
         className,
       )}
       aria-label="Application"

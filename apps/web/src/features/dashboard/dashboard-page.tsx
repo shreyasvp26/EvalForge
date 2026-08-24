@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, FadeIn, Text } from "@agent-eval/ui";
+import { ArrowRight, Button, FadeIn, Text } from "@agent-eval/ui";
 import Link from "next/link";
 
 import { ActiveExecution, RecentFailures } from "./active-execution";
@@ -58,9 +58,9 @@ export function DashboardPage() {
       <PageLayout>
         <FadeIn>
           <PageHeader
-            eyebrow="Workspace"
-            title="Overview"
-            description="Define evaluations, launch runs, and inspect what happened."
+            eyebrow="Evaluation control plane"
+            title="Evaluation overview"
+            description="Operational snapshot of recent evaluations across sampled projects."
           />
           <div className="mt-8">
             <DashboardEmpty />
@@ -74,17 +74,17 @@ export function DashboardPage() {
     <PageLayout width="full" className="max-w-6xl">
       <FadeIn>
         <PageHeader
-          eyebrow="Workspace"
-          title="Overview"
-          description="What is happening with your evaluations right now."
+          eyebrow="Evaluation control plane"
+          title="Evaluation overview"
+          description="Operational snapshot of recent evaluations across sampled projects."
           actions={
-            <Button asChild>
-              <Link href="/runs/new">Launch run</Link>
+            <Button asChild size="lg" rightIcon={ArrowRight}>
+              <Link href="/runs/new">Launch evaluation</Link>
             </Button>
           }
         />
 
-        <div className="mt-6 space-y-8">
+        <div className="mt-8 space-y-8">
           <EvaluationHealthStrip health={snapshot.health} />
 
           <div className="grid gap-8 lg:grid-cols-3">
@@ -123,7 +123,7 @@ export function DashboardPage() {
               />
             </Section>
 
-            <Section title="Workflow" description="Jump into the evaluation model.">
+            <Section title="Workflow" description="Start or configure the evaluation model.">
               <QuickActions />
             </Section>
 
