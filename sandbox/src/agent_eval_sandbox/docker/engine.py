@@ -120,7 +120,9 @@ class DockerPyEngine:
                 cause=exc,
             ) from exc
 
-        timed_out = exit_code == 124 and timeout_seconds is not None
+        # GNU coreutils ``timeout`` exits 124 on expiry; BusyBox ``timeout -s KILL``
+        # typically surfaces 128+9=137 when the wrapped command is killed.
+        timed_out = timeout_seconds is not None and exit_code in {124, 137}
         return exit_code, stdout, stderr, timed_out
 
     def get_archive(self, container_id: str, path: str) -> bytes:
