@@ -10,7 +10,7 @@ logic (Execution Engine Architecture — Sandbox Lifecycle).
 
 from __future__ import annotations
 
-from agent_eval_sandbox.docker import DockerPyEngine, DockerSandbox
+from agent_eval_sandbox.docker import DockerPyEngine, DockerSandbox, FakeDockerEngine
 from agent_eval_sandbox.exceptions import (
     SandboxCleanupError,
     SandboxCopyError,
@@ -46,6 +46,7 @@ __all__ = [
     "DockerEngine",
     "DockerPyEngine",
     "DockerSandbox",
+    "FakeDockerEngine",
     "ExecutionRequest",
     "ExecutionResult",
     "MountSpec",

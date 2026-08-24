@@ -68,7 +68,9 @@ credentials.json
 service-account*.json
 
 # Docker
-infrastructure/docker/data/
+# Local audit / verification artifacts (screenshots, cookies) — never commit
+.data/
+
 
 # Misc
 *.tmp
