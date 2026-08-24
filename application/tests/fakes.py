@@ -45,6 +45,9 @@ class InMemoryIdGenerator:
 
 
 class AllowAllAuth:
+    def __init__(self) -> None:
+        self.granted_owners: list[tuple[str, str]] = []
+
     def ensure_can_access_project(self, actor: Actor, project_id: ProjectId) -> None:
         return None
 
@@ -53,6 +56,9 @@ class AllowAllAuth:
 
     def ensure_can_create_project(self, actor: Actor) -> None:
         return None
+
+    def grant_project_owner(self, actor: Actor, project_id: ProjectId) -> None:
+        self.granted_owners.append((actor.id, project_id.value))
 
 
 class DenyAllAuth:
@@ -64,6 +70,9 @@ class DenyAllAuth:
 
     def ensure_can_create_project(self, actor: Actor) -> None:
         raise AuthorizationError()
+
+    def grant_project_owner(self, actor: Actor, project_id: ProjectId) -> None:
+        raise AuthorizationError(details={"project_id": project_id.value})
 
 
 class RecordingEventDispatcher:

@@ -86,6 +86,9 @@ class CreateProject:
                 )
             )
             uow.projects.save(project)
+            # Owner membership is Application authorization state, not a Domain
+            # concept — but it must commit atomically with the Project row.
+            self._auth.grant_project_owner(command.actor, project_id)
             return ProjectDTO.from_domain(project), collect_events(project)
 
         result = run_in_uow(self._uow_factory, self._events, work)

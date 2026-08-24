@@ -13,7 +13,7 @@ from agent_eval_application.commands.project import (
 from agent_eval_application.queries.queries import GetProjectQuery, ListProjectsQuery
 from fastapi import APIRouter, Depends, Header, status
 
-from agent_eval_api.dependencies import ActorDep, ContainerDep, ServicesDep
+from agent_eval_api.dependencies import ActorDep, ServicesDep
 from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.project import (
@@ -37,7 +37,6 @@ def create_project(
     body: CreateProjectRequest,
     actor: ActorDep,
     services: ServicesDep,
-    container: ContainerDep,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ) -> ProjectResponse:
     dto = services.create_project.execute(
@@ -49,10 +48,6 @@ def create_project(
             idempotency_key=idempotency_key,
         )
     )
-    # Grant Owner outside Application (membership is not a Domain concept).
-    grant = getattr(container.auth, "grant", None)
-    if callable(grant):
-        grant(actor_id=actor.id, project_id=dto.id)
     return ProjectResponse.from_dto(dto)
 
 

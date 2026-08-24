@@ -31,9 +31,12 @@ class ProjectRbacAuthorization:
         self._require_at_least(actor, project_id, ProjectRole.MAINTAINER)
 
     def ensure_can_create_project(self, actor: Actor) -> None:
-        # Any authenticated Actor may create a Project; the API grants Owner
-        # membership immediately after creation.
+        # Any authenticated Actor may create a Project; CreateProject grants
+        # Owner membership inside the same Unit of Work as persistence.
         del actor
+
+    def grant_project_owner(self, actor: Actor, project_id: ProjectId) -> None:
+        self.grant(actor_id=actor.id, project_id=project_id.value)
 
     def grant(
         self,

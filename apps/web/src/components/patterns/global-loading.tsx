@@ -18,7 +18,9 @@ export function GlobalLoading({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[var(--ef-z-overlay)] flex items-center justify-center bg-background/80 backdrop-blur-[2px]",
+        // Solid background + visible card — avoid a dark translucent wash that
+        // looks like a hung black screen when auth is resolving.
+        "fixed inset-0 z-[var(--ef-z-overlay)] flex items-center justify-center bg-background",
         className,
       )}
       role="status"

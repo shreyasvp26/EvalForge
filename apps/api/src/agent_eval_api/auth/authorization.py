@@ -21,3 +21,6 @@ class AllowAllAuthorization:
 
     def ensure_can_create_project(self, actor: Actor) -> None:
         return None
+
+    def grant_project_owner(self, actor: Actor, project_id: ProjectId) -> None:
+        return None

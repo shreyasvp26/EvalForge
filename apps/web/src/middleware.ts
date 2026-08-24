@@ -12,14 +12,11 @@ function isPublicPath(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Public routes (including /login) always pass. Do not redirect away from
+  // /login based on the presence cookie — that cookie can outlive the JWT and
+  // would loop with RequireAuth ("Redirecting to sign in" on a dark overlay).
   if (isPublicPath(pathname)) {
-    if (pathname === "/login" || pathname.startsWith("/login/")) {
-      if (hasSessionCookie(request.headers.get("cookie"))) {
-        const next = request.nextUrl.searchParams.get("next");
-        const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-        return NextResponse.redirect(new URL(target, request.url));
-      }
-    }
     return NextResponse.next();
   }
 

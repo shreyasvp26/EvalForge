@@ -6,8 +6,8 @@ No direct ``os.environ`` access — all values flow through pydantic-settings
 
 from __future__ import annotations
 
-from agent_eval_shared.config import BaseSettings, load_settings
-from pydantic import Field
+from agent_eval_shared.config import BaseSettings, load_settings, resolve_env_file
+from pydantic import Field, model_validator
 from pydantic_settings import SettingsConfigDict
 
 from agent_eval_infrastructure.database.config import DatabaseSettings
@@ -17,7 +17,7 @@ class InfrastructureSettings(BaseSettings):
     """Concrete Infrastructure configuration (database, Redis, object storage)."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=resolve_env_file(),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -86,6 +86,29 @@ class InfrastructureSettings(BaseSettings):
         validation_alias="OBJECT_STORAGE_FORCE_PATH_STYLE",
         description="Path-style addressing for MinIO and many S3-compatible stores.",
     )
+
+    @model_validator(mode="after")
+    def _reject_misleading_database_urls(self) -> InfrastructureSettings:
+        """Fail fast on configs that look partially working but are unsafe."""
+        url = self.database_url.strip()
+        lowered = url.lower()
+        is_sqlite = lowered.startswith("sqlite")
+
+        if "/tmp/evalforge" in lowered:
+            raise ValueError(
+                "DATABASE_URL points at /tmp/evalforge*.db — this commonly pairs "
+                "MEMORY identity (ENVIRONMENT=test) with an empty SQLite file for "
+                "domain APIs. Use PostgreSQL for local development (see .env.example)."
+            )
+
+        if self.environment in ("development", "production") and is_sqlite:
+            raise ValueError(
+                f"DATABASE_URL must be PostgreSQL when ENVIRONMENT={self.environment}; "
+                "SQLite is only allowed for ENVIRONMENT=test "
+                "(typically sqlite+pysqlite:///:memory:)."
+            )
+
+        return self
 
     def to_database_settings(self) -> DatabaseSettings:
         """Project nested DB fields into the existing DatabaseSettings object."""

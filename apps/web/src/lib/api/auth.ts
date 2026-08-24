@@ -20,11 +20,22 @@ export async function loginRequest(email: string, password: string): Promise<Log
   });
 }
 
-export async function fetchCurrentUser(token: string): Promise<AuthUser> {
-  return apiRequest<AuthUser>("/v1/auth/me", {
+export async function fetchCurrentUser(
+  token: string,
+  options?: { signal?: AbortSignal },
+): Promise<AuthUser> {
+  const request: {
+    method: string;
+    token: string;
+    signal?: AbortSignal;
+  } = {
     method: "GET",
     token,
-  });
+  };
+  if (options?.signal) {
+    request.signal = options.signal;
+  }
+  return apiRequest<AuthUser>("/v1/auth/me", request);
 }
 
 export async function logoutRequest(token: string): Promise<undefined> {
