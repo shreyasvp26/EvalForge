@@ -20,7 +20,7 @@ export function useRunEvents(runId: string, status: RunStatus | undefined, enabl
     enabled: Boolean(token) && Boolean(runId) && enabled,
     queryFn: async () => {
       if (!token) throw new Error("Missing auth token");
-      return listRunEvents(token, runId, { limit: 200, sort: "sequence" });
+      return listRunEvents(token, runId, { limit: 100, sort: "sequence" });
     },
     refetchInterval: polling.refetchInterval,
   });
