@@ -107,6 +107,11 @@ class RedisRunQueue:
         if removed:
             self._client.rpush(self._pending, run_id.value)
 
+    def dequeue_pending(self, run_id: RunId) -> bool:
+        """Remove a not-yet-claimed run from pending (cancel-before-claim)."""
+        removed = self._client.lrem(self._pending, 0, run_id.value)
+        return bool(removed)
+
     def pending_run_ids(self) -> list[RunId]:
         """Introspection helper for tests / ops (not an Application API)."""
         return [RunId(v) for v in self._client.lrange(self._pending, 0, -1)]

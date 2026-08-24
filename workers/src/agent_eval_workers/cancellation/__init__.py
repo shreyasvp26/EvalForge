@@ -13,9 +13,11 @@ Must NOT:
 """
 
 from agent_eval_workers.cancellation.ports import CancellationPort
+from agent_eval_workers.cancellation.redis_registry import RedisCancellationRegistry
 from agent_eval_workers.cancellation.registry import InMemoryCancellationRegistry
 
 __all__ = [
     "CancellationPort",
     "InMemoryCancellationRegistry",
+    "RedisCancellationRegistry",
 ]
