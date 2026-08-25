@@ -17,12 +17,15 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { ApiError } from "@/lib/api/client";
 
+const launchRunClassName =
+  "ef-auth-primary-fill border-0 shadow-[0_2px_12px_var(--ef-auth-primary-glow)] hover:bg-transparent hover:brightness-110";
+
 export function DashboardPage() {
   const query = useDashboardData();
 
   if (query.isLoading) {
     return (
-      <PageLayout width="full" className="max-w-7xl">
+      <PageLayout width="full">
         <DetailSkeleton withInspector={false} />
       </PageLayout>
     );
@@ -30,7 +33,7 @@ export function DashboardPage() {
 
   if (query.isError) {
     return (
-      <PageLayout width="full" className="max-w-7xl">
+      <PageLayout width="full">
         <ErrorContent
           fill
           title="Couldn’t load overview"
@@ -54,18 +57,15 @@ export function DashboardPage() {
 
   if (snapshot.isEmpty) {
     return (
-      <PageLayout width="full" className="max-w-7xl">
+      <PageLayout width="full">
         <FadeIn>
           <PageHeader
             eyebrow="Workspace"
             title="Overview"
             description="Here's what's happening with your evaluations."
+            className="space-y-2 [&_.flex]:gap-3"
             actions={
-              <Button
-                asChild
-                size="lg"
-                className="ef-auth-primary-fill border-0 hover:bg-transparent"
-              >
+              <Button asChild size="md" className={launchRunClassName}>
                 <Link href="/runs/new" className="inline-flex items-center gap-2">
                   <Icon icon={Play} size="sm" aria-hidden />
                   Launch run
@@ -73,7 +73,7 @@ export function DashboardPage() {
               </Button>
             }
           />
-          <div className="mt-8">
+          <div className="mt-5">
             <DashboardEmpty />
           </div>
         </FadeIn>
@@ -82,18 +82,15 @@ export function DashboardPage() {
   }
 
   return (
-    <PageLayout width="full" className="max-w-7xl">
+    <PageLayout width="full">
       <FadeIn>
         <PageHeader
           eyebrow="Workspace"
           title="Overview"
           description="Here's what's happening with your evaluations."
+          className="space-y-2 [&_.flex]:gap-3"
           actions={
-            <Button
-              asChild
-              size="lg"
-              className="ef-auth-primary-fill border-0 shadow-[0_4px_24px_var(--ef-auth-primary-glow)] hover:bg-transparent"
-            >
+            <Button asChild size="md" className={launchRunClassName}>
               <Link href="/runs/new" className="inline-flex items-center gap-2">
                 <Icon icon={Play} size="sm" aria-hidden />
                 Launch run
@@ -102,10 +99,14 @@ export function DashboardPage() {
           }
         />
 
-        <div className="mt-8 space-y-8">
+        <div className="mt-5 space-y-5">
           <EvaluationHealthStrip health={snapshot.health} />
 
-          <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
+          <Section title="Quick actions" description="What should you do next?">
+            <QuickActions />
+          </Section>
+
+          <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
             <Section
               title="Recent evaluations"
               className="lg:col-span-2"
@@ -122,14 +123,22 @@ export function DashboardPage() {
               />
             </Section>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               <Section
                 title="Active executions"
                 description="Queued, running, and grading right now."
+                actions={
+                  snapshot.activeRuns.length > 0 ? (
+                    <Button asChild variant="ghost" size="sm" className="text-[var(--ef-accent)]">
+                      <Link href="/runs">View all</Link>
+                    </Button>
+                  ) : null
+                }
               >
                 <ActiveExecution
                   runs={snapshot.activeRuns}
                   projectNameById={snapshot.projectNameById}
+                  agentNameByVersionId={snapshot.agentNameByVersionId}
                 />
               </Section>
 
@@ -149,10 +158,6 @@ export function DashboardPage() {
               </Section>
             </div>
           </div>
-
-          <Section title="Quick actions" description="What should you do next?">
-            <QuickActions />
-          </Section>
 
           <Text variant="caption" className="block text-muted-foreground">
             Health and feeds sample up to eight recent projects — open Projects or Runs for the full

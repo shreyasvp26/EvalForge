@@ -5,9 +5,12 @@ import Link from "next/link";
 export function EvalForgeMark({
   className,
   size = "md",
+  glow = true,
 }: {
   className?: string;
   size?: "sm" | "md";
+  /** Soft mark glow — keep for landing, reduce in dense shell chrome. */
+  glow?: boolean;
 }) {
   const box = size === "sm" ? "h-7 w-7" : "h-8 w-8";
   const icon = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
@@ -17,7 +20,8 @@ export function EvalForgeMark({
     <span
       aria-hidden
       className={cn(
-        "relative flex shrink-0 items-center justify-center rounded-[var(--ef-radius-control)] border border-[var(--ef-auth-feature-border)] bg-[var(--ef-auth-feature-bg)] shadow-[0_0_16px_var(--ef-auth-primary-glow)]",
+        "relative flex shrink-0 items-center justify-center rounded-[var(--ef-radius-control)] border border-[var(--ef-auth-feature-border)] bg-[var(--ef-auth-feature-bg)]",
+        glow && "shadow-[0_0_16px_var(--ef-auth-primary-glow)]",
         box,
         className,
       )}

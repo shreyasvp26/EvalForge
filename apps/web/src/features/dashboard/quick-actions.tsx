@@ -60,18 +60,18 @@ const toneClass: Record<(typeof ACTIONS)[number]["tone"], string> = {
 
 export function QuickActions() {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
       {ACTIONS.map((action) => (
         <li key={action.href}>
           <Link
             href={action.href}
             className={cn(
-              "group flex h-full items-start gap-3 rounded-[var(--ef-radius-panel)] border border-border bg-card p-4 shadow-ef-sm transition-[border-color,box-shadow,transform] duration-[var(--ef-duration-fast)] hover:-translate-y-0.5 hover:border-[var(--ef-auth-feature-border)] hover:shadow-[0_8px_28px_var(--ef-accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0",
+              "group flex h-full items-start gap-2.5 rounded-[var(--ef-radius-panel)] border border-border bg-card px-3 py-2.5 transition-[border-color,background-color,box-shadow] duration-[var(--ef-duration-fast)] hover:border-border-strong hover:bg-muted/25 hover:shadow-ef-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
           >
             <span
               className={cn(
-                "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--ef-radius-control)]",
+                "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ef-radius-control)]",
                 toneClass[action.tone],
               )}
             >
@@ -81,14 +81,14 @@ export function QuickActions() {
               <Text as="span" variant="body" className="block font-medium text-foreground">
                 {action.label}
               </Text>
-              <Text as="span" variant="caption" className="mt-1 block text-muted-foreground">
+              <Text as="span" variant="caption" className="mt-0.5 block text-muted-foreground">
                 {action.hint}
               </Text>
             </span>
             <Icon
               icon={ArrowRight}
               size="sm"
-              className="mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:opacity-60"
+              className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:opacity-60"
               aria-hidden
             />
           </Link>

@@ -51,7 +51,7 @@ function NavLink({
         "group relative flex items-center gap-2.5 rounded-[var(--ef-radius-control)] text-[length:var(--ef-text-body)] transition-[background-color,color,box-shadow] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
         active
-          ? "bg-[var(--ef-accent-muted)] font-medium text-foreground shadow-[inset_0_0_0_1px_var(--ef-auth-feature-border),0_0_20px_var(--ef-accent-glow)]"
+          ? "bg-[var(--ef-accent-muted)] font-medium text-foreground shadow-[inset_0_0_0_1px_var(--ef-auth-feature-border),0_0_8px_rgb(124_58_237_/_0.14)]"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
       )}
       {...(active ? { "aria-current": "page" as const } : {})}
@@ -134,7 +134,7 @@ export function Sidebar({
             className="flex min-w-0 flex-1 items-center gap-2.5 rounded-[var(--ef-radius-control)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             {...(onNavigate !== undefined ? { onClick: onNavigate } : {})}
           >
-            <EvalForgeMark size="sm" />
+            <EvalForgeMark size="sm" glow={false} />
             <span className="min-w-0">
               <span className="block truncate font-mono text-[length:var(--ef-text-body)] font-semibold uppercase tracking-[0.16em] text-foreground">
                 EvalForge
@@ -148,7 +148,7 @@ export function Sidebar({
             className="rounded-[var(--ef-radius-control)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             {...(onNavigate !== undefined ? { onClick: onNavigate } : {})}
           >
-            <EvalForgeMark size="sm" />
+            <EvalForgeMark size="sm" glow={false} />
           </Link>
         )}
         {showCollapseControl && onToggleCollapsed ? (

@@ -4,13 +4,7 @@ import { Play, Text, cn } from "@agent-eval/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import {
-  formatDashboardDate,
-  formatRelativeTime,
-  primaryScoreLabel,
-  runPassSignal,
-  truncateId,
-} from "./utils";
+import { formatRelativeTime, primaryScoreLabel, runPassSignal, truncateId } from "./utils";
 
 import type { Run } from "@/lib/api/runs";
 
@@ -46,14 +40,14 @@ export function RecentEvaluations({
 
   return (
     <div className="overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-card shadow-ef-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[40rem] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-border bg-muted/25">
+      <div className="max-h-[20.5rem] overflow-auto">
+        <table className="w-full min-w-[36rem] border-collapse text-left">
+          <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
+            <tr>
               {["Status", "Run", "Project", "Score", "Started"].map((heading) => (
                 <th
                   key={heading}
-                  className="px-4 py-3 font-mono text-[length:var(--ef-text-caption)] font-medium uppercase tracking-[0.1em] text-muted-foreground"
+                  className="bg-muted/40 px-3 py-2 font-mono text-[length:var(--ef-text-caption)] font-medium uppercase tracking-[0.1em] text-muted-foreground"
                 >
                   {heading}
                 </th>
@@ -69,7 +63,7 @@ export function RecentEvaluations({
               return (
                 <tr
                   key={run.id}
-                  className="group cursor-pointer border-b border-border/80 last:border-b-0 transition-colors hover:bg-[var(--ef-accent-muted)]/35"
+                  className="group cursor-pointer border-b border-border/70 last:border-b-0 transition-colors hover:bg-muted/40"
                   onClick={() => {
                     router.push(`/runs/${run.id}`);
                   }}
@@ -82,15 +76,15 @@ export function RecentEvaluations({
                   tabIndex={0}
                   role="link"
                 >
-                  <td className="px-4 py-3.5">
+                  <td className="px-3 py-2">
                     <StatusBadge status={run.status} passed={passed} size="sm" />
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-3 py-2">
                     <span className="font-mono text-[length:var(--ef-text-caption)] text-foreground group-hover:text-[var(--ef-accent)]">
                       {truncateId(run.id, 14)}
                     </span>
                   </td>
-                  <td className="max-w-[14rem] truncate px-4 py-3.5">
+                  <td className="max-w-[11rem] truncate px-3 py-2">
                     <Link
                       href={`/projects/${run.pins.project_id}`}
                       className="text-[length:var(--ef-text-body)] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -101,31 +95,28 @@ export function RecentEvaluations({
                       {projectName}
                     </Link>
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-3 py-2">
                     <span
                       className={cn(
-                        "font-mono text-[length:var(--ef-text-body)] font-medium tabular-nums",
+                        "font-mono text-[length:var(--ef-text-caption)] font-medium tabular-nums",
                         scoreTone(passed),
                       )}
                     >
                       {score ?? "—"}
                     </span>
                     {passed === true ? (
-                      <Text as="span" variant="caption" className="ml-2 text-success">
+                      <Text as="span" variant="caption" className="ml-1.5 text-success">
                         PASS
                       </Text>
                     ) : null}
                     {passed === false ? (
-                      <Text as="span" variant="caption" className="ml-2 text-danger">
+                      <Text as="span" variant="caption" className="ml-1.5 text-danger">
                         FAIL
                       </Text>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3.5 text-[length:var(--ef-text-caption)] tabular-nums text-muted-foreground">
-                    <span className="block">{formatRelativeTime(run.created_at)}</span>
-                    <span className="mt-0.5 block opacity-70">
-                      {formatDashboardDate(run.created_at)}
-                    </span>
+                  <td className="px-3 py-2 text-[length:var(--ef-text-caption)] tabular-nums text-muted-foreground">
+                    {formatRelativeTime(run.created_at)}
                   </td>
                 </tr>
               );

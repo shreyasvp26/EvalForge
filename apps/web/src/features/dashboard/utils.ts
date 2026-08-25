@@ -185,6 +185,7 @@ export interface DashboardSnapshot {
   failures: Run[];
   results: DashboardScoreRow[];
   projectNameById: Record<string, string>;
+  agentNameByVersionId: Record<string, string>;
   isEmpty: boolean;
 }
 
@@ -202,6 +203,13 @@ export function buildDashboardSnapshot(input: {
   const projectNameById = Object.fromEntries(
     input.projects.map((project) => [project.id, project.name]),
   );
+
+  const agentNameByVersionId: Record<string, string> = {};
+  for (const agent of input.agents) {
+    for (const version of agent.versions) {
+      agentNameByVersionId[version.id] = agent.name;
+    }
+  }
 
   const runs = sortByDateDesc(input.runs, (run) => run.created_at);
   const suites = sortByDateDesc(input.suites, latestResourceAt);
@@ -267,6 +275,7 @@ export function buildDashboardSnapshot(input: {
     failures,
     results: results.slice(0, DASHBOARD_RESULTS_LIMIT),
     projectNameById,
+    agentNameByVersionId,
     isEmpty,
   };
 }

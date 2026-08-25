@@ -22,69 +22,40 @@ function MetricCard({
   tone?: "primary" | "success" | "running" | "danger";
 }) {
   const toneStyles = {
-    primary: {
-      icon: "bg-[var(--ef-accent-muted)] text-[var(--ef-accent)]",
-      glow: "group-hover:shadow-[0_0_24px_var(--ef-accent-glow)]",
-    },
-    success: {
-      icon: "bg-success-muted text-success",
-      glow: "group-hover:shadow-[0_0_20px_rgb(15_122_69/0.15)]",
-    },
-    running: {
-      icon: "bg-running-muted text-running",
-      glow: "group-hover:shadow-[0_0_20px_rgb(47_95_158/0.15)]",
-    },
-    danger: {
-      icon: "bg-danger-muted text-danger",
-      glow: "group-hover:shadow-[0_0_20px_rgb(180_35_24/0.12)]",
-    },
+    primary: "bg-[var(--ef-accent-muted)] text-[var(--ef-accent)]",
+    success: "bg-success-muted text-success",
+    running: "bg-running-muted text-running",
+    danger: "bg-danger-muted text-danger",
   } as const;
 
   return (
     <Link
       href={href}
-      className={cn(
-        "group relative overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-card p-4 shadow-ef-sm transition-[border-color,box-shadow,transform] duration-[var(--ef-duration-fast)] hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-5",
-        toneStyles[tone].glow,
-      )}
+      className="group rounded-[var(--ef-radius-panel)] border border-border bg-card px-3.5 py-3 shadow-ef-sm transition-[border-color,background-color] duration-[var(--ef-duration-fast)] hover:border-border-strong hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full opacity-40 blur-2xl"
-        style={{
-          background:
-            tone === "primary"
-              ? "var(--ef-accent-glow)"
-              : tone === "success"
-                ? "rgb(15 122 69 / 0.2)"
-                : tone === "running"
-                  ? "rgb(47 95 158 / 0.2)"
-                  : "rgb(180 35 24 / 0.18)",
-        }}
-      />
-      <div className="relative flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 space-y-1.5">
           <Text
             as="div"
             variant="caption"
-            className="font-mono uppercase tracking-[0.12em] text-muted-foreground"
+            className="font-mono uppercase tracking-[0.1em] text-muted-foreground"
           >
             {label}
           </Text>
           <Text
             as="div"
-            className="text-[clamp(1.75rem,2.5vw,2.25rem)] font-semibold leading-none tracking-tight tabular-nums text-foreground"
+            className="text-[length:var(--ef-text-page)] font-semibold leading-none tracking-tight tabular-nums text-foreground sm:text-[1.5rem]"
           >
             {value}
           </Text>
-          <Text as="p" variant="caption" className="text-muted-foreground">
+          <Text as="p" variant="caption" className="line-clamp-1 text-muted-foreground">
             {context}
           </Text>
         </div>
         <span
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ef-radius-control)]",
-            toneStyles[tone].icon,
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ef-radius-control)]",
+            toneStyles[tone],
           )}
         >
           <Icon icon={icon} size="sm" aria-hidden />
@@ -107,7 +78,7 @@ export function EvaluationHealthStrip({ health }: { health: EvaluationHealth }) 
       : `From ${String(health.sampledRuns)} recent sampled runs`;
 
   return (
-    <section aria-label="Evaluation health" className="space-y-3">
+    <section aria-label="Evaluation health" className="space-y-2.5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <Text as="div" variant="body" className="font-medium text-foreground">
@@ -124,7 +95,7 @@ export function EvaluationHealthStrip({ health }: { health: EvaluationHealth }) 
           Open runs
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-3">
         <MetricCard
           label="Recent runs"
           value={String(health.sampledRuns)}
