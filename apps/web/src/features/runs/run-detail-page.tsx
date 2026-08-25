@@ -82,6 +82,18 @@ export function RunDetailPage({ runId }: { runId: string }) {
     return undefined;
   }, [casesQuery.data, runQuery.data?.pins.case_version_id]);
 
+  const pinnedPrompt = useMemo(() => {
+    const promptVersionId = runQuery.data?.pins.prompt_version_id;
+    if (!promptVersionId) return null;
+    for (const caseItem of casesQuery.data?.items ?? []) {
+      const version = caseItem.prompt_versions.find((item) => item.id === promptVersionId);
+      if (version) {
+        return version;
+      }
+    }
+    return null;
+  }, [casesQuery.data, runQuery.data?.pins.prompt_version_id]);
+
   const agentLabel = useMemo(() => {
     const agentVersionId = runQuery.data?.pins.agent_version_id;
     if (!agentVersionId) return undefined;
@@ -234,6 +246,24 @@ export function RunDetailPage({ runId }: { runId: string }) {
           )}
 
           <div className="grid gap-6 lg:grid-cols-3">
+            <Section
+              title="Evaluation input"
+              className="lg:col-span-3"
+              description="Pinned prompt content delivered to the agent for this run."
+            >
+              {pinnedPrompt ? (
+                <pre className="max-h-56 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-3 font-mono text-[length:var(--ef-text-caption)] whitespace-pre-wrap">
+                  {pinnedPrompt.content}
+                </pre>
+              ) : (
+                <Text variant="secondary">
+                  {casesQuery.isLoading
+                    ? "Loading prompt…"
+                    : "Pinned prompt content could not be resolved from the project cases."}
+                </Text>
+              )}
+            </Section>
+
             <Section
               title="Execution timeline"
               className="lg:col-span-2"
