@@ -182,6 +182,7 @@ def sample_provenance(**overrides: Any) -> RunProvenanceDTO:
         event_count=0,
         artifact_count=0,
         execution_mode=None,
+        execution_metadata={},
         reproducibility=ReproducibilityDTO(
             can_reproduce=True,
             missing=(),

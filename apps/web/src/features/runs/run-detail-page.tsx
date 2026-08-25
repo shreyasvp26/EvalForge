@@ -374,7 +374,11 @@ export function RunDetailPage({ runId }: { runId: string }) {
                   mono
                 />
                 <MetaField label="Adapter" value={adapterLabel ?? pins.adapter_version_id} mono />
-                <MetaField label="Execution mode" value="Worker-scoped (WORKER_ADAPTER_MODE)" />
+                <MetaField
+                  label="Execution mode"
+                  value={run.execution_mode ?? "Not yet recorded (worker sets on start)"}
+                  mono
+                />
               </div>
             </Section>
 

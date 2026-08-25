@@ -58,4 +58,5 @@ class RunProvenanceDTO:
     event_count: int
     artifact_count: int
     execution_mode: str | None
+    execution_metadata: dict[str, str]
     reproducibility: ReproducibilityDTO

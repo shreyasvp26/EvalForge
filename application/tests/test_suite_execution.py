@@ -6,6 +6,7 @@ from agent_eval_application.commands.run import (
     CompleteRunCommand,
     CreateRunCommand,
     FailRunCommand,
+    RecordExecutionConfigurationCommand,
     RecordScoreCommand,
     StartGradingCommand,
     StartRunCommand,
@@ -26,6 +27,7 @@ from agent_eval_application.use_cases.run import (
     CompleteRun,
     CreateRun,
     FailRun,
+    RecordExecutionConfiguration,
     RecordScore,
     StartGrading,
     StartRun,
@@ -144,6 +146,34 @@ def test_run_provenance_exposes_repo_and_adapter(world):
     assert provenance.adapter_name == "claude_code"
     assert provenance.grader_summaries
     assert provenance.platform_version_id == "platform-1.0.0"
+    assert provenance.execution_mode is None
+    assert provenance.execution_metadata == {}
+
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run.id, sandbox_id="sb-1")
+    )
+    RecordExecutionConfiguration(world["uow"], world["auth"], world["events"]).execute(
+        RecordExecutionConfigurationCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            execution_mode="deterministic",
+            metadata={
+                "adapter_key": "claude_code",
+                "sandbox_engine": "fake",
+                "api_key": "sk-leak",
+            },
+        )
+    )
+    provenance_after = GetRunProvenance(world["uow"], world["auth"]).execute(
+        GetRunProvenanceQuery(actor=world["actor"], run_id=run.id)
+    )
+    assert provenance_after.execution_mode == "deterministic"
+    assert provenance_after.execution_metadata == {
+        "adapter_key": "claude_code",
+        "sandbox_engine": "fake",
+    }
+    assert "api_key" not in provenance_after.execution_metadata
+    assert "sk-leak" not in str(provenance_after.execution_metadata)
 
 
 def _start_run(world, run_id: str) -> None:

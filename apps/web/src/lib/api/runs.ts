@@ -44,6 +44,8 @@ export interface Run {
   is_partially_graded: boolean;
   scores: Score[];
   telemetry?: RunTelemetry | null;
+  execution_mode?: string | null;
+  execution_metadata?: Record<string, string>;
 }
 
 export interface RunTelemetry {
@@ -271,6 +273,7 @@ export interface RunProvenance {
   event_count: number;
   artifact_count: number;
   execution_mode: string | null;
+  execution_metadata: Record<string, string>;
   reproducibility: Reproducibility;
 }
 

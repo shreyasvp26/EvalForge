@@ -172,6 +172,8 @@ class RunResponse(BaseModel):
     is_partially_graded: bool
     scores: list[ScoreResponse]
     telemetry: RunTelemetryResponse | None = None
+    execution_mode: str | None = None
+    execution_metadata: dict[str, str] = Field(default_factory=dict)
 
     @classmethod
     def from_dto(cls, dto: RunDTO) -> RunResponse:
@@ -207,6 +209,8 @@ class RunResponse(BaseModel):
                 estimated_cost=None,
                 provider_usage_available=telem.provider_usage_available,
             ),
+            execution_mode=dto.execution_mode,
+            execution_metadata=dict(dto.execution_metadata),
         )
 
 
@@ -262,6 +266,7 @@ class RunProvenanceResponse(BaseModel):
     event_count: int
     artifact_count: int
     execution_mode: str | None = None
+    execution_metadata: dict[str, str] = Field(default_factory=dict)
     reproducibility: ReproducibilityResponse
 
 

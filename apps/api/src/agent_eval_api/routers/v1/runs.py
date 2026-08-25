@@ -260,6 +260,7 @@ def get_run_provenance(
         event_count=dto.event_count,
         artifact_count=dto.artifact_count,
         execution_mode=dto.execution_mode,
+        execution_metadata=dict(dto.execution_metadata),
         reproducibility=ReproducibilityResponse(
             can_reproduce=dto.reproducibility.can_reproduce,
             missing=list(dto.reproducibility.missing),

@@ -21,6 +21,10 @@ from agent_eval_domain.common.ids import (
     SuiteId,
     SuiteVersionId,
 )
+from agent_eval_domain.execution.configuration import (
+    ExecutionConfiguration,
+    ExecutionMode,
+)
 from agent_eval_domain.execution.entities import ArtifactKind, ExecutionCost, ScoreValue
 from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.ndm_codec import action_from_payload, action_to_payload
@@ -33,6 +37,7 @@ from agent_eval_application.commands.run import (
     CreateRunCommand,
     FailRunCommand,
     RecordArtifactCommand,
+    RecordExecutionConfigurationCommand,
     RecordExecutionEventCommand,
     RecordRunTelemetryCommand,
     RecordScoreCommand,
@@ -415,6 +420,47 @@ class RecordRunTelemetry:
                 # Idempotent: first write wins.
                 return RunDTO.from_domain(run), []
             with_domain_errors(lambda: run.record_cost(cost))
+            uow.runs.save(run)
+            return RunDTO.from_domain(run), collect_events(run)
+
+        return run_in_uow(self._uow_factory, self._events, work)
+
+
+class RecordExecutionConfiguration:
+    """Persist effective execution mode + safe metadata for a Run."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+        events: DomainEventDispatcher,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+        self._events = events
+
+    def execute(self, command: RecordExecutionConfigurationCommand) -> RunDTO:
+        run_id = RunId(require_non_empty(command.run_id, field="run_id"))
+        mode_raw = require_non_empty(command.execution_mode, field="execution_mode")
+        try:
+            mode = ExecutionMode(mode_raw.strip().lower())
+        except ValueError as exc:
+            raise ApplicationValidationError(
+                "execution_mode must be 'deterministic' or 'live'",
+                field="execution_mode",
+                code="INVALID_EXECUTION_MODE",
+            ) from exc
+        configuration = ExecutionConfiguration(
+            mode=mode,
+            metadata=dict(command.metadata or {}),
+        )
+
+        def work(uow):
+            run = uow.runs.get(run_id)
+            self._auth.ensure_can_manage_project(command.actor, run.pins.project_id)
+            with_domain_errors(
+                lambda: run.record_execution_configuration(configuration)
+            )
             uow.runs.save(run)
             return RunDTO.from_domain(run), collect_events(run)
 

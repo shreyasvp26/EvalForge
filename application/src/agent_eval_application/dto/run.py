@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from agent_eval_domain.execution.run import EvaluationRun
@@ -88,6 +88,8 @@ class RunDTO:
     is_partially_graded: bool
     scores: tuple[ScoreDTO, ...]
     telemetry: RunTelemetryDTO
+    execution_mode: str | None = None
+    execution_metadata: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_domain(cls, run: EvaluationRun) -> RunDTO:
@@ -137,6 +139,10 @@ class RunDTO:
                 for score in run.scores
             ),
             telemetry=RunTelemetryDTO.from_cost(run.cost),
+            execution_mode=(
+                run.execution_mode.value if run.execution_mode is not None else None
+            ),
+            execution_metadata=dict(run.execution_metadata),
         )
 
 

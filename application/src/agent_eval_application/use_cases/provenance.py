@@ -132,7 +132,8 @@ class GetRunProvenance:
                 telemetry=dto.telemetry,
                 event_count=len(run.execution_events),
                 artifact_count=len(run.artifacts),
-                execution_mode=None,
+                execution_mode=dto.execution_mode,
+                execution_metadata=dict(dto.execution_metadata),
                 reproducibility=_build_reproducibility(
                     dto,
                     repository_url=repository_url,

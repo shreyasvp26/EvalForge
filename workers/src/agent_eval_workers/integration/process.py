@@ -18,6 +18,7 @@ from typing import Protocol
 from agent_eval_adapters.claude_code import ClaudeCodeAdapter
 from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.models import RunMetadata
+from agent_eval_application.commands.run import RecordExecutionConfigurationCommand
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.queries.queries import GetRunQuery
 from agent_eval_application.use_cases.agent import ListAdapters
@@ -31,6 +32,7 @@ from agent_eval_application.use_cases.run import (
     GetRunArtifacts,
     GetRunEvents,
     RecordArtifact,
+    RecordExecutionConfiguration,
     RecordExecutionEvent,
     RecordRunTelemetry,
     RecordScore,
@@ -265,6 +267,13 @@ def build_production_lifecycle_factory(
         list_adapters=list_adapters,
         mode=adapter_mode,
     )
+    record_execution_configuration = RecordExecutionConfiguration(
+        uow_factory, worker_auth, events
+    )
+    effective_adapter_mode = resolve_adapter_mode(adapter_mode)
+    sandbox_engine_label = (
+        "fake" if isinstance(docker_engine, FakeDockerEngine) else "docker"
+    )
 
     def run_metadata_factory(run_id: RunId) -> RunMetadata:
         dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
@@ -278,12 +287,34 @@ def build_production_lifecycle_factory(
 
     def resolve_adapter_factory(run_id: RunId) -> AdapterFactory:
         try:
-            return pinned_adapter_resolver.resolve_factory(run_id)
+            key, name, version_id = pinned_adapter_resolver.resolve_key(run_id)
+            factory = pinned_adapter_resolver.resolve_factory(run_id)
         except AdapterResolutionError as exc:
             raise RecoverableExecutionError(
                 str(exc),
                 cause=FailureCause.ADAPTER_FAILURE,
             ) from exc
+        try:
+            record_execution_configuration.execute(
+                RecordExecutionConfigurationCommand(
+                    actor=system_actor,
+                    run_id=run_id.value,
+                    execution_mode=effective_adapter_mode,
+                    metadata={
+                        "adapter_key": key,
+                        "adapter_name": name,
+                        "adapter_version_id": version_id,
+                        "sandbox_engine": sandbox_engine_label,
+                        "worker_adapter_mode_source": "WORKER_ADAPTER_MODE",
+                    },
+                )
+            )
+        except Exception:  # noqa: BLE001 — config persistence must not block execution
+            logger.exception(
+                "execution_configuration_persist_failed",
+                run_id=run_id.value,
+            )
+        return factory
 
     # Injected factory overrides pin resolution (tests / explicit composition).
     # When absent, resolve from the Run's pinned Adapter Version at start time.

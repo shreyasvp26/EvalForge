@@ -86,6 +86,19 @@ class RecordRunTelemetryCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordExecutionConfigurationCommand:
+    """Persist the effective execution configuration used for a Run.
+
+    Must never include secrets, API keys, or credential-bearing env values.
+    """
+
+    actor: Actor
+    run_id: str
+    execution_mode: str
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
 class RecordScoreCommand:
     """Persist a Score produced by the Grader Layer via Application."""
 
