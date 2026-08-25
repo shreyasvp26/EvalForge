@@ -23,7 +23,7 @@ import { PermissionDeniedState } from "@/components/patterns/permission-denied-s
 import { agentsQueryKey } from "@/features/agents/utils";
 import { casesQueryKey } from "@/features/cases/utils";
 import { projectQueryKey } from "@/features/projects/utils";
-import { listAgents } from "@/lib/api/agents";
+import { listAdapters, listAgents } from "@/lib/api/agents";
 import { listCases } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
 import { getProject } from "@/lib/api/projects";
@@ -60,27 +60,21 @@ export function RunDetailPage({ runId }: { runId: string }) {
     },
   });
 
-  const agentsQuery = useQuery({
-    queryKey: [...agentsQueryKey, "run-detail"],
-    enabled: Boolean(token),
-    queryFn: async () => {
-      if (!token) throw new Error("Missing auth token");
-      return listAgents(token, { limit: 100 });
-    },
-  });
-
-  const caseLabel = useMemo(() => {
+  const pinnedCaseVersion = useMemo(() => {
     const caseVersionId = runQuery.data?.pins.case_version_id;
-    if (!caseVersionId) return undefined;
+    if (!caseVersionId) return null;
     for (const caseItem of casesQuery.data?.items ?? []) {
-      for (const version of caseItem.versions) {
-        if (version.id === caseVersionId) {
-          return `${caseItem.name} · v${String(version.version_number)}`;
-        }
+      const version = caseItem.versions.find((item) => item.id === caseVersionId);
+      if (version) {
+        return { caseName: caseItem.name, version };
       }
     }
-    return undefined;
+    return null;
   }, [casesQuery.data, runQuery.data?.pins.case_version_id]);
+
+  const caseLabel = pinnedCaseVersion
+    ? `${pinnedCaseVersion.caseName} · v${String(pinnedCaseVersion.version.version_number)}`
+    : undefined;
 
   const pinnedPrompt = useMemo(() => {
     const promptVersionId = runQuery.data?.pins.prompt_version_id;
@@ -94,6 +88,24 @@ export function RunDetailPage({ runId }: { runId: string }) {
     return null;
   }, [casesQuery.data, runQuery.data?.pins.prompt_version_id]);
 
+  const agentsQuery = useQuery({
+    queryKey: [...agentsQueryKey, "run-detail"],
+    enabled: Boolean(token),
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return listAgents(token, { limit: 100 });
+    },
+  });
+
+  const adaptersQuery = useQuery({
+    queryKey: [...agentsQueryKey, "adapters", "run-detail"],
+    enabled: Boolean(token),
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return listAdapters(token, { limit: 100 });
+    },
+  });
+
   const agentLabel = useMemo(() => {
     const agentVersionId = runQuery.data?.pins.agent_version_id;
     if (!agentVersionId) return undefined;
@@ -106,6 +118,19 @@ export function RunDetailPage({ runId }: { runId: string }) {
     }
     return undefined;
   }, [agentsQuery.data, runQuery.data?.pins.agent_version_id]);
+
+  const adapterLabel = useMemo(() => {
+    const adapterVersionId = runQuery.data?.pins.adapter_version_id;
+    if (!adapterVersionId) return undefined;
+    for (const adapter of adaptersQuery.data?.items ?? []) {
+      for (const version of adapter.versions) {
+        if (version.id === adapterVersionId) {
+          return `${adapter.name} · v${String(version.version_number)}`;
+        }
+      }
+    }
+    return undefined;
+  }, [adaptersQuery.data, runQuery.data?.pins.adapter_version_id]);
 
   if (runQuery.isLoading) {
     return (
@@ -246,6 +271,27 @@ export function RunDetailPage({ runId }: { runId: string }) {
           )}
 
           <div className="grid gap-6 lg:grid-cols-3">
+            <Section
+              title="Evaluation target"
+              className="lg:col-span-3"
+              description="Repository revision and adapter resolved from immutable pins."
+            >
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <MetaField
+                  label="Repository"
+                  value={pinnedCaseVersion?.version.repository_url ?? "—"}
+                  mono
+                />
+                <MetaField
+                  label="Commit"
+                  value={pinnedCaseVersion?.version.commit_sha ?? "—"}
+                  mono
+                />
+                <MetaField label="Adapter" value={adapterLabel ?? pins.adapter_version_id} mono />
+                <MetaField label="Execution mode" value="Worker-scoped (WORKER_ADAPTER_MODE)" />
+              </div>
+            </Section>
+
             <Section
               title="Evaluation input"
               className="lg:col-span-3"
