@@ -26,10 +26,11 @@ test.describe("critical product path", () => {
     await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.getByRole("heading", { name: "Evaluation overview" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible({
       timeout: 20_000,
     });
     await expect(page.getByRole("region", { name: "Evaluation health" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Launch run" }).first()).toBeVisible();
 
     await page.locator('nav[aria-label="Primary"] a[href="/projects"]').click();
     await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
