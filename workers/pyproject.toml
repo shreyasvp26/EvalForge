@@ -53,6 +53,7 @@ pythonpath = [
 addopts = ["-q", "--strict-markers"]
 markers = [
   "integration: requires a live Docker daemon",
+  "gemini_live: requires live Gemini API credentials and Gemini CLI in sandbox image",
 ]
 
 [dependency-groups]

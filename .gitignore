@@ -79,3 +79,6 @@ apps/web/blob-report/
 *.tmp
 *.temp
 .direnv/
+
+# Nested git repositories used as canonical evaluation sources
+evaluations/canonical/*/.git/
