@@ -237,6 +237,9 @@ def get_run_provenance(
         adapter_name=dto.adapter_name,
         adapter_version_label=dto.adapter_version_label,
         adapter_key=dto.adapter_key,
+        platform_name=dto.platform_name,
+        platform_version_label=dto.platform_version_label,
+        platform_policy_summaries=dto.platform_policy_summaries,
         grader_summaries=[dict(row) for row in dto.grader_summaries],
         score_aggregate=ScoreAggregateResponse(
             passed=dto.score_aggregate.passed,

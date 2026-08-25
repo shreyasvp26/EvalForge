@@ -14,6 +14,7 @@ from agent_eval_domain.repositories import (
     AgentRepository,
     CaseRepository,
     GraderRepository,
+    PlatformRepository,
     ProjectRepository,
     RunRepository,
     SuiteRepository,
@@ -40,6 +41,9 @@ class UnitOfWork(Protocol):
 
     @property
     def graders(self) -> GraderRepository: ...
+
+    @property
+    def platforms(self) -> PlatformRepository: ...
 
     @property
     def runs(self) -> RunRepository: ...

@@ -79,6 +79,7 @@ from fakes import (
     RecordingEventDispatcher,
     RecordingRunQueue,
     SharedStore,
+    add_published_platform,
 )
 
 
@@ -92,6 +93,7 @@ def world():
     events = RecordingEventDispatcher()
     queue = RecordingRunQueue()
     actor = Actor(id="user-1")
+    platform_version = add_published_platform(store)
 
     project = CreateProject(uow, ids, auth, events).execute(
         CreateProjectCommand(actor=actor, name="P")
@@ -176,6 +178,7 @@ def world():
         "adapter_version_id": adv.id,
         "grader_id": grader.id,
         "grader_version_id": gv.id,
+        "platform_version_id": platform_version.id.value,
     }
 
 
@@ -198,7 +201,7 @@ def _create_run(world, *, idempotency_key: str | None = None):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-1.0.0",
+            platform_version_id=world["platform_version_id"],
             idempotency_key=idempotency_key,
         )
     )

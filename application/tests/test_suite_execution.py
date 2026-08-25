@@ -94,7 +94,7 @@ def test_create_suite_runs_fan_out(world):
             agent_id=world["agent_id"],
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
-            platform_version_id="platform-suite-1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     assert execution.total_cases == 1
@@ -134,7 +134,7 @@ def test_run_provenance_exposes_repo_and_adapter(world):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-1.0.0",
+            platform_version_id=world["platform_version_id"],
         )
     )
     provenance = GetRunProvenance(world["uow"], world["auth"]).execute(
@@ -145,7 +145,12 @@ def test_run_provenance_exposes_repo_and_adapter(world):
     assert provenance.adapter_key == "claude_code"
     assert provenance.adapter_name == "claude_code"
     assert provenance.grader_summaries
-    assert provenance.platform_version_id == "platform-1.0.0"
+    assert provenance.platform_version_id == world["platform_version_id"]
+    assert provenance.platform_name == "Test Platform"
+    assert provenance.platform_version_label == "Test Platform v1"
+    assert provenance.platform_policy_summaries["sandbox"] == {
+        "network_mode": "isolated"
+    }
     assert provenance.execution_mode is None
     assert provenance.execution_metadata == {}
 
@@ -252,7 +257,7 @@ def test_suite_aggregate_evaluation_failed_vs_execution_failed(world):
             agent_id=world["agent_id"],
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
-            platform_version_id="platform-suite-1",
+            platform_version_id=world["platform_version_id"],
             idempotency_key="suite-exec-1",
         )
     )
@@ -278,7 +283,7 @@ def test_suite_aggregate_evaluation_failed_vs_execution_failed(world):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-suite-1",
+            platform_version_id=world["platform_version_id"],
             suite_id=suite.id,
             suite_version_id=published.id,
         )

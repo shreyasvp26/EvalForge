@@ -5,6 +5,7 @@ from agent_eval_infrastructure.repositories.agent import SqlAlchemyAgentReposito
 from agent_eval_infrastructure.repositories.base import SqlAlchemyRepository
 from agent_eval_infrastructure.repositories.case import SqlAlchemyCaseRepository
 from agent_eval_infrastructure.repositories.grader import SqlAlchemyGraderRepository
+from agent_eval_infrastructure.repositories.platform import SqlAlchemyPlatformRepository
 from agent_eval_infrastructure.repositories.project import SqlAlchemyProjectRepository
 from agent_eval_infrastructure.repositories.run import SqlAlchemyRunRepository
 from agent_eval_infrastructure.repositories.suite import SqlAlchemySuiteRepository
@@ -17,5 +18,6 @@ __all__ = [
     "SqlAlchemyAgentRepository",
     "SqlAlchemyAdapterRepository",
     "SqlAlchemyGraderRepository",
+    "SqlAlchemyPlatformRepository",
     "SqlAlchemyRunRepository",
 ]

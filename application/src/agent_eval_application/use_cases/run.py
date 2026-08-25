@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from agent_eval_domain.common.errors import NotFoundError
 from agent_eval_domain.common.ids import (
     AdapterVersionId,
     AgentId,
@@ -168,6 +169,28 @@ def _resolve_pins(
         )
         suite_project_id = suite.project_id
 
+    platform_version_id = PlatformVersionId(
+        require_non_empty(command.platform_version_id, field="platform_version_id")
+    )
+    try:
+        platform_version = uow.platforms.get_version(platform_version_id)
+    except NotFoundError as exc:
+        raise ApplicationValidationError(
+            "Platform version was not found in the catalog",
+            code="PLATFORM_VERSION_NOT_FOUND",
+            details={"platform_version_id": platform_version_id.value},
+            cause=exc,
+        ) from exc
+    if not platform_version.is_pinnable():
+        raise ApplicationValidationError(
+            "Platform version is not published and cannot be pinned",
+            code="PLATFORM_VERSION_NOT_PINNABLE",
+            details={
+                "platform_version_id": platform_version_id.value,
+                "status": platform_version.status.value,
+            },
+        )
+
     return RunCreationCommand(
         run_id=run_id,
         project_id=project_id,
@@ -177,9 +200,7 @@ def _resolve_pins(
         agent_version=agent_version,
         adapter_version=adapter_version,
         grader_versions=tuple(grader_versions),
-        platform_version_id=PlatformVersionId(
-            require_non_empty(command.platform_version_id, field="platform_version_id")
-        ),
+        platform_version_id=platform_version_id,
         suite_version=suite_version,
         suite_project_id=suite_project_id,
     )
@@ -447,8 +468,8 @@ class RecordExecutionConfiguration:
         except ValueError as exc:
             raise ApplicationValidationError(
                 "execution_mode must be 'deterministic' or 'live'",
-                field="execution_mode",
                 code="INVALID_EXECUTION_MODE",
+                details={"field": "execution_mode"},
             ) from exc
         configuration = ExecutionConfiguration(
             mode=mode,

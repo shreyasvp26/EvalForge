@@ -89,7 +89,7 @@ def test_pinned_adapter_resolver_resolves_claude(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
 
@@ -174,7 +174,7 @@ def test_pinned_adapter_resolver_rejects_unmapped_name(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
 
@@ -215,7 +215,7 @@ def test_process_worker_uses_pin_registry_without_factory_override(world) -> Non
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()
@@ -278,7 +278,7 @@ def test_process_worker_fails_live_without_credentials(
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()

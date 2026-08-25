@@ -257,6 +257,9 @@ class RunProvenanceResponse(BaseModel):
     adapter_name: str | None
     adapter_version_label: str | None
     adapter_key: str | None
+    platform_name: str | None
+    platform_version_label: str | None
+    platform_policy_summaries: dict[str, dict[str, str]] = Field(default_factory=dict)
     grader_summaries: list[dict[str, Any]]
     score_aggregate: ScoreAggregateResponse
     expected_grader_count: int

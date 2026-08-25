@@ -13,6 +13,7 @@ from agent_eval_domain.repositories import (
     AgentRepository,
     CaseRepository,
     GraderRepository,
+    PlatformRepository,
     ProjectRepository,
     RunRepository,
     SuiteRepository,
@@ -29,6 +30,7 @@ from agent_eval_infrastructure.repositories import (
     SqlAlchemyAgentRepository,
     SqlAlchemyCaseRepository,
     SqlAlchemyGraderRepository,
+    SqlAlchemyPlatformRepository,
     SqlAlchemyProjectRepository,
     SqlAlchemyRunRepository,
     SqlAlchemySuiteRepository,
@@ -61,6 +63,7 @@ class SqlAlchemyUnitOfWork:
         self._agents: AgentRepository | None = None
         self._adapters: AdapterRepository | None = None
         self._graders: GraderRepository | None = None
+        self._platforms: PlatformRepository | None = None
         self._runs: RunRepository | None = None
 
     @property
@@ -91,6 +94,10 @@ class SqlAlchemyUnitOfWork:
     @property
     def graders(self) -> GraderRepository:
         return self._require_repo(self._graders, "graders")
+
+    @property
+    def platforms(self) -> PlatformRepository:
+        return self._require_repo(self._platforms, "platforms")
 
     @property
     def runs(self) -> RunRepository:
@@ -124,6 +131,7 @@ class SqlAlchemyUnitOfWork:
         self._agents = SqlAlchemyAgentRepository(session)
         self._adapters = SqlAlchemyAdapterRepository(session)
         self._graders = SqlAlchemyGraderRepository(session)
+        self._platforms = SqlAlchemyPlatformRepository(session)
         self._runs = SqlAlchemyRunRepository(session)
         return self
 
@@ -166,6 +174,7 @@ class SqlAlchemyUnitOfWork:
         self._agents = None
         self._adapters = None
         self._graders = None
+        self._platforms = None
         self._runs = None
 
 

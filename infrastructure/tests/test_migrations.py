@@ -28,6 +28,8 @@ EXPECTED_TABLES = {
     "adapter_versions",
     "graders",
     "grader_versions",
+    "platforms",
+    "platform_versions",
     "runs",
     "execution_events",
     "artifacts",
@@ -62,7 +64,7 @@ def test_upgrade_head_creates_schema(alembic_cfg: Config) -> None:
             version = conn.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar()
-        assert version == "f8c5d2e16a30"
+        assert version == "9a4d7c2e5b81"
     finally:
         engine.dispose()
 

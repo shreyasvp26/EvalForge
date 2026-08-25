@@ -118,5 +118,16 @@ class ListGradersQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class GetPlatformQuery:
+    actor: Actor
+    platform_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListPlatformsQuery:
+    actor: Actor
+
+
+@dataclass(frozen=True, slots=True)
 class GetCurrentUserQuery:
     actor: Actor

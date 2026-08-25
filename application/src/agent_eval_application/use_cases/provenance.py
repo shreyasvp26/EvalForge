@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from agent_eval_domain.common.ids import RunId
+from agent_eval_domain.common.errors import NotFoundError
+from agent_eval_domain.common.ids import PlatformVersionId, RunId
 
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.provenance import ReproducibilityDTO, RunProvenanceDTO
@@ -80,6 +81,26 @@ class GetRunProvenance:
             adapter_name, adapter_version_label, adapter_key = resolve_adapter_labels(
                 uow, dto
             )
+            platform_name = None
+            platform_version_label = None
+            platform_policy_summaries: dict[str, dict[str, str]] = {}
+            try:
+                platform_version = uow.platforms.get_version(
+                    PlatformVersionId(dto.pins.platform_version_id)
+                )
+                platform_version_label = platform_version.label
+                platform = uow.platforms.get(platform_version.platform_id)
+                platform_name = platform.name
+                platform_policy_summaries = {
+                    "sandbox": dict(platform_version.sandbox_policy),
+                    "execution": dict(platform_version.execution_policy),
+                    "timeout": dict(platform_version.timeout_policy),
+                    "environment": dict(platform_version.environment_policy),
+                    "grading": dict(platform_version.grading_policy),
+                }
+            except NotFoundError:
+                # Historical runs may predate the catalog migration.
+                pass
 
             grader_summaries: list[dict[str, object]] = []
             for grader in uow.graders.list_all():
@@ -124,6 +145,9 @@ class GetRunProvenance:
                 adapter_name=adapter_name,
                 adapter_version_label=adapter_version_label,
                 adapter_key=adapter_key,
+                platform_name=platform_name,
+                platform_version_label=platform_version_label,
+                platform_policy_summaries=platform_policy_summaries,
                 grader_summaries=tuple(grader_summaries),
                 score_aggregate=aggregate,
                 expected_grader_count=dto.expected_grader_count,
