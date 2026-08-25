@@ -282,6 +282,31 @@ def test_invalid_input_no_events() -> None:
     assert "no test command" in sink.scores[0].reason
 
 
+def test_test_pass_grader_workspace_result() -> None:
+    from types import SimpleNamespace
+
+    reader = InMemoryRunReader()
+    sink = CollectingSink()
+    result = SimpleNamespace(
+        passed=True,
+        command=("python3", "-m", "pytest", "tests/", "-q"),
+        exit_code=0,
+        timed_out=False,
+    )
+    ctx = GradingContext(
+        reader=reader,
+        grader_id=GraderId("grader-ws"),
+        grader_version_id=GraderVersionId("gv-ws"),
+        grader_version_label="v1",
+        grader_specification="workspace:python3 -m pytest tests/ -q",
+        correlation_id="grade-ws",
+        workspace_test_results={"gv-ws": result},
+    )
+    run_grader(TestPassGrader(), ctx, sink)
+    assert sink.scores[0].value.passed is True
+    assert "workspace test passed" in sink.scores[0].reason
+
+
 def test_cross_grader_duplicate_version_prevention() -> None:
     reader = InMemoryRunReader()
     reader.add_shell("pytest", 0)

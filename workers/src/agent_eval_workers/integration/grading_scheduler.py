@@ -76,6 +76,11 @@ class GraderSdkScheduler:
         )
         if self.workspace_probe is not None:
             self.workspace_probe(run_id, specs)
+        workspace_results = None
+        if self.workspace_probe is not None and hasattr(
+            self.workspace_probe, "workspace_results"
+        ):
+            workspace_results = self.workspace_probe.workspace_results()  # type: ignore[attr-defined]
         invocations: list[tuple[str, Grader, GradingContext]] = []
         for spec in specs:
             context = GradingContext(
@@ -86,6 +91,7 @@ class GraderSdkScheduler:
                 grader_specification=spec.specification,
                 correlation_id=f"grade-{run_id.value}-{spec.name}",
                 config=GradingConfig(timeout_seconds=60.0),
+                workspace_test_results=workspace_results,
             )
             invocations.append((spec.name, spec.factory(), context))
 
