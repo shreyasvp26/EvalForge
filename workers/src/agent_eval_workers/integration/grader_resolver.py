@@ -1,8 +1,8 @@
 """Resolve pinned Grader Versions into concrete Grader SDK invocations.
 
-Phase 1 canonical path: objective ``ExpectedFileGrader`` / ``DiffValidationGrader``
-from published grader pins. Rubric graders require an injectable judge and are
-skipped unless a factory is supplied.
+Maps objective pins to the built-in objective grader family. Rubric graders
+require an injectable judge and are skipped unless a factory is supplied —
+mixed runs still grade with any resolvable objective pins.
 """
 
 from __future__ import annotations
@@ -13,10 +13,21 @@ from dataclasses import dataclass
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.queries.queries import GetRunQuery, ListGradersQuery
 from agent_eval_domain.common.ids import RunId
-from agent_eval_graders.objective import DiffValidationGrader, ExpectedFileGrader
+from agent_eval_graders.objective import (
+    BuildSuccessGrader,
+    DiffValidationGrader,
+    ExitCodeGrader,
+    ExpectedFileGrader,
+    JSONOutputGrader,
+    LintGrader,
+    TestPassGrader,
+)
 from agent_eval_graders.sdk.grader import Grader
+from agent_eval_shared.log import get_logger
 
 from agent_eval_workers.integration.grading_scheduler import GraderInvocationSpec
+
+logger = get_logger(__name__)
 
 GraderFactory = Callable[[], Grader]
 
@@ -43,10 +54,47 @@ def _parse_expected_paths(specification: str) -> tuple[str, ...]:
     return ("main.py",)
 
 
+def _parse_required_keys(specification: str) -> tuple[str, ...]:
+    raw = specification.strip()
+    if not raw:
+        return ()
+    if raw.startswith("[") and raw.endswith("]"):
+        inner = raw[1:-1].strip()
+        if not inner:
+            return ()
+        return tuple(p.strip().strip("\"'") for p in inner.split(",") if p.strip())
+    if "," in raw:
+        return tuple(p.strip() for p in raw.split(",") if p.strip())
+    # Treat free-form non-path labels as a single required key when plausible.
+    token = raw.split()[0]
+    if "/" not in token and "." not in token:
+        return (token,)
+    return ()
+
+
 def _objective_factory(*, name: str, specification: str) -> GraderFactory:
+    """Map grader identity + specification heuristics to an objective factory."""
     lowered = f"{name} {specification}".lower()
+
     if "diff" in lowered:
         return DiffValidationGrader
+    if "build" in lowered:
+        return BuildSuccessGrader
+    if "test" in lowered and "expected" not in lowered:
+        return TestPassGrader
+    if "lint" in lowered:
+        return LintGrader
+    if "exit" in lowered or "exit_code" in lowered.replace(" ", "_"):
+        return ExitCodeGrader
+    if "json" in lowered:
+        keys = _parse_required_keys(specification)
+        return lambda: JSONOutputGrader(required_keys=keys)
+    if "expected" in lowered or "file" in lowered:
+        paths = _parse_expected_paths(specification)
+        return lambda: ExpectedFileGrader(expected_paths=paths)
+
+    # Default: path-oriented ExpectedFile — preserves Phase 1 behavior for
+    # free-form objective grader names that declare file paths in the spec.
     paths = _parse_expected_paths(specification)
     return lambda: ExpectedFileGrader(expected_paths=paths)
 
@@ -73,6 +121,7 @@ class PinBasedGraderResolver:
                 by_version[version.id] = (grader, version)
 
         specs: list[GraderInvocationSpec] = []
+        skipped_rubrics: list[str] = []
         for version_id in run.pins.grader_version_ids:
             matched = by_version.get(version_id)
             if matched is None:
@@ -87,7 +136,13 @@ class PinBasedGraderResolver:
 
             if family == "rubric":
                 if self.rubric_factory is None:
-                    # Phase 1: skip rubric pins when no judge is configured.
+                    skipped_rubrics.append(version_id)
+                    logger.warning(
+                        "rubric_grader_skipped_no_judge",
+                        run_id=run_id.value,
+                        grader_version_id=version_id,
+                        grader_name=name,
+                    )
                     continue
                 factory = self.rubric_factory(name, specification, label)
             else:
@@ -105,8 +160,13 @@ class PinBasedGraderResolver:
             )
 
         if not specs:
+            detail = ""
+            if skipped_rubrics:
+                detail = (
+                    f"; skipped rubric pins without judge: {', '.join(skipped_rubrics)}"
+                )
             raise LookupError(
                 "No invocable graders resolved from Run pins "
-                "(objective graders required for Phase 1; rubric needs a judge)"
+                f"(objective graders required; rubric needs a judge){detail}"
             )
         return tuple(specs)
