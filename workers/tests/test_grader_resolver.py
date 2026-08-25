@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+import pytest
+from agent_eval_application.common.actor import Actor
+from agent_eval_domain.common.ids import RunId
 from agent_eval_graders.objective import (
     BuildSuccessGrader,
     DiffValidationGrader,
@@ -11,7 +16,10 @@ from agent_eval_graders.objective import (
     LintGrader,
     TestPassGrader,
 )
-from agent_eval_workers.integration.grader_resolver import _objective_factory
+from agent_eval_workers.integration.grader_resolver import (
+    PinBasedGraderResolver,
+    _objective_factory,
+)
 
 
 def _make(name: str, specification: str = ""):
@@ -34,3 +42,39 @@ def test_objective_factory_defaults_to_expected_file_paths() -> None:
     grader = _make("custom_objective", "lib/util.py,README.md")
     assert isinstance(grader, ExpectedFileGrader)
     assert grader.expected_paths == ("lib/util.py", "README.md")
+
+
+def test_pin_resolver_fails_closed_when_rubric_lacks_judge() -> None:
+    run = SimpleNamespace(
+        pins=SimpleNamespace(grader_version_ids=["gv-rubric"]),
+    )
+    graders = [
+        SimpleNamespace(
+            id="g1",
+            name="quality",
+            family="rubric",
+            versions=[
+                SimpleNamespace(
+                    id="gv-rubric",
+                    specification="score carefully",
+                    label="v1",
+                )
+            ],
+        )
+    ]
+
+    class _GetRun:
+        def execute(self, _q):
+            return run
+
+    class _ListGraders:
+        def execute(self, _q):
+            return graders
+
+    resolver = PinBasedGraderResolver(
+        actor=Actor(id="system"),
+        get_run=_GetRun(),
+        list_graders=_ListGraders(),
+    )
+    with pytest.raises(LookupError, match="requires a configured LLM judge"):
+        resolver.resolve(RunId("run-1"))

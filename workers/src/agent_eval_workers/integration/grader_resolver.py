@@ -1,8 +1,8 @@
 """Resolve pinned Grader Versions into concrete Grader SDK invocations.
 
 Maps objective pins to the built-in objective grader family. Rubric graders
-require an injectable judge and are skipped unless a factory is supplied —
-mixed runs still grade with any resolvable objective pins.
+require an injectable judge factory. When a rubric is pinned and no judge is
+configured, resolution fails closed — never silently skip a required pin.
 """
 
 from __future__ import annotations
@@ -23,11 +23,8 @@ from agent_eval_graders.objective import (
     TestPassGrader,
 )
 from agent_eval_graders.sdk.grader import Grader
-from agent_eval_shared.log import get_logger
 
 from agent_eval_workers.integration.grading_scheduler import GraderInvocationSpec
-
-logger = get_logger(__name__)
 
 GraderFactory = Callable[[], Grader]
 
@@ -121,7 +118,6 @@ class PinBasedGraderResolver:
                 by_version[version.id] = (grader, version)
 
         specs: list[GraderInvocationSpec] = []
-        skipped_rubrics: list[str] = []
         for version_id in run.pins.grader_version_ids:
             matched = by_version.get(version_id)
             if matched is None:
@@ -136,14 +132,11 @@ class PinBasedGraderResolver:
 
             if family == "rubric":
                 if self.rubric_factory is None:
-                    skipped_rubrics.append(version_id)
-                    logger.warning(
-                        "rubric_grader_skipped_no_judge",
-                        run_id=run_id.value,
-                        grader_version_id=version_id,
-                        grader_name=name,
+                    raise LookupError(
+                        f"Pinned rubric grader {name!r} (version {version_id}) "
+                        "requires a configured LLM judge; no judge is available. "
+                        "Configure a judge provider or pin only objective graders."
                     )
-                    continue
                 factory = self.rubric_factory(name, specification, label)
             else:
                 factory = _objective_factory(name=name, specification=specification)
@@ -160,13 +153,8 @@ class PinBasedGraderResolver:
             )
 
         if not specs:
-            detail = ""
-            if skipped_rubrics:
-                detail = (
-                    f"; skipped rubric pins without judge: {', '.join(skipped_rubrics)}"
-                )
             raise LookupError(
                 "No invocable graders resolved from Run pins "
-                f"(objective graders required; rubric needs a judge){detail}"
+                "(at least one published grader version must be pinned)"
             )
         return tuple(specs)
