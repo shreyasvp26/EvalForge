@@ -34,6 +34,7 @@ AdapterFactory = Callable[[], Adapter]
 AdapterHook = Callable[[RunId], None]
 RunMetadataFactory = Callable[[RunId], RunMetadata]
 PromptFactory = Callable[[RunId], str]
+AdapterFactoryResolver = Callable[[RunId], AdapterFactory]
 
 
 class _ArtifactStore(Protocol):
@@ -98,6 +99,7 @@ class SdkAdapterBridge:
     sandboxes: RunSandboxRegistry
     manager: SandboxManager
     adapter_factory: AdapterFactory
+    adapter_factory_resolver: AdapterFactoryResolver | None = None
     cancellation: object | None = None
     object_storage: _ArtifactStore | None = None
     run_metadata_factory: RunMetadataFactory = field(default=default_run_metadata)
@@ -119,6 +121,11 @@ class SdkAdapterBridge:
             return self.prompt_factory(run_id)
         return self.prompt
 
+    def _resolve_adapter(self, run_id: RunId) -> Adapter:
+        if self.adapter_factory_resolver is not None:
+            return self.adapter_factory_resolver(run_id)()
+        return self.adapter_factory()
+
     def start(self, run_id: RunId) -> None:
         try:
             handle = self.sandboxes.get(run_id)
@@ -127,7 +134,7 @@ class SdkAdapterBridge:
                 run_id=run_id,
                 object_storage=self.object_storage,
             )
-            adapter = self.adapter_factory()
+            adapter = self._resolve_adapter(run_id)
             cancel: CancellationPort | None = None
             if self.cancellation is not None:
                 cancel = RegistryCancellation(registry=self.cancellation, run_id=run_id)

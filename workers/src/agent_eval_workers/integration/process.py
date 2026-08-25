@@ -20,6 +20,7 @@ from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.models import RunMetadata
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.queries.queries import GetRunQuery
+from agent_eval_application.use_cases.agent import ListAdapters
 from agent_eval_application.use_cases.case import ListCasesByProject
 from agent_eval_application.use_cases.grader import ListGraders
 from agent_eval_application.use_cases.run import (
@@ -57,6 +58,11 @@ from agent_eval_workers.event_pipeline.projector import ProjectionHub
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.execution_engine.lifecycle_driver import LifecycleDriver
 from agent_eval_workers.integration.adapter_bridge import SdkAdapterBridge
+from agent_eval_workers.integration.adapter_registry import (
+    AdapterResolutionError,
+    PinnedAdapterResolver,
+    resolve_adapter_mode,
+)
 from agent_eval_workers.integration.composition import default_claude_factory
 from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolver
 from agent_eval_workers.integration.grading_scheduler import GraderSdkScheduler
@@ -131,21 +137,29 @@ def select_docker_engine(*, mode: str | None = None) -> tuple[DockerEngine, str]
 
 
 def select_adapter_factory(*, mode: str | None = None) -> tuple[AdapterFactory, str]:
-    """Choose Claude adapter mode: ``deterministic`` (injected stream) | ``claude``."""
-    resolved = (
-        (mode or os.environ.get("WORKER_ADAPTER_MODE", "deterministic")).strip().lower()
-    )
-    if resolved in {"claude", "live", "cli"}:
-        logger.info("worker_adapter_mode_claude_cli")
+    """Legacy composition helper — prefers pin resolution in production.
+
+    Kept for tests that call ``select_adapter_factory`` directly. Production
+    workers resolve adapters from Run pins via ``PinnedAdapterResolver``.
+    ``deterministic`` is synthetic development/test execution only.
+    """
+    resolved = resolve_adapter_mode(mode)
+    if resolved == "live":
+        logger.info(
+            "worker_adapter_mode_live",
+            detail="Live mode selected; pin resolution still required at run time",
+        )
 
         def live_factory() -> Adapter:
             return ClaudeCodeAdapter()
 
-        return live_factory, "claude"
-    # deterministic — real ClaudeCodeAdapter through injected NDJSON stream
+        return live_factory, "live"
     logger.info(
         "worker_adapter_mode_deterministic",
-        detail="ClaudeCodeAdapter with injected stream (Phase 1 canonical path)",
+        detail=(
+            "Synthetic development/test execution via injected NDJSON stream "
+            "(not a live coding agent)"
+        ),
     )
     return default_claude_factory(), "deterministic"
 
@@ -159,6 +173,7 @@ def build_production_lifecycle_factory(
     actor: Actor | None = None,
     auth: object | None = None,
     adapter_factory: AdapterFactory | None = None,
+    adapter_mode: str | None = None,
     cancellation: CancellationPort | None = None,
     object_storage: _ArtifactStore | None = None,
 ) -> tuple[
@@ -213,10 +228,17 @@ def build_production_lifecycle_factory(
 
     get_run = GetRun(uow_factory, worker_auth)
     list_cases = ListCasesByProject(uow_factory, worker_auth)
+    list_adapters = ListAdapters(uow_factory, worker_auth)
     prompt_resolver = PinnedPromptResolver(
         actor=system_actor,
         get_run=get_run,
         list_cases=list_cases,
+    )
+    pinned_adapter_resolver = PinnedAdapterResolver(
+        actor=system_actor,
+        get_run=get_run,
+        list_adapters=list_adapters,
+        mode=adapter_mode,
     )
 
     def run_metadata_factory(run_id: RunId) -> RunMetadata:
@@ -229,12 +251,26 @@ def build_production_lifecycle_factory(
             case_version_id=dto.pins.case_version_id,
         )
 
-    factory = adapter_factory or default_claude_factory()
+    def resolve_adapter_factory(run_id: RunId) -> AdapterFactory:
+        try:
+            return pinned_adapter_resolver.resolve_factory(run_id)
+        except AdapterResolutionError as exc:
+            raise RecoverableExecutionError(
+                str(exc),
+                cause=FailureCause.ADAPTER_FAILURE,
+            ) from exc
+
+    # Injected factory overrides pin resolution (tests / explicit composition).
+    # When absent, resolve from the Run's pinned Adapter Version at start time.
+    fallback_factory = adapter_factory or default_claude_factory()
     adapter = SdkAdapterBridge(
         stream=pipeline,
         sandboxes=sandbox_registry,
         manager=manager,
-        adapter_factory=factory,
+        adapter_factory=fallback_factory,
+        adapter_factory_resolver=(
+            None if adapter_factory is not None else resolve_adapter_factory
+        ),
         cancellation=cancel,  # type: ignore[arg-type]
         object_storage=object_storage,
         environment=sandbox_environment_from_allowlist(),
@@ -305,9 +341,12 @@ def build_production_worker(
         engine, resolved_sandbox = docker_engine, sandbox_mode or "injected"
 
     if adapter_factory is None:
-        factory, resolved_adapter = select_adapter_factory(mode=adapter_mode)
+        # Pin-based resolution; mode controls live vs deterministic factories.
+        resolved_adapter = resolve_adapter_mode(adapter_mode)
+        factory: AdapterFactory | None = None
     else:
-        factory, resolved_adapter = adapter_factory, adapter_mode or "injected"
+        factory = adapter_factory
+        resolved_adapter = adapter_mode or "injected"
 
     (
         lifecycle_factory,
@@ -324,6 +363,7 @@ def build_production_worker(
         actor=system_actor,
         auth=auth,
         adapter_factory=factory,
+        adapter_mode=adapter_mode,
         cancellation=cancellation,
         object_storage=object_storage,
     )

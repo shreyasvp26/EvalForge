@@ -138,7 +138,7 @@ def world():
         CreateAgentCommand(actor=actor, name="Agent")
     )
     adapter = CreateAdapter(uow, ids, auth, events).execute(
-        CreateAdapterCommand(actor=actor, agent_id=agent.id, name="Adapter")
+        CreateAdapterCommand(actor=actor, agent_id=agent.id, name="claude_code")
     )
     av = CreateAgentDraftVersion(uow, ids, auth, events).execute(
         CreateAgentDraftVersionCommand(actor=actor, agent_id=agent.id, label="1.0")

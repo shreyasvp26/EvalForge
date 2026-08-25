@@ -209,7 +209,7 @@ def test_process_worker_continues_after_failure(world) -> None:
 
 def test_select_adapter_factory_claude() -> None:
     factory, mode = select_adapter_factory(mode="claude")
-    assert mode == "claude"
+    assert mode == "live"
     adapter = factory()
     assert adapter.stream_source is None
 
