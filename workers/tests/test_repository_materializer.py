@@ -89,10 +89,10 @@ def test_materializer_rejects_head_mismatch() -> None:
     # Force rev-parse to return a different SHA than checkout.
     original = engine._maybe_handle_git
 
-    def mismatched(command: list[str]):
+    def mismatched(container_id: str, command: list[str]):
         if "rev-parse" in command:
             return 0, b"ffffffff\n", b"", False
-        return original(command)
+        return original(container_id, command)
 
     engine._maybe_handle_git = mismatched  # type: ignore[method-assign]
     materializer = RepositoryMaterializer(manager=manager)
@@ -208,3 +208,13 @@ def test_process_worker_materializes_before_adapter(world) -> None:
     assert result is not None
     assert result.kind is EngineOutcomeKind.COMPLETED
     assert engine.checked_out_sha == "deadbeef"
+    # Deterministic adapter wrote main.py into the materialized workspace; the
+    # workspace probe + ExpectedFile grader both validated that result.
+    from agent_eval_application.queries.queries import GetRunScoresQuery
+    from agent_eval_application.use_cases.run import GetRunScores
+
+    scores = GetRunScores(world["uow"], world["auth"]).execute(
+        GetRunScoresQuery(actor=world["actor"], run_id=run.id)
+    )
+    assert len(scores) >= 1
+    assert scores[0].value.passed is True

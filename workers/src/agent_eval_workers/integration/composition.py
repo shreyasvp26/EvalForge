@@ -152,6 +152,33 @@ def _default_claude_stream() -> Iterator[str]:
     )
 
 
+def _write_deterministic_workspace(context: object) -> None:
+    """Materialize the synthetic edit into the sandbox working directory.
+
+    Deterministic mode still injects NDJSON, but also writes the files the
+    stream claims to edit so graders can verify the same workspace.
+    """
+    from agent_eval_adapters.sdk.context import ExecutionContext
+    from agent_eval_sandbox.models import ExecutionRequest
+
+    if not isinstance(context, ExecutionContext):
+        return
+    workspace = context.working_directory.rstrip("/")
+    # Keep content tiny and deterministic; path matches ExpectedFile default.
+    script = (
+        f"mkdir -p {workspace} && "
+        f"printf '%s\\n' 'print(\"evalforge-deterministic\")' > {workspace}/main.py"
+    )
+    context.sandbox_exec.execute(
+        context.sandbox,
+        ExecutionRequest(
+            command=("sh", "-c", script),
+            working_dir=workspace,
+            timeout_seconds=30.0,
+        ),
+    )
+
+
 def default_claude_factory(
     *,
     stream_lines: Sequence[str] | None = None,
@@ -161,7 +188,8 @@ def default_claude_factory(
     lines = list(stream_lines) if stream_lines is not None else None
 
     def factory() -> Adapter:
-        def source(_ctx: object) -> Iterator[str]:
+        def source(ctx: object) -> Iterator[str]:
+            _write_deterministic_workspace(ctx)
             if lines is not None:
                 yield from lines
             else:

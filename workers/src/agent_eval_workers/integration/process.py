@@ -77,6 +77,7 @@ from agent_eval_workers.integration.sandbox_adapter import (
     sandbox_environment_from_allowlist,
 )
 from agent_eval_workers.integration.worker_auth import WorkerAuthorization
+from agent_eval_workers.integration.workspace_grader import WorkspaceExpectedFileProbe
 from agent_eval_workers.lifecycle.machine import RunLifecycle
 from agent_eval_workers.lifecycle.orchestrator import LifecycleOrchestrator
 from agent_eval_workers.lifecycle.phases import OrchestrationPhase
@@ -298,6 +299,13 @@ def build_production_lifecycle_factory(
         get_run=get_run,
         list_graders=ListGraders(uow_factory, worker_auth),
     )
+    workspace_probe = WorkspaceExpectedFileProbe(
+        manager=manager,
+        sandboxes=sandbox_registry,
+        working_directory_factory=lambda rid: repo_preparer.workspaces.get(
+            rid.value, "/workspace"
+        ),
+    )
     grading = GraderSdkScheduler(
         actor=system_actor,
         get_run=get_run,
@@ -305,6 +313,7 @@ def build_production_lifecycle_factory(
         get_artifacts=GetRunArtifacts(uow_factory, worker_auth),
         record_score=RecordScore(uow_factory, ids, worker_auth, events),
         grader_resolver=resolver.resolve,
+        workspace_probe=workspace_probe.verify,
     )
 
     status = ApplicationRunStatus(

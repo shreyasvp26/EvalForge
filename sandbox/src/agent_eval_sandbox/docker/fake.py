@@ -178,23 +178,58 @@ class FakeDockerEngine:
         if self.force_timeout:
             return 124, b"", b"timed out", True
 
-        git_result = self._maybe_handle_git(command)
+        git_result = self._maybe_handle_git(container_id, command)
         if git_result is not None:
             return git_result
 
+        fs_result = self._maybe_handle_filesystem(container, command)
+        if fs_result is not None:
+            return fs_result
+
         return self.exec_exit_code, self.exec_stdout, self.exec_stderr, False
 
-    def _maybe_handle_git(
-        self, command: list[str]
+    def _maybe_handle_filesystem(
+        self,
+        container: FakeContainer,
+        command: list[str],
     ) -> tuple[int, bytes, bytes, bool] | None:
         if not command:
             return None
-        if command[0] == "test" and len(command) >= 3 and command[1] == "-d":
-            # Subdirectory exists checks succeed by default in fake sandboxes.
+        if command[0] == "test" and len(command) >= 3:
+            flag, path = command[1], command[2]
+            exists = path in container.filesystem or any(
+                key.startswith(path.rstrip("/") + "/") for key in container.filesystem
+            )
+            is_dir = any(
+                key == path or key.startswith(path.rstrip("/") + "/")
+                for key in container.filesystem
+            )
+            if flag == "-e":
+                return (0 if exists else 1), b"", b"", False
+            if flag == "-d":
+                return (0 if is_dir else 1), b"", b"", False
+            if flag == "-f":
+                return (0 if path in container.filesystem else 1), b"", b"", False
+            return None
+        if command[0] == "sh" and len(command) >= 3 and command[1] == "-c":
+            script = command[2]
+            if ">" in script:
+                target = script.rsplit(">", 1)[-1].strip().split()[0]
+                if target:
+                    container.filesystem[target] = b"deterministic\n"
             return 0, b"", b"", False
         if command[0] == "sh":
-            # Workspace cleanup / shell helpers used by materializer.
+            # Materializer cleanup helpers.
             return 0, b"", b"", False
+        return None
+
+    def _maybe_handle_git(
+        self,
+        container_id: str,
+        command: list[str],
+    ) -> tuple[int, bytes, bytes, bool] | None:
+        if not command:
+            return None
         if command[0] != "git" and not (len(command) >= 2 and command[0] == "rm"):
             return None
         if self.fail_git and command[0] == "git":
@@ -203,10 +238,11 @@ class FakeDockerEngine:
             return 0, b"", b"", False
         # git …
         if "checkout" in command:
-            # git … checkout --detach <sha>
             sha = command[-1]
             if sha not in {"--detach", "checkout"}:
                 self.checked_out_sha = sha
+                container = self.containers[container_id]
+                container.filesystem.setdefault("/workspace/README.md", b"# repo\n")
             return 0, b"", b"", False
         if "rev-parse" in command:
             sha = (self.checked_out_sha or "deadbeef").encode()
