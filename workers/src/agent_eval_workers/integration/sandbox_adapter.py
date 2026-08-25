@@ -47,7 +47,7 @@ def sandbox_environment_from_allowlist(
     if raw is None:
         raw = os.environ.get(
             "WORKER_SANDBOX_ENV_ALLOWLIST",
-            "ANTHROPIC_API_KEY,PATH,HOME,TERM",
+            "ANTHROPIC_API_KEY,GEMINI_API_KEY,GOOGLE_API_KEY,PATH,HOME,TERM",
         )
     keys = [k.strip() for k in raw.split(",") if k.strip()]
     env_source = source if source is not None else os.environ
