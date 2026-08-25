@@ -36,6 +36,7 @@ class FailureCause(StrEnum):
     """
 
     ADAPTER_FAILURE = "adapter_failure"
+    ADAPTER_UNSUPPORTED = "adapter_unsupported"
     SANDBOX_FAILURE = "sandbox_failure"
     WORKER_FAILURE = "worker_failure"
     TIMEOUT = "timeout"

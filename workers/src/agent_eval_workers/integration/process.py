@@ -290,9 +290,14 @@ def build_production_lifecycle_factory(
             key, name, version_id = pinned_adapter_resolver.resolve_key(run_id)
             factory = pinned_adapter_resolver.resolve_factory(run_id)
         except AdapterResolutionError as exc:
+            cause = (
+                FailureCause.ADAPTER_UNSUPPORTED
+                if exc.unsupported
+                else FailureCause.ADAPTER_FAILURE
+            )
             raise RecoverableExecutionError(
                 str(exc),
-                cause=FailureCause.ADAPTER_FAILURE,
+                cause=cause,
             ) from exc
         try:
             record_execution_configuration.execute(

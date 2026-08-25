@@ -218,6 +218,7 @@ class ExecutionEngine:
 def _failure_trigger_for(cause: FailureCause) -> LifecycleTrigger:
     mapping = {
         FailureCause.ADAPTER_FAILURE: LifecycleTrigger.ADAPTER_FAILED,
+        FailureCause.ADAPTER_UNSUPPORTED: LifecycleTrigger.ADAPTER_FAILED,
         FailureCause.SANDBOX_FAILURE: LifecycleTrigger.SANDBOX_FAILED,
         FailureCause.WORKER_FAILURE: LifecycleTrigger.WORKER_FAILED,
         FailureCause.TIMEOUT: LifecycleTrigger.TIMEOUT,
