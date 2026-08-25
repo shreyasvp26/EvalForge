@@ -20,6 +20,7 @@ from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.models import RunMetadata
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.queries.queries import GetRunQuery
+from agent_eval_application.use_cases.case import ListCasesByProject
 from agent_eval_application.use_cases.grader import ListGraders
 from agent_eval_application.use_cases.run import (
     CancelRun,
@@ -59,6 +60,7 @@ from agent_eval_workers.integration.adapter_bridge import SdkAdapterBridge
 from agent_eval_workers.integration.composition import default_claude_factory
 from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolver
 from agent_eval_workers.integration.grading_scheduler import GraderSdkScheduler
+from agent_eval_workers.integration.prompt_resolver import PinnedPromptResolver
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.integration.run_status import ApplicationRunStatus
 from agent_eval_workers.integration.sandbox_adapter import (
@@ -210,6 +212,12 @@ def build_production_lifecycle_factory(
     )
 
     get_run = GetRun(uow_factory, worker_auth)
+    list_cases = ListCasesByProject(uow_factory, worker_auth)
+    prompt_resolver = PinnedPromptResolver(
+        actor=system_actor,
+        get_run=get_run,
+        list_cases=list_cases,
+    )
 
     def run_metadata_factory(run_id: RunId) -> RunMetadata:
         dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
@@ -231,6 +239,7 @@ def build_production_lifecycle_factory(
         object_storage=object_storage,
         environment=sandbox_environment_from_allowlist(),
         run_metadata_factory=run_metadata_factory,
+        prompt_factory=prompt_resolver.resolve,
     )
 
     resolver = PinBasedGraderResolver(

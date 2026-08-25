@@ -33,6 +33,7 @@ from agent_eval_workers.mocks.stream import EventStreamPort
 AdapterFactory = Callable[[], Adapter]
 AdapterHook = Callable[[RunId], None]
 RunMetadataFactory = Callable[[RunId], RunMetadata]
+PromptFactory = Callable[[RunId], str]
 
 
 class _ArtifactStore(Protocol):
@@ -101,6 +102,7 @@ class SdkAdapterBridge:
     object_storage: _ArtifactStore | None = None
     run_metadata_factory: RunMetadataFactory = field(default=default_run_metadata)
     prompt: str = "solve the case"
+    prompt_factory: PromptFactory | None = None
     working_directory: str = "/workspace"
     environment: dict[str, str] = field(default_factory=dict)
     fail_on_run: bool = False
@@ -111,6 +113,11 @@ class SdkAdapterBridge:
     ran: list[RunId] = field(default_factory=list)
     finished: list[RunId] = field(default_factory=list)
     _sessions: dict[str, _Session] = field(default_factory=dict, repr=False)
+
+    def _resolve_prompt(self, run_id: RunId) -> str:
+        if self.prompt_factory is not None:
+            return self.prompt_factory(run_id)
+        return self.prompt
 
     def start(self, run_id: RunId) -> None:
         try:
@@ -132,7 +139,7 @@ class SdkAdapterBridge:
                 run=self.run_metadata_factory(run_id),
                 correlation_id=f"corr-{run_id.value}",
                 config=ExecutionConfig(),
-                prompt=self.prompt,
+                prompt=self._resolve_prompt(run_id),
                 cancellation=cancel,
             )
             emitter = EventEmitter(sink=sink)
