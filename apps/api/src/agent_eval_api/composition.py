@@ -52,6 +52,7 @@ from agent_eval_application.use_cases.project import (
     RenameProject,
     UpdateProjectSettings,
 )
+from agent_eval_application.use_cases.provenance import GetRunProvenance
 from agent_eval_application.use_cases.run import (
     CancelRun,
     CreateRun,
@@ -69,6 +70,10 @@ from agent_eval_application.use_cases.suite import (
     ListSuitesByProject,
     PublishSuiteVersion,
     RetireSuiteVersion,
+)
+from agent_eval_application.use_cases.suite_execution import (
+    AggregateSuiteResults,
+    CreateSuiteRuns,
 )
 from agent_eval_infrastructure import (
     InfrastructureContainer,
@@ -112,6 +117,8 @@ class ApplicationServices:
     publish_suite_version: PublishSuiteVersion
     retire_suite_version: RetireSuiteVersion
     deprecate_suite: DeprecateSuite
+    create_suite_runs: CreateSuiteRuns
+    aggregate_suite_results: AggregateSuiteResults
 
     # Cases + Prompts
     create_case: CreateCase
@@ -149,6 +156,7 @@ class ApplicationServices:
     get_run_events: GetRunEvents
     get_run_artifacts: GetRunArtifacts
     get_run_scores: GetRunScores
+    get_run_provenance: GetRunProvenance
     cancel_run: CancelRun
 
 
@@ -207,6 +215,7 @@ def build_application_services(
     events = infrastructure.events
     idempotency = infrastructure.idempotency
     run_queue = infrastructure.run_queue
+    create_run = CreateRun(uow, ids, auth, events, run_queue, idempotency)
 
     return ApplicationServices(
         login=Login(identity),
@@ -224,6 +233,8 @@ def build_application_services(
         publish_suite_version=PublishSuiteVersion(uow, auth, events),
         retire_suite_version=RetireSuiteVersion(uow, auth, events),
         deprecate_suite=DeprecateSuite(uow, auth, events),
+        create_suite_runs=CreateSuiteRuns(uow, auth, create_run),
+        aggregate_suite_results=AggregateSuiteResults(uow, auth),
         create_case=CreateCase(uow, ids, auth, events, idempotency),
         get_case=GetCase(uow, auth),
         list_cases_by_project=ListCasesByProject(uow, auth),
@@ -247,12 +258,13 @@ def build_application_services(
         list_graders=ListGraders(uow, auth),
         create_grader_draft_version=CreateGraderDraftVersion(uow, ids, auth, events),
         publish_grader_version=PublishGraderVersion(uow, auth, events),
-        create_run=CreateRun(uow, ids, auth, events, run_queue, idempotency),
+        create_run=create_run,
         get_run=GetRun(uow, auth),
         list_runs_by_project=ListRunsByProject(uow, auth),
         get_run_events=GetRunEvents(uow, auth),
         get_run_artifacts=GetRunArtifacts(uow, auth),
         get_run_scores=GetRunScores(uow, auth),
+        get_run_provenance=GetRunProvenance(uow, auth),
         cancel_run=CancelRun(uow, auth, events),
     )
 

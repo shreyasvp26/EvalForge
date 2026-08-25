@@ -73,6 +73,12 @@ class GetRunScoresQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class GetRunProvenanceQuery:
+    actor: Actor
+    run_id: str
+
+
+@dataclass(frozen=True, slots=True)
 class GetAgentQuery:
     actor: Actor
     agent_id: str
