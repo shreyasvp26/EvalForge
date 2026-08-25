@@ -110,7 +110,7 @@ export function EvaluationHealthStrip({ health }: { health: EvaluationHealth }) 
     <section aria-label="Evaluation health" className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <Text as="h2" variant="body" className="font-medium text-foreground">
+          <Text as="div" variant="body" className="font-medium text-foreground">
             Evaluation health
           </Text>
           <Text as="p" variant="caption" className="mt-0.5 text-muted-foreground">

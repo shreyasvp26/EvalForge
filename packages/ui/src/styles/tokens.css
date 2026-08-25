@@ -183,12 +183,12 @@
   --ef-surface-overlay: #14141c;
   --ef-surface-inset: #14141a;
 
-  --ef-accent: #8b5cf6;
-  --ef-accent-strong: #7c3aed;
+  --ef-accent: #7c3aed;
+  --ef-accent-strong: #6d28d9;
   --ef-accent-foreground: #ffffff;
   --ef-accent-muted: #1a1228;
-  --ef-accent-gradient: linear-gradient(135deg, #6366f1 0%, #9333ea 50%, #a855f7 100%);
-  --ef-accent-glow: rgb(139 92 246 / 0.35);
+  --ef-accent-gradient: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #9333ea 100%);
+  --ef-accent-glow: rgb(124 58 237 / 0.35);
 
   /* Auth landing — dark theme (hero experience) */
   --ef-auth-bg-base: #06060a;
@@ -196,11 +196,11 @@
   --ef-auth-glow-2: rgb(168 85 247 / 0.38);
   --ef-auth-glow-3: rgb(236 72 153 / 0.28);
   --ef-auth-gradient-text: linear-gradient(90deg, #a78bfa 0%, #c084fc 40%, #f0abfc 100%);
-  --ef-auth-primary: #8b5cf6;
-  --ef-auth-primary-hover: #7c3aed;
-  --ef-auth-primary-gradient: linear-gradient(135deg, #6366f1 0%, #9333ea 50%, #a855f7 100%);
+  --ef-auth-primary: #7c3aed;
+  --ef-auth-primary-hover: #6d28d9;
+  --ef-auth-primary-gradient: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #9333ea 100%);
   --ef-auth-primary-foreground: #ffffff;
-  --ef-auth-primary-glow: rgb(139 92 246 / 0.45);
+  --ef-auth-primary-glow: rgb(124 58 237 / 0.45);
   --ef-auth-card-bg: rgb(14 14 20 / 0.72);
   --ef-auth-card-border: rgb(255 255 255 / 0.08);
   --ef-auth-card-highlight: rgb(255 255 255 / 0.04);

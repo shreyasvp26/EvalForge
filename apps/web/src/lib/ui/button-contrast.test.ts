@@ -24,6 +24,6 @@ describe("primary button accent contrast", () => {
   });
 
   it("dark theme accent meets AA for normal text", () => {
-    expect(contrastRatio("#ffffff", "#8b5cf6")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#ffffff", "#7c3aed")).toBeGreaterThanOrEqual(4.5);
   });
 });
