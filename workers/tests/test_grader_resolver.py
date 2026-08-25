@@ -76,5 +76,5 @@ def test_pin_resolver_fails_closed_when_rubric_lacks_judge() -> None:
         get_run=_GetRun(),
         list_graders=_ListGraders(),
     )
-    with pytest.raises(LookupError, match="requires a configured LLM judge"):
+    with pytest.raises(LookupError, match="requires a configured judge provider"):
         resolver.resolve(RunId("run-1"))

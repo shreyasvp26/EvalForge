@@ -136,8 +136,10 @@ class PinBasedGraderResolver:
                 if self.rubric_factory is None:
                     raise LookupError(
                         f"Pinned rubric grader {name!r} (version {version_id}) "
-                        "requires a configured LLM judge; no judge is available. "
-                        "Configure a judge provider or pin only objective graders."
+                        "requires a configured judge provider. "
+                        "Set JUDGE_PROVIDER (groq|anthropic|openai|gemini|mock) "
+                        "and the matching API key (e.g. GROQ_API_KEY), "
+                        "or pin only objective graders."
                     )
                 factory = self.rubric_factory(name, specification, label)
             else:
