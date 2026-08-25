@@ -21,6 +21,7 @@ from agent_eval_workers.integration.process import (
     select_adapter_factory,
     select_docker_engine,
 )
+from agent_eval_workers.integration.prompt_resolver import PinnedPromptResolver
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.integration.sandbox_adapter import ManagedSandboxAdapter
 from agent_eval_workers.integration.worker_auth import WorkerAuthorization
@@ -30,6 +31,7 @@ __all__ = [
     "GraderSdkScheduler",
     "ManagedSandboxAdapter",
     "PinBasedGraderResolver",
+    "PinnedPromptResolver",
     "ProductionHarness",
     "ProductionWorkerBundle",
     "RunSandboxRegistry",
