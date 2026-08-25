@@ -46,7 +46,15 @@ class GeminiAdapter(BaseAdapter):
         )
     )
     cli_binary: str = "gemini"
-    extra_args: tuple[str, ...] = ("--output-format", "stream-json")
+    # Headless coding-agent invocation: trust sandbox workspace, auto-approve
+    # tools, stream NDJSON, prompt via -p.
+    extra_args: tuple[str, ...] = (
+        "--skip-trust",
+        "--yolo",
+        "--output-format",
+        "stream-json",
+        "-p",
+    )
     stream_source: StreamSource | None = None
     _started_at: float | None = field(default=None, init=False, repr=False)
     _saw_completion: bool = field(default=False, init=False, repr=False)

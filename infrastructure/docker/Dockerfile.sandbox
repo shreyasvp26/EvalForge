@@ -26,11 +26,14 @@ RUN apt-get update \
 
 # Optional agent CLIs — installed only when build args are set (requires network).
 # Default image stays lean for deterministic-only runs.
+# Gemini CLI requires Node >= 20; Debian bookworm ships Node 18, so use NodeSource.
 ARG EVALFORGE_INSTALL_CLAUDE_CLI=0
 ARG EVALFORGE_INSTALL_GEMINI_CLI=0
 RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ] || [ "$EVALFORGE_INSTALL_GEMINI_CLI" = "1" ]; then \
       apt-get update \
-      && apt-get install -y --no-install-recommends nodejs npm \
+      && apt-get install -y --no-install-recommends gnupg \
+      && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+      && apt-get install -y --no-install-recommends nodejs \
       && rm -rf /var/lib/apt/lists/*; \
     fi
 RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ]; then \
@@ -39,6 +42,8 @@ RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ]; then \
     fi
 RUN if [ "$EVALFORGE_INSTALL_GEMINI_CLI" = "1" ]; then \
       npm install -g @google/gemini-cli \
+      && node --version \
+      && gemini --version \
       && rm -rf /root/.npm; \
     fi
 

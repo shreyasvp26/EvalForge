@@ -237,6 +237,9 @@ def test_gemini_sandbox_process_startup_path() -> None:
     assert result.outcome is AdapterOutcome.COMPLETED
     assert exec_port.commands[0][0] == "gemini"
     assert "--output-format" in exec_port.commands[0]
+    assert "--yolo" in exec_port.commands[0]
+    assert "--skip-trust" in exec_port.commands[0]
+    assert "-p" in exec_port.commands[0]
 
 
 def test_gemini_initialize_requires_prompt() -> None:

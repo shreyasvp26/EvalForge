@@ -314,6 +314,7 @@ def build_production_lifecycle_factory(
         record_score=RecordScore(uow_factory, ids, worker_auth, events),
         grader_resolver=resolver.resolve,
         workspace_probe=workspace_probe.verify,
+        workspace_results_getter=workspace_probe.workspace_results,
     )
 
     status = ApplicationRunStatus(

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import shutil
-from dataclasses import replace
 
 import docker
 import pytest
@@ -201,15 +200,14 @@ def _build_gemini_world(world, *, prompt: str = CANONICAL_CALCULATOR_PROMPT):
         )
     )
 
-    return replace(
-        world,
-        case_version_id=case_version.id,
-        prompt_version_id=prompt_version.id,
-        agent_id=agent.id,
-        agent_version_id=agent_version.id,
-        adapter_version_id=adapter_version.id,
-        grader_version_id=test_grader.id,
-    )
+    world = dict(world)
+    world["case_version_id"] = case_version.id
+    world["prompt_version_id"] = prompt_version.id
+    world["agent_id"] = agent.id
+    world["agent_version_id"] = agent_version.id
+    world["adapter_version_id"] = adapter_version.id
+    world["grader_version_id"] = test_grader.id
+    return world
 
 
 def test_live_gemini_missing_api_key_fails_fast(

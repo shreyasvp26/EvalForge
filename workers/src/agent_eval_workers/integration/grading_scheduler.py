@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from agent_eval_application.common.actor import Actor
@@ -21,6 +21,7 @@ from agent_eval_workers.integration.score_sink import ApplicationScoreSink
 GraderFactory = Callable[[], Grader]
 GraderSpecResolver = Callable[[RunId], Sequence["GraderInvocationSpec"]]
 WorkspaceProbe = Callable[[RunId, Sequence["GraderInvocationSpec"]], None]
+WorkspaceResultsGetter = Callable[[], Mapping[str, object]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +52,7 @@ class GraderSdkScheduler:
     graders: Sequence[GraderInvocationSpec] = ()
     grader_resolver: GraderSpecResolver | None = None
     workspace_probe: WorkspaceProbe | None = None
+    workspace_results_getter: WorkspaceResultsGetter | None = None
     scores: list[ProducedScore] = field(default_factory=list)
     failures: list[tuple[str, str, str]] = field(default_factory=list)
     scheduled: list[RunId] = field(default_factory=list)
@@ -76,11 +78,11 @@ class GraderSdkScheduler:
         )
         if self.workspace_probe is not None:
             self.workspace_probe(run_id, specs)
-        workspace_results = None
-        if self.workspace_probe is not None and hasattr(
-            self.workspace_probe, "workspace_results"
-        ):
-            workspace_results = self.workspace_probe.workspace_results()  # type: ignore[attr-defined]
+        workspace_results = (
+            self.workspace_results_getter()
+            if self.workspace_results_getter is not None
+            else None
+        )
         invocations: list[tuple[str, Grader, GradingContext]] = []
         for spec in specs:
             context = GradingContext(
