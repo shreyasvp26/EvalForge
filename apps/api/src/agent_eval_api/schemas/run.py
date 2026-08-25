@@ -152,6 +152,7 @@ class RunResponse(BaseModel):
     created_at: datetime
     pins: RunPinsResponse
     failure_reason: str | None
+    failure_category: str | None = None
     cancellation_reason: str | None
     sandbox_id: str | None
     expected_grader_count: int
@@ -176,6 +177,7 @@ class RunResponse(BaseModel):
                 suite_version_id=dto.pins.suite_version_id,
             ),
             failure_reason=dto.failure_reason,
+            failure_category=dto.failure_category,
             cancellation_reason=dto.cancellation_reason,
             sandbox_id=dto.sandbox_id,
             expected_grader_count=dto.expected_grader_count,
@@ -202,6 +204,7 @@ class RunProvenanceResponse(BaseModel):
     status: str
     created_at: datetime
     failure_reason: str | None
+    failure_category: str | None = None
     cancellation_reason: str | None
     project_id: str
     case_version_id: str

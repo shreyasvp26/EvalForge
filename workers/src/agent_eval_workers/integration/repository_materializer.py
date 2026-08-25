@@ -257,12 +257,12 @@ class SandboxRepositoryPreparer:
         except RepositoryMaterializationError as exc:
             raise RecoverableExecutionError(
                 str(exc),
-                cause=FailureCause.SANDBOX_FAILURE,
+                cause=FailureCause.REPOSITORY_PREPARATION,
             ) from exc
         except Exception as exc:  # noqa: BLE001
             raise RecoverableExecutionError(
                 f"Repository materialization failed for {run_id.value}: {exc}",
-                cause=FailureCause.SANDBOX_FAILURE,
+                cause=FailureCause.REPOSITORY_PREPARATION,
             ) from exc
 
 

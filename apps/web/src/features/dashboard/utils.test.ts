@@ -18,6 +18,7 @@ function makeRun(partial: Partial<Run> & Pick<Run, "id" | "status">): Run {
       suite_version_id: null,
     },
     failure_reason: null,
+    failure_category: null,
     cancellation_reason: null,
     sandbox_id: null,
     expected_grader_count: 1,

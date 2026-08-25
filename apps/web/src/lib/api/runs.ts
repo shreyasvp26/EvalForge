@@ -36,6 +36,7 @@ export interface Run {
   created_at: string;
   pins: RunPins;
   failure_reason: string | null;
+  failure_category: string | null;
   cancellation_reason: string | null;
   sandbox_id: string | null;
   expected_grader_count: number;

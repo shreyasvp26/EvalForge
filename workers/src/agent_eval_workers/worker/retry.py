@@ -27,6 +27,7 @@ _RETRYABLE_CAUSES: frozenset[FailureCause] = frozenset(
     {
         FailureCause.SANDBOX_FAILURE,
         FailureCause.WORKER_FAILURE,
+        FailureCause.REPOSITORY_PREPARATION,
     }
 )
 

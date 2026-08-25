@@ -77,6 +77,7 @@ class ApplicationRunStatus:
                     actor=self.actor,
                     run_id=run_id.value,
                     reason=reason,
+                    category=cause.value,
                 )
             )
         except Exception:

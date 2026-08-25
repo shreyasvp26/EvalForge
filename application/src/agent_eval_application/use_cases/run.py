@@ -22,6 +22,7 @@ from agent_eval_domain.common.ids import (
     SuiteVersionId,
 )
 from agent_eval_domain.execution.entities import ArtifactKind, ScoreValue
+from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.ndm_codec import action_from_payload, action_to_payload
 from agent_eval_domain.execution.normalized_model import action_kind_of
 from agent_eval_domain.execution.run_factory import RunCreationCommand, RunFactory
@@ -346,11 +347,20 @@ class FailRun:
     def execute(self, command: FailRunCommand) -> RunDTO:
         run_id = RunId(require_non_empty(command.run_id, field="run_id"))
         reason = require_non_empty(command.reason, field="reason")
+        category: FailureCategory | None = None
+        if command.category is not None and command.category.strip():
+            try:
+                category = FailureCategory(command.category.strip())
+            except ValueError as exc:
+                raise ApplicationValidationError(
+                    f"Unknown failure category {command.category!r}",
+                    field="category",
+                ) from exc
 
         def work(uow):
             run = uow.runs.get(run_id)
             self._auth.ensure_can_manage_project(command.actor, run.pins.project_id)
-            with_domain_errors(lambda: run.fail(reason=reason))
+            with_domain_errors(lambda: run.fail(reason=reason, category=category))
             uow.runs.save(run)
             return RunDTO.from_domain(run), collect_events(run)
 

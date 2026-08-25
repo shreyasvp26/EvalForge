@@ -127,6 +127,7 @@ def get_run_provenance(
         status=dto.status,
         created_at=dto.created_at,
         failure_reason=dto.failure_reason,
+        failure_category=dto.failure_category,
         cancellation_reason=dto.cancellation_reason,
         project_id=dto.project_id,
         case_version_id=dto.case_version_id,

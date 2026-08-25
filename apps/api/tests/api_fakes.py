@@ -70,6 +70,7 @@ def sample_run(**overrides: Any) -> RunDTO:
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
         pins=pins,
         failure_reason=None,
+        failure_category=None,
         cancellation_reason=None,
         sandbox_id=None,
         expected_grader_count=1,

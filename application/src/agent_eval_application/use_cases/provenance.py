@@ -133,6 +133,7 @@ class GetRunProvenance:
                 status=dto.status,
                 created_at=dto.created_at,
                 failure_reason=dto.failure_reason,
+                failure_category=dto.failure_category,
                 cancellation_reason=dto.cancellation_reason,
                 project_id=dto.pins.project_id,
                 case_version_id=dto.pins.case_version_id,

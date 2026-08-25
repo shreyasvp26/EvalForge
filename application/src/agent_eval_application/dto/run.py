@@ -44,6 +44,7 @@ class RunDTO:
     created_at: datetime
     pins: RunPinsDTO
     failure_reason: str | None
+    failure_category: str | None
     cancellation_reason: str | None
     sandbox_id: str | None
     expected_grader_count: int
@@ -71,6 +72,9 @@ class RunDTO:
                 ),
             ),
             failure_reason=run.failure_reason,
+            failure_category=(
+                run.failure_category.value if run.failure_category is not None else None
+            ),
             cancellation_reason=run.cancellation_reason,
             sandbox_id=run.sandbox.id.value if run.sandbox else None,
             expected_grader_count=run.expected_grader_count,

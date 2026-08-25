@@ -16,6 +16,7 @@ class RunProvenanceDTO:
     status: str
     created_at: datetime
     failure_reason: str | None
+    failure_category: str | None
     cancellation_reason: str | None
 
     project_id: str

@@ -27,6 +27,7 @@ from agent_eval_domain.execution.entities import (
     Score,
     ScoreValue,
 )
+from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.normalized_model import action_kind_of
 from agent_eval_domain.execution.run import EvaluationRun, RunPins
 from agent_eval_domain.execution.run_status import RunStatus
@@ -147,6 +148,9 @@ def run_to_domain(
         created_at=row.created_at,
         cost=_cost_to_domain(row),
         failure_reason=row.failure_reason,
+        failure_category=(
+            FailureCategory(row.failure_category) if row.failure_category else None
+        ),
         cancellation_reason=row.cancellation_reason,
         sandbox=None,
         _execution_events=mapped_events,
@@ -164,6 +168,9 @@ def apply_run_to_orm(run: EvaluationRun, row: RunOrm) -> None:
     """
     row.status = run.status.value
     row.failure_reason = run.failure_reason
+    row.failure_category = (
+        run.failure_category.value if run.failure_category is not None else None
+    )
     row.cancellation_reason = run.cancellation_reason
     if run.cost is not None:
         row.input_tokens = run.cost.input_tokens

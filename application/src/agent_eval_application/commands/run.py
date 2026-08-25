@@ -57,6 +57,8 @@ class FailRunCommand:
     actor: Actor
     run_id: str
     reason: str
+    category: str | None = None
+    """Optional ``FailureCategory`` value (e.g. ``adapter_failure``)."""
 
 
 @dataclass(frozen=True, slots=True)

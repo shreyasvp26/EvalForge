@@ -257,6 +257,7 @@ class AggregateSuiteResults:
                         status=status,
                         aggregate=agg,
                         failure_reason=dto.failure_reason,
+                        failure_category=dto.failure_category,
                     )
                 )
 

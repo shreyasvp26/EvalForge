@@ -78,7 +78,9 @@ _FAILABLE: frozenset[OrchestrationPhase] = frozenset(
 _FAILURE_TRIGGER_TO_CAUSE: dict[LifecycleTrigger, FailureCause] = {
     LifecycleTrigger.ADAPTER_FAILED: FailureCause.ADAPTER_FAILURE,
     LifecycleTrigger.SANDBOX_FAILED: FailureCause.SANDBOX_FAILURE,
+    LifecycleTrigger.REPOSITORY_FAILED: FailureCause.REPOSITORY_PREPARATION,
     LifecycleTrigger.WORKER_FAILED: FailureCause.WORKER_FAILURE,
+    LifecycleTrigger.GRADING_FAILED: FailureCause.GRADING_FAILURE,
     LifecycleTrigger.TIMEOUT: FailureCause.TIMEOUT,
     LifecycleTrigger.RESOURCE_EXHAUSTED: FailureCause.RESOURCE_EXHAUSTION,
 }
@@ -99,6 +101,13 @@ _FAILURE_PHASES: dict[LifecycleTrigger, frozenset[OrchestrationPhase]] = {
             OrchestrationPhase.EXECUTION_STREAMING,
         }
     ),
+    LifecycleTrigger.REPOSITORY_FAILED: frozenset(
+        {
+            OrchestrationPhase.SANDBOX_PROVISIONING,
+            OrchestrationPhase.SANDBOX_READY,
+            OrchestrationPhase.ADAPTER_STARTING,
+        }
+    ),
     LifecycleTrigger.TIMEOUT: frozenset(
         {
             OrchestrationPhase.SANDBOX_PROVISIONING,
@@ -110,6 +119,12 @@ _FAILURE_PHASES: dict[LifecycleTrigger, frozenset[OrchestrationPhase]] = {
         {
             OrchestrationPhase.SANDBOX_PROVISIONING,
             OrchestrationPhase.EXECUTION_STREAMING,
+        }
+    ),
+    LifecycleTrigger.GRADING_FAILED: frozenset(
+        {
+            OrchestrationPhase.GRADING_SCHEDULED,
+            OrchestrationPhase.FINAL_EVENT_PERSISTENCE,
         }
     ),
     LifecycleTrigger.WORKER_FAILED: _FAILABLE,

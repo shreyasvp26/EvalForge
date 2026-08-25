@@ -164,6 +164,7 @@ class SuiteCaseResultResponse(BaseModel):
     status: str
     aggregate: ScoreAggregateResponse
     failure_reason: str | None
+    failure_category: str | None = None
 
 
 class SuiteAggregateResponse(BaseModel):
@@ -209,6 +210,7 @@ class SuiteAggregateResponse(BaseModel):
                         reason=c.aggregate.reason,
                     ),
                     failure_reason=c.failure_reason,
+                    failure_category=c.failure_category,
                 )
                 for c in dto.cases
             ],

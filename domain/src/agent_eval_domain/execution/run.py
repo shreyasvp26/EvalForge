@@ -46,6 +46,7 @@ from agent_eval_domain.execution.events import (
     RunStarted,
     ScoreProduced,
 )
+from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.normalized_model import (
     NormalizedAction,
     action_kind_of,
@@ -88,6 +89,7 @@ class EvaluationRun(AggregateRoot):
     created_at: datetime = field(default_factory=utc_now)
     cost: ExecutionCost | None = None
     failure_reason: str | None = None
+    failure_category: FailureCategory | None = None
     cancellation_reason: str | None = None
     sandbox: Sandbox | None = None
     _execution_events: list[ExecutionEvent] = field(default_factory=list, repr=False)
@@ -176,7 +178,12 @@ class EvaluationRun(AggregateRoot):
             )
         )
 
-    def fail(self, *, reason: str) -> None:
+    def fail(
+        self,
+        *,
+        reason: str,
+        category: FailureCategory | None = None,
+    ) -> None:
         if not reason.strip():
             raise InvariantViolation(
                 "Failure reason must be non-empty",
@@ -185,6 +192,7 @@ class EvaluationRun(AggregateRoot):
         self._destroy_sandbox_if_present()
         self._transition_to(RunStatus.FAILED)
         self.failure_reason = reason.strip()
+        self.failure_category = category
         self._record(RunFailed(run_id=self.id, reason=self.failure_reason))
 
     def cancel(self, *, reason: str | None = None) -> None:
