@@ -3,7 +3,7 @@
 import { AlertTriangle, Play, Text } from "@agent-eval/ui";
 import Link from "next/link";
 
-import { formatDashboardDate, runPassSignal, truncateId } from "./utils";
+import { formatRelativeTime, primaryScoreLabel, runPassSignal, truncateId } from "./utils";
 
 import type { Run } from "@/lib/api/runs";
 
@@ -22,7 +22,7 @@ export function ActiveExecution({
       <PanelEmpty
         icon={Play}
         title="No active executions"
-        description="Queued, running, and grading runs appear here while evaluations execute."
+        description="Queued, running, and grading evaluations appear here while they execute."
         actionHref="/runs/new"
         actionLabel="Launch run"
       />
@@ -30,7 +30,7 @@ export function ActiveExecution({
   }
 
   return (
-    <ul className="divide-y divide-border rounded-[var(--ef-radius-panel)] border border-border">
+    <ul className="divide-y divide-border overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-card shadow-ef-sm">
       {runs.map((run) => {
         const projectName =
           projectNameById[run.pins.project_id] ?? truncateId(run.pins.project_id, 10);
@@ -38,22 +38,28 @@ export function ActiveExecution({
           <li key={run.id}>
             <Link
               href={`/runs/${run.id}`}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="block px-4 py-3.5 transition-colors hover:bg-[var(--ef-accent-muted)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <StatusBadge status={run.status} size="sm" />
-              <Text
-                as="span"
-                variant="body"
-                className="font-mono text-[length:var(--ef-text-caption)]"
-              >
-                {truncateId(run.id, 12)}
-              </Text>
-              <Text as="span" variant="caption" className="min-w-0 truncate">
-                {projectName}
-              </Text>
-              <Text as="span" variant="caption" className="ml-auto tabular-nums">
-                {formatDashboardDate(run.created_at)}
-              </Text>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge status={run.status} size="sm" />
+                    <Text as="span" variant="caption" className="font-mono text-foreground">
+                      {truncateId(run.id, 12)}
+                    </Text>
+                  </div>
+                  <Text as="p" variant="caption" className="truncate text-muted-foreground">
+                    {projectName}
+                  </Text>
+                </div>
+                <Text
+                  as="span"
+                  variant="caption"
+                  className="shrink-0 tabular-nums text-muted-foreground"
+                >
+                  {formatRelativeTime(run.created_at)}
+                </Text>
+              </div>
             </Link>
           </li>
         );
@@ -73,7 +79,7 @@ export function RecentFailures({
     return (
       <PanelEmpty
         icon={AlertTriangle}
-        title="Nothing needs attention"
+        title="No recent failures"
         description="Failed runs and failing scores in the sampled window will show up here."
         actionHref="/runs"
         actionLabel="Browse runs"
@@ -82,38 +88,44 @@ export function RecentFailures({
   }
 
   return (
-    <ul className="divide-y divide-border rounded-[var(--ef-radius-panel)] border border-border">
+    <ul className="divide-y divide-border overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-card shadow-ef-sm">
       {runs.map((run) => {
         const projectName =
           projectNameById[run.pins.project_id] ?? truncateId(run.pins.project_id, 10);
+        const score = primaryScoreLabel(run);
         const reason = run.failure_reason?.trim() ?? null;
         return (
           <li key={run.id}>
             <Link
               href={`/runs/${run.id}`}
-              className="block px-3 py-2.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="block px-4 py-3.5 transition-colors hover:bg-danger-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <StatusBadge status={run.status} passed={runPassSignal(run)} size="sm" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge status={run.status} passed={runPassSignal(run)} size="sm" />
+                    <Text as="span" variant="caption" className="font-mono text-foreground">
+                      {truncateId(run.id, 12)}
+                    </Text>
+                  </div>
+                  <Text as="p" variant="caption" className="truncate text-muted-foreground">
+                    {projectName}
+                    {score ? ` · ${score}` : ""}
+                  </Text>
+                  {reason ? (
+                    <Text as="p" variant="caption" className="line-clamp-2 text-danger">
+                      {reason}
+                    </Text>
+                  ) : null}
+                </div>
                 <Text
                   as="span"
-                  variant="body"
-                  className="font-mono text-[length:var(--ef-text-caption)]"
+                  variant="caption"
+                  className="shrink-0 tabular-nums text-muted-foreground"
                 >
-                  {truncateId(run.id, 12)}
-                </Text>
-                <Text as="span" variant="caption" className="min-w-0 truncate">
-                  {projectName}
-                </Text>
-                <Text as="span" variant="caption" className="ml-auto tabular-nums">
-                  {formatDashboardDate(run.created_at)}
+                  {formatRelativeTime(run.created_at)}
                 </Text>
               </div>
-              {reason ? (
-                <Text as="p" variant="caption" className="mt-1 line-clamp-2 text-danger">
-                  {reason}
-                </Text>
-              ) : null}
             </Link>
           </li>
         );
