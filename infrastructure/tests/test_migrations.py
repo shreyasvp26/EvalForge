@@ -62,7 +62,7 @@ def test_upgrade_head_creates_schema(alembic_cfg: Config) -> None:
             version = conn.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar()
-        assert version == "d5a9c2b38e14"
+        assert version == "e7b4a1c05f29"
     finally:
         engine.dispose()
 
