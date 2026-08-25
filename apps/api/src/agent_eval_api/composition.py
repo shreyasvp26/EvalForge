@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.identity import IdentityPort
+from agent_eval_application.ports.oauth_identity import OAuthIdentityPort
 from agent_eval_application.use_cases.agent import (
     CreateAdapter,
     CreateAdapterDraftVersion,
@@ -85,12 +86,25 @@ from agent_eval_infrastructure import (
 from agent_eval_infrastructure.auth import (
     InMemoryIdentityStore,
     InMemoryMembershipStore,
+    InMemoryOAuthIdentityStore,
     MembershipStore,
     SqlAlchemyIdentityStore,
     SqlAlchemyMembershipStore,
+    SqlAlchemyOAuthIdentityStore,
     ensure_bootstrap_user,
 )
 
+from agent_eval_api.auth.oauth.providers.github import GitHubOAuthProvider
+from agent_eval_api.auth.oauth.providers.google import GoogleOAuthProvider
+from agent_eval_api.auth.oauth.service import OAuthService
+from agent_eval_api.auth.oauth.stores import (
+    InMemoryOAuthExchangeStore,
+    InMemoryOAuthStateStore,
+    OAuthExchangeStore,
+    OAuthStateStore,
+    RedisOAuthExchangeStore,
+    RedisOAuthStateStore,
+)
 from agent_eval_api.auth.rbac import ProjectRbacAuthorization
 from agent_eval_api.config import ApiSettings, load_api_settings
 
@@ -174,6 +188,8 @@ class ApiContainer:
     services: ApplicationServices
     memberships: MembershipStore
     identity: IdentityPort
+    oauth_identities: OAuthIdentityPort
+    oauth: OAuthService
 
     def dispose(self) -> None:
         self.infrastructure.dispose()
@@ -190,6 +206,58 @@ class ApiContainer:
         except Exception:  # noqa: BLE001 — readiness must never raise
             checks["database"] = "unavailable"
         return checks
+
+
+def build_oauth_identity_store(
+    infrastructure: InfrastructureContainer,
+) -> OAuthIdentityPort:
+    if infrastructure.profile is RuntimeProfile.MEMORY:
+        return InMemoryOAuthIdentityStore()
+    return SqlAlchemyOAuthIdentityStore(infrastructure.session_factory)
+
+
+def build_oauth_stores(
+    infrastructure: InfrastructureContainer,
+) -> tuple[OAuthStateStore, OAuthExchangeStore]:
+    if infrastructure.profile is RuntimeProfile.MEMORY or infrastructure.redis is None:
+        return InMemoryOAuthStateStore(), InMemoryOAuthExchangeStore()
+    return (
+        RedisOAuthStateStore(infrastructure.redis),
+        RedisOAuthExchangeStore(infrastructure.redis),
+    )
+
+
+def build_oauth_service(
+    *,
+    settings: ApiSettings,
+    infrastructure: InfrastructureContainer,
+    identity: IdentityPort,
+    oauth_identities: OAuthIdentityPort,
+) -> OAuthService:
+    state_store, exchange_store = build_oauth_stores(infrastructure)
+    google = None
+    if settings.google_oauth_configured():
+        google = GoogleOAuthProvider(
+            client_id=settings.google_client_id or "",
+            client_secret=settings.google_client_secret or "",
+            redirect_uri=settings.google_redirect_uri or "",
+        )
+    github = None
+    if settings.github_oauth_configured():
+        github = GitHubOAuthProvider(
+            client_id=settings.github_client_id or "",
+            client_secret=settings.github_client_secret or "",
+            redirect_uri=settings.github_redirect_uri or "",
+        )
+    return OAuthService(
+        identity=identity,
+        oauth_identities=oauth_identities,
+        state_store=state_store,
+        exchange_store=exchange_store,
+        web_app_url=settings.web_app_url,
+        google=google,
+        github=github,
+    )
 
 
 def build_membership_store(
@@ -282,6 +350,8 @@ def build_api_container(
     auth: AuthorizationPort | None = None,
     memberships: MembershipStore | None = None,
     identity: IdentityPort | None = None,
+    oauth_identities: OAuthIdentityPort | None = None,
+    oauth: OAuthService | None = None,
     profile: RuntimeProfile | None = None,
 ) -> ApiContainer:
     """Assemble the Control Plane composition root."""
@@ -289,6 +359,7 @@ def build_api_container(
     infra = infrastructure or build_infrastructure(profile=profile)
     store = memberships or build_membership_store(infra)
     identity_store = identity or build_identity_store(infra)
+    oauth_store = oauth_identities or build_oauth_identity_store(infra)
     if api_settings.auth_bootstrap_email and api_settings.auth_bootstrap_password:
         ensure_bootstrap_user(
             identity_store,
@@ -298,6 +369,12 @@ def build_api_container(
         )
     authorization = auth or ProjectRbacAuthorization(store)
     services = build_application_services(infra, authorization, identity_store)
+    oauth_service = oauth or build_oauth_service(
+        settings=api_settings,
+        infrastructure=infra,
+        identity=identity_store,
+        oauth_identities=oauth_store,
+    )
     return ApiContainer(
         settings=api_settings,
         infrastructure=infra,
@@ -305,4 +382,6 @@ def build_api_container(
         services=services,
         memberships=store,
         identity=identity_store,
+        oauth_identities=oauth_store,
+        oauth=oauth_service,
     )

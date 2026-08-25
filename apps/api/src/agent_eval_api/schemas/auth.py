@@ -32,3 +32,16 @@ class LoginResponse(BaseModel):
     token_type: str = "Bearer"
     expires_in: int
     user: UserResponse
+
+
+class OAuthProvidersResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    google: bool = False
+    github: bool = False
+
+
+class OAuthExchangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(min_length=8, max_length=512)

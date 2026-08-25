@@ -312,6 +312,8 @@ class FakeContainer:
         self.auth = MagicMock()
         self.memberships = MagicMock()
         self.identity = MagicMock()
+        self.oauth_identities = MagicMock()
+        self.oauth = MagicMock()
         self.infrastructure = MagicMock()
         self.infrastructure.redis = None
         self.infrastructure.run_queue = MagicMock()

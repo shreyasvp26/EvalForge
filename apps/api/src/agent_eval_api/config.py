@@ -120,6 +120,43 @@ class ApiSettings(BaseSettings):
         default="http://localhost:3000,http://127.0.0.1:3000",
         validation_alias=AliasChoices("CORS_ORIGINS"),
     )
+    web_app_url: str = Field(
+        default="http://localhost:3000",
+        validation_alias=AliasChoices("WEB_APP_URL"),
+    )
+
+    oauth_google_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("OAUTH_GOOGLE_ENABLED"),
+    )
+    oauth_github_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("OAUTH_GITHUB_ENABLED"),
+    )
+    google_client_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GOOGLE_CLIENT_ID"),
+    )
+    google_client_secret: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GOOGLE_CLIENT_SECRET"),
+    )
+    google_redirect_uri: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GOOGLE_REDIRECT_URI"),
+    )
+    github_client_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GITHUB_CLIENT_ID"),
+    )
+    github_client_secret: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GITHUB_CLIENT_SECRET"),
+    )
+    github_redirect_uri: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("GITHUB_REDIRECT_URI"),
+    )
 
     @model_validator(mode="after")
     def _require_jwt_or_dev_bypass(self) -> ApiSettings:
@@ -148,6 +185,22 @@ class ApiSettings(BaseSettings):
         return [
             origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
         ]
+
+    def google_oauth_configured(self) -> bool:
+        return bool(
+            self.oauth_google_enabled
+            and self.google_client_id
+            and self.google_client_secret
+            and self.google_redirect_uri
+        )
+
+    def github_oauth_configured(self) -> bool:
+        return bool(
+            self.oauth_github_enabled
+            and self.github_client_id
+            and self.github_client_secret
+            and self.github_redirect_uri
+        )
 
 
 def load_api_settings() -> ApiSettings:
