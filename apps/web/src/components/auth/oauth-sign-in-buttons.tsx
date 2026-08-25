@@ -77,9 +77,7 @@ export function OAuthSignInButtons({
       } catch {
         // OAuth is optional — hide buttons when providers cannot be loaded.
       } finally {
-        if (!controller.signal.aborted) {
-          setProvidersLoaded(true);
-        }
+        setProvidersLoaded(true);
       }
     })();
     return () => {
