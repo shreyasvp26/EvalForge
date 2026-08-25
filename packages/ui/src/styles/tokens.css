@@ -70,13 +70,13 @@
   --ef-z-command: 500;
 
   /* Surfaces & text */
-  --ef-background: #f7f7f8;
+  --ef-background: #f6f5fa;
   --ef-foreground: #111113;
-  --ef-muted: #efeff1;
+  --ef-muted: #eeedf3;
   --ef-muted-foreground: #63636e;
-  --ef-border: #e2e2e7;
-  --ef-border-strong: #cfcfd6;
-  --ef-ring: #5c6b7c;
+  --ef-border: #e4e2ea;
+  --ef-border-strong: #cdc8d6;
+  --ef-ring: #7c3aed;
   --ef-card: #ffffff;
   --ef-card-foreground: #111113;
   --ef-popover: #ffffff;
@@ -85,18 +85,18 @@
   --ef-input-foreground: #111113;
 
   /* Layered surfaces */
-  --ef-surface-base: #f7f7f8;
+  --ef-surface-base: #f6f5fa;
   --ef-surface-raised: #ffffff;
   --ef-surface-overlay: #ffffff;
-  --ef-surface-inset: #efeff1;
+  --ef-surface-inset: #eeedf3;
 
-  /* Accent — deep indigo-slate; high contrast on actions */
-  --ef-accent: #1e3a5f;
-  --ef-accent-strong: #152a45;
-  --ef-accent-foreground: #f7f7f8;
-  --ef-accent-muted: #e4ebf3;
-  --ef-accent-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
-  --ef-accent-glow: rgb(30 58 95 / 0.18);
+  /* Accent — violet brand aligned with auth landing; white on violet AA */
+  --ef-accent: #7c3aed;
+  --ef-accent-strong: #6d28d9;
+  --ef-accent-foreground: #ffffff;
+  --ef-accent-muted: #f0e9ff;
+  --ef-accent-gradient: linear-gradient(135deg, #6366f1 0%, #9333ea 55%, #a855f7 100%);
+  --ef-accent-glow: rgb(124 58 237 / 0.28);
 
   /* Auth landing — light theme */
   --ef-auth-bg-base: #f4f3f8;
@@ -164,31 +164,31 @@
 .dark {
   color-scheme: dark;
 
-  --ef-background: #0b0b0c;
+  --ef-background: #08080c;
   --ef-foreground: #f2f2f3;
-  --ef-muted: #161618;
+  --ef-muted: #14141a;
   --ef-muted-foreground: #a0a0a8;
-  --ef-border: #27272a;
-  --ef-border-strong: #3f3f46;
-  --ef-ring: #8b9aab;
-  --ef-card: #111113;
+  --ef-border: #252530;
+  --ef-border-strong: #3a3a48;
+  --ef-ring: #a78bfa;
+  --ef-card: #101016;
   --ef-card-foreground: #f2f2f3;
-  --ef-popover: #141416;
+  --ef-popover: #14141c;
   --ef-popover-foreground: #f2f2f3;
-  --ef-input: #111113;
+  --ef-input: #101016;
   --ef-input-foreground: #f2f2f3;
 
-  --ef-surface-base: #0b0b0c;
-  --ef-surface-raised: #111113;
-  --ef-surface-overlay: #141416;
-  --ef-surface-inset: #161618;
+  --ef-surface-base: #08080c;
+  --ef-surface-raised: #101016;
+  --ef-surface-overlay: #14141c;
+  --ef-surface-inset: #14141a;
 
-  --ef-accent: #7eb6f0;
-  --ef-accent-strong: #5a9fd8;
-  --ef-accent-foreground: #0a1420;
-  --ef-accent-muted: #132235;
-  --ef-accent-gradient: linear-gradient(135deg, #4a7ab0 0%, #7eb6f0 100%);
-  --ef-accent-glow: rgb(126 182 240 / 0.15);
+  --ef-accent: #8b5cf6;
+  --ef-accent-strong: #7c3aed;
+  --ef-accent-foreground: #ffffff;
+  --ef-accent-muted: #1a1228;
+  --ef-accent-gradient: linear-gradient(135deg, #6366f1 0%, #9333ea 50%, #a855f7 100%);
+  --ef-accent-glow: rgb(139 92 246 / 0.35);
 
   /* Auth landing — dark theme (hero experience) */
   --ef-auth-bg-base: #06060a;
