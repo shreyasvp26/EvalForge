@@ -66,10 +66,13 @@ class StrictResponseParser:
             )
 
         numeric = self._optional_float(payload, "numeric")
+        if numeric is None:
+            # Accept Phase 6 conceptual shape: {"score": 0.85, ...}
+            numeric = self._optional_float(payload, "score")
         passed = self._optional_bool(payload, "passed")
         if numeric is None and passed is None:
             raise RubricSchemaError(
-                "Judge response must include numeric and/or passed",
+                "Judge response must include numeric/score and/or passed",
                 details={"keys": sorted(payload.keys())},
             )
 
@@ -144,9 +147,11 @@ class StrictResponseParser:
         for item in raw_criteria:
             if not isinstance(item, dict):
                 raise RubricSchemaError("each criteria entry must be an object")
-            cid = item.get("criterion_id")
+            cid = item.get("criterion_id") or item.get("name") or item.get("id")
             if not isinstance(cid, str) or not cid.strip():
-                raise RubricSchemaError("criterion_id must be a non-empty string")
+                raise RubricSchemaError(
+                    "criterion_id (or name/id) must be a non-empty string"
+                )
             if known and cid not in known:
                 raise RubricSchemaError(
                     f"Unknown criterion_id {cid!r}",

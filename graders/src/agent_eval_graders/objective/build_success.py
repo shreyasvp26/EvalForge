@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from uuid import uuid4
 
-from agent_eval_domain.common.ids import ScoreId
 from agent_eval_domain.execution.entities import Artifact, ExecutionEvent
 
 from agent_eval_graders.objective._helpers import matching_shell
 from agent_eval_graders.sdk.context import GradingContext
 from agent_eval_graders.sdk.grader import BaseGrader
-from agent_eval_graders.sdk.models import ProducedScore, make_score
+from agent_eval_graders.sdk.models import ProducedScore
+from agent_eval_graders.sdk.result import produce_objective_score
 
 DEFAULT_BUILD_PATTERNS = (
     r"\bnpm\s+run\s+build\b",
@@ -63,21 +62,9 @@ class BuildSuccessGrader(BaseGrader):
         context: GradingContext,
         judgment: object,
     ) -> Sequence[ProducedScore]:
-        data = judgment if isinstance(judgment, dict) else {}
-        passed = bool(data.get("passed"))
-        reason = str(data.get("reason", ""))
-        return (
-            make_score(
-                score_id=ScoreId(f"score-{uuid4().hex[:12]}"),
-                run_id=context.reader.metadata().run_id,
-                grader_id=context.grader_id,
-                grader_version_id=context.grader_version_id,
-                passed=passed,
-                numeric=1.0 if passed else 0.0,
-                reason=reason,
-                detail={
-                    "grader": self.name,
-                    **{k: v for k, v in data.items() if k != "reason"},
-                },
-            ),
+        return produce_objective_score(
+            context,
+            grader_name=self.name,
+            judgment=judgment,
+            evidence_keys=("exit_code", "command"),
         )

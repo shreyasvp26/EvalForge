@@ -30,6 +30,7 @@ from agent_eval_graders.rubric.registry import (
 )
 from agent_eval_graders.rubric.response_parser import StrictResponseParser
 from agent_eval_graders.rubric.runner import JudgeRunner, RubricGrader
+from agent_eval_graders.rubric.specification import parse_rubric_specification
 
 __all__ = [
     "CriterionScore",
@@ -56,5 +57,6 @@ __all__ = [
     "StrictResponseParser",
     "create_rubric_grader",
     "default_rubric_registry",
+    "parse_rubric_specification",
     "register_rubric_graders",
 ]
