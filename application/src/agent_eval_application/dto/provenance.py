@@ -5,7 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from agent_eval_application.dto.run import RunTelemetryDTO
 from agent_eval_application.scoring.aggregation import ScoreAggregate
+
+
+@dataclass(frozen=True, slots=True)
+class ReproducibilityDTO:
+    """Whether the pinned evaluation can be re-run without missing inputs."""
+
+    can_reproduce: bool
+    missing: tuple[str, ...]
+    notes: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,3 +53,9 @@ class RunProvenanceDTO:
     expected_grader_count: int
     produced_score_count: int
     is_partially_graded: bool
+
+    telemetry: RunTelemetryDTO
+    event_count: int
+    artifact_count: int
+    execution_mode: str | None
+    reproducibility: ReproducibilityDTO
