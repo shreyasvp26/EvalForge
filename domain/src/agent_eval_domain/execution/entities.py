@@ -27,20 +27,19 @@ from agent_eval_domain.execution.normalized_model import (
 
 @dataclass(frozen=True, slots=True)
 class ExecutionCost:
-    """Intrinsic cost facts on a Run (Invariant 15). Written once during execution."""
+    """Intrinsic cost facts on a Run (Invariant 15). Written once during execution.
 
-    input_tokens: int = 0
-    output_tokens: int = 0
+    Token fields are ``None`` when the provider did not expose reliable usage.
+    Never treat missing provider usage as zero tokens.
+    """
+
     wall_clock_ms: int = 0
     compute_ms: int = 0
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
     def __post_init__(self) -> None:
-        for field_name in (
-            "input_tokens",
-            "output_tokens",
-            "wall_clock_ms",
-            "compute_ms",
-        ):
+        for field_name in ("wall_clock_ms", "compute_ms"):
             value = getattr(self, field_name)
             if value < 0:
                 raise InvariantViolation(
@@ -48,6 +47,24 @@ class ExecutionCost:
                     code="INVALID_COST",
                     details={field_name: value},
                 )
+        for field_name in ("input_tokens", "output_tokens"):
+            value = getattr(self, field_name)
+            if value is not None and value < 0:
+                raise InvariantViolation(
+                    f"{field_name} cannot be negative",
+                    code="INVALID_COST",
+                    details={field_name: value},
+                )
+
+    @property
+    def provider_usage_available(self) -> bool:
+        return self.input_tokens is not None or self.output_tokens is not None
+
+    @property
+    def total_tokens(self) -> int | None:
+        if self.input_tokens is None and self.output_tokens is None:
+            return None
+        return (self.input_tokens or 0) + (self.output_tokens or 0)
 
 
 class ArtifactKind(StrEnum):

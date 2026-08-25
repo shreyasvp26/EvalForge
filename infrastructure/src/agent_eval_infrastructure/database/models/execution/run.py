@@ -80,6 +80,7 @@ class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
         default=list,
     )
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    failure_category: Mapped[str | None] = mapped_column(String(64), nullable=True)
     cancellation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)

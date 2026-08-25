@@ -11,6 +11,7 @@ from agent_eval_domain.execution.entities import (
     ScoreValue,
 )
 from agent_eval_domain.execution.execution_engine import ExecutionEngine
+from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.normalized_model import (
     ActionKind,
     FileEditAction,
@@ -33,6 +34,7 @@ __all__ = [
     "ExecutionCost",
     "ExecutionEngine",
     "ExecutionEvent",
+    "FailureCategory",
     "FileEditAction",
     "MessageAction",
     "NormalizedAction",

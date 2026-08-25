@@ -262,10 +262,12 @@ def test_fail_run_is_platform_failure(world):
             actor=world["actor"],
             run_id=run.id,
             reason="Sandbox provision failed",
+            category="sandbox_failure",
         )
     )
     assert failed.status == "failed"
     assert failed.failure_reason == "Sandbox provision failed"
+    assert failed.failure_category == "sandbox_failure"
 
 
 def test_cancel_queued_run(world):

@@ -62,6 +62,8 @@ from agent_eval_application.use_cases.run import (
     GetRunScores,
     ListRunsByProject,
 )
+from agent_eval_application.use_cases.run_comparison import CompareRuns
+from agent_eval_application.use_cases.run_diagnosis import DiagnoseRunFailure
 from agent_eval_application.use_cases.suite import (
     CreateSuite,
     CreateSuiteDraftVersion,
@@ -157,6 +159,8 @@ class ApplicationServices:
     get_run_artifacts: GetRunArtifacts
     get_run_scores: GetRunScores
     get_run_provenance: GetRunProvenance
+    compare_runs: CompareRuns
+    diagnose_run_failure: DiagnoseRunFailure
     cancel_run: CancelRun
 
 
@@ -265,6 +269,8 @@ def build_application_services(
         get_run_artifacts=GetRunArtifacts(uow, auth),
         get_run_scores=GetRunScores(uow, auth),
         get_run_provenance=GetRunProvenance(uow, auth),
+        compare_runs=CompareRuns(uow, auth),
+        diagnose_run_failure=DiagnoseRunFailure(uow, auth),
         cancel_run=CancelRun(uow, auth, events),
     )
 

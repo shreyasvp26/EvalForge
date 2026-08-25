@@ -164,6 +164,7 @@ class SuiteCaseResultResponse(BaseModel):
     status: str
     aggregate: ScoreAggregateResponse
     failure_reason: str | None
+    failure_category: str | None = None
 
 
 class SuiteAggregateResponse(BaseModel):
@@ -175,9 +176,12 @@ class SuiteAggregateResponse(BaseModel):
     run_count: int
     completed: int
     failed: int
+    execution_failed: int
     cancelled: int
     queued_or_running: int
     passed: int
+    evaluation_failed: int
+    objective_failed_count: int
     pass_rate: float | None
     average_score: float | None
     cases: list[SuiteCaseResultResponse]
@@ -191,9 +195,12 @@ class SuiteAggregateResponse(BaseModel):
             run_count=dto.run_count,
             completed=dto.completed,
             failed=dto.failed,
+            execution_failed=dto.execution_failed,
             cancelled=dto.cancelled,
             queued_or_running=dto.queued_or_running,
             passed=dto.passed,
+            evaluation_failed=dto.evaluation_failed,
+            objective_failed_count=dto.objective_failed_count,
             pass_rate=dto.pass_rate,
             average_score=dto.average_score,
             cases=[
@@ -209,6 +216,7 @@ class SuiteAggregateResponse(BaseModel):
                         reason=c.aggregate.reason,
                     ),
                     failure_reason=c.failure_reason,
+                    failure_category=c.failure_category,
                 )
                 for c in dto.cases
             ],

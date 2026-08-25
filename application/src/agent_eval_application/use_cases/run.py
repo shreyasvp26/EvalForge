@@ -21,7 +21,8 @@ from agent_eval_domain.common.ids import (
     SuiteId,
     SuiteVersionId,
 )
-from agent_eval_domain.execution.entities import ArtifactKind, ScoreValue
+from agent_eval_domain.execution.entities import ArtifactKind, ExecutionCost, ScoreValue
+from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.ndm_codec import action_from_payload, action_to_payload
 from agent_eval_domain.execution.normalized_model import action_kind_of
 from agent_eval_domain.execution.run_factory import RunCreationCommand, RunFactory
@@ -33,6 +34,7 @@ from agent_eval_application.commands.run import (
     FailRunCommand,
     RecordArtifactCommand,
     RecordExecutionEventCommand,
+    RecordRunTelemetryCommand,
     RecordScoreCommand,
     StartGradingCommand,
     StartRunCommand,
@@ -346,11 +348,73 @@ class FailRun:
     def execute(self, command: FailRunCommand) -> RunDTO:
         run_id = RunId(require_non_empty(command.run_id, field="run_id"))
         reason = require_non_empty(command.reason, field="reason")
+        category: FailureCategory | None = None
+        if command.category is not None and command.category.strip():
+            try:
+                category = FailureCategory(command.category.strip())
+            except ValueError as exc:
+                raise ApplicationValidationError(
+                    f"Unknown failure category {command.category!r}",
+                    field="category",
+                ) from exc
 
         def work(uow):
             run = uow.runs.get(run_id)
             self._auth.ensure_can_manage_project(command.actor, run.pins.project_id)
-            with_domain_errors(lambda: run.fail(reason=reason))
+            with_domain_errors(lambda: run.fail(reason=reason, category=category))
+            uow.runs.save(run)
+            return RunDTO.from_domain(run), collect_events(run)
+
+        return run_in_uow(self._uow_factory, self._events, work)
+
+
+class RecordRunTelemetry:
+    """Write wall-clock / optional provider usage once while Running or Grading."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+        events: DomainEventDispatcher,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+        self._events = events
+
+    def execute(self, command: RecordRunTelemetryCommand) -> RunDTO:
+        run_id = RunId(require_non_empty(command.run_id, field="run_id"))
+        if command.wall_clock_ms < 0 or command.compute_ms < 0:
+            raise ApplicationValidationError(
+                "Telemetry durations cannot be negative",
+                field="wall_clock_ms",
+            )
+        if command.provider_usage_available:
+            if command.input_tokens is None and command.output_tokens is None:
+                raise ApplicationValidationError(
+                    "provider_usage_available requires at least one token count",
+                    field="input_tokens",
+                )
+            input_tokens = command.input_tokens
+            output_tokens = command.output_tokens
+        else:
+            # Explicitly unavailable — do not persist fabricated zeros as usage.
+            input_tokens = None
+            output_tokens = None
+
+        cost = ExecutionCost(
+            wall_clock_ms=command.wall_clock_ms,
+            compute_ms=command.compute_ms,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+
+        def work(uow):
+            run = uow.runs.get(run_id)
+            self._auth.ensure_can_manage_project(command.actor, run.pins.project_id)
+            if run.cost is not None:
+                # Idempotent: first write wins.
+                return RunDTO.from_domain(run), []
+            with_domain_errors(lambda: run.record_cost(cost))
             uow.runs.save(run)
             return RunDTO.from_domain(run), collect_events(run)
 

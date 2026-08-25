@@ -21,7 +21,9 @@ class LifecycleTrigger(StrEnum):
     # Failure / control-plane triggers
     ADAPTER_FAILED = "adapter_failed"
     SANDBOX_FAILED = "sandbox_failed"
+    REPOSITORY_FAILED = "repository_failed"
     WORKER_FAILED = "worker_failed"
+    GRADING_FAILED = "grading_failed"
     TIMEOUT = "timeout"
     RESOURCE_EXHAUSTED = "resource_exhausted"
     CANCEL = "cancel"
@@ -38,3 +40,5 @@ class FailureCause(StrEnum):
     WORKER_FAILURE = "worker_failure"
     TIMEOUT = "timeout"
     RESOURCE_EXHAUSTION = "resource_exhaustion"
+    REPOSITORY_PREPARATION = "repository_preparation"
+    GRADING_FAILURE = "grading_failure"

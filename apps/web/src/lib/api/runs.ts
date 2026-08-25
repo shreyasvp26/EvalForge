@@ -36,12 +36,24 @@ export interface Run {
   created_at: string;
   pins: RunPins;
   failure_reason: string | null;
+  failure_category: string | null;
   cancellation_reason: string | null;
   sandbox_id: string | null;
   expected_grader_count: number;
   produced_score_count: number;
   is_partially_graded: boolean;
   scores: Score[];
+  telemetry?: RunTelemetry | null;
+}
+
+export interface RunTelemetry {
+  wall_clock_ms: number | null;
+  compute_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  total_tokens: number | null;
+  estimated_cost: null;
+  provider_usage_available: boolean;
 }
 
 export interface ExecutionEvent {
@@ -209,6 +221,146 @@ export async function listRunScores(
     `/v1/runs/${encodeURIComponent(runId)}/scores${buildQuery({
       limit: params?.limit,
     })}`,
+    { method: "GET", token },
+  );
+}
+
+export interface ScoreAggregate {
+  passed: boolean | null;
+  overall_score: number | null;
+  objective_failed: boolean;
+  score_count: number;
+  reason: string;
+}
+
+export interface Reproducibility {
+  can_reproduce: boolean;
+  missing: string[];
+  notes: string;
+}
+
+export interface RunProvenance {
+  run_id: string;
+  status: string;
+  created_at: string;
+  failure_reason: string | null;
+  failure_category: string | null;
+  cancellation_reason: string | null;
+  project_id: string;
+  case_version_id: string;
+  prompt_version_id: string;
+  agent_version_id: string;
+  adapter_version_id: string;
+  platform_version_id: string;
+  grader_version_ids: string[];
+  suite_version_id: string | null;
+  repository_url: string | null;
+  commit_sha: string | null;
+  subdirectory: string | null;
+  agent_name: string | null;
+  agent_version_label: string | null;
+  adapter_name: string | null;
+  adapter_version_label: string | null;
+  adapter_key: string | null;
+  grader_summaries: Record<string, unknown>[];
+  score_aggregate: ScoreAggregate;
+  expected_grader_count: number;
+  produced_score_count: number;
+  is_partially_graded: boolean;
+  telemetry: RunTelemetry;
+  event_count: number;
+  artifact_count: number;
+  execution_mode: string | null;
+  reproducibility: Reproducibility;
+}
+
+export interface RunComparisonEntry {
+  run_id: string;
+  status: string;
+  failure_reason: string | null;
+  failure_category: string | null;
+  pins: RunPins;
+  repository_url: string | null;
+  commit_sha: string | null;
+  adapter_key: string | null;
+  adapter_name: string | null;
+  prompt_version: string | null;
+  agent_version: string | null;
+  telemetry: RunTelemetry;
+  score_aggregate: ScoreAggregate;
+  duration_ms: number | null;
+}
+
+export interface RunComparisonDelta {
+  run_id: string;
+  score_delta: number | null;
+  pass_changed: boolean | null;
+  duration_delta_ms: number | null;
+  pin_differences: string[];
+}
+
+export interface RunComparisonResult {
+  baseline_run_id: string;
+  runs: RunComparisonEntry[];
+  deltas: RunComparisonDelta[];
+}
+
+export interface FailingGraderReason {
+  grader_id: string;
+  grader_version_id: string;
+  reason: string;
+}
+
+export interface RunDiagnosis {
+  run_id: string;
+  status: string;
+  summary: string;
+  category: string | null;
+  reason: string | null;
+  evidence: string[];
+  failing_grader_reasons: FailingGraderReason[];
+  last_events: ExecutionEvent[];
+  relevant_artifact_ids: string[];
+}
+
+export interface ArtifactPreview {
+  artifact_id: string;
+  content_type: string;
+  size_bytes: number;
+  preview: string | null;
+  truncated: boolean;
+  previewable: boolean;
+}
+
+export async function getRunProvenance(token: string, runId: string): Promise<RunProvenance> {
+  return apiRequest<RunProvenance>(`/v1/runs/${encodeURIComponent(runId)}/provenance`, {
+    method: "GET",
+    token,
+  });
+}
+
+export async function compareRuns(token: string, runIds: string[]): Promise<RunComparisonResult> {
+  return apiRequest<RunComparisonResult>("/v1/runs/compare", {
+    method: "POST",
+    token,
+    body: { run_ids: runIds },
+  });
+}
+
+export async function diagnoseRunFailure(token: string, runId: string): Promise<RunDiagnosis> {
+  return apiRequest<RunDiagnosis>(`/v1/runs/${encodeURIComponent(runId)}/diagnosis`, {
+    method: "GET",
+    token,
+  });
+}
+
+export async function previewRunArtifact(
+  token: string,
+  runId: string,
+  artifactId: string,
+): Promise<ArtifactPreview> {
+  return apiRequest<ArtifactPreview>(
+    `/v1/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
     { method: "GET", token },
   );
 }

@@ -149,7 +149,7 @@ def test_process_worker_fails_when_git_fails(world) -> None:
     )
     result = bundle.worker.run_once(block=False)
     assert result is not None
-    assert result.failure_cause is FailureCause.SANDBOX_FAILURE
+    assert result.failure_cause is FailureCause.REPOSITORY_PREPARATION
     dto = GetRun(world["uow"], world["auth"]).execute(
         GetRunQuery(actor=world["actor"], run_id=run.id)
     )
@@ -158,6 +158,7 @@ def test_process_worker_fails_when_git_fails(world) -> None:
     assert dto.status in {"failed", "cancelled"}
     if dto.status == "failed":
         assert dto.failure_reason
+        assert dto.failure_category == "repository_preparation"
         assert (
             "Repository" in dto.failure_reason
             or "git" in dto.failure_reason.lower()

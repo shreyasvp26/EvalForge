@@ -32,6 +32,7 @@ from agent_eval_application.use_cases.run import (
     GetRunEvents,
     RecordArtifact,
     RecordExecutionEvent,
+    RecordRunTelemetry,
     RecordScore,
     StartGrading,
     StartRun,
@@ -71,6 +72,9 @@ from agent_eval_workers.integration.judge_wiring import (
     make_rubric_factory,
 )
 from agent_eval_workers.integration.prompt_resolver import PinnedPromptResolver
+from agent_eval_workers.integration.redis_event_projector import (
+    RedisEventFanoutProjector,
+)
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.integration.repository_materializer import (
     SandboxRepositoryPreparer,
@@ -184,6 +188,7 @@ def build_production_lifecycle_factory(
     adapter_mode: str | None = None,
     cancellation: CancellationPort | None = None,
     object_storage: _ArtifactStore | None = None,
+    event_fanout: object | None = None,
 ) -> tuple[
     LifecycleFactory,
     ManagedSandboxAdapter,
@@ -238,10 +243,13 @@ def build_production_lifecycle_factory(
         record_event_uc=RecordExecutionEvent(uow_factory, worker_auth, events),
         record_artifact_uc=RecordArtifact(uow_factory, ids, worker_auth, events),
     )
+    projections = ProjectionHub()
+    if event_fanout is not None:
+        projections.subscribe(RedisEventFanoutProjector(fanout=event_fanout))
     pipeline = EventPersistencePipeline(
         writer=writer,
         actor=system_actor,
-        projections=ProjectionHub(),
+        projections=projections,
         batch_size=1,
     )
 
@@ -340,6 +348,8 @@ def build_production_lifecycle_factory(
         complete_run=CompleteRun(uow_factory, worker_auth, events),
         fail_run=FailRun(uow_factory, worker_auth, events),
         cancel_run=CancelRun(uow_factory, worker_auth, events),
+        record_telemetry=RecordRunTelemetry(uow_factory, worker_auth, events),
+        event_fanout=event_fanout,
     )
 
     def lifecycle_factory(run_id: RunId, phase: OrchestrationPhase) -> LifecycleDriver:
@@ -372,6 +382,7 @@ def build_production_worker(
     adapter_mode: str | None = None,
     cancellation: CancellationPort | None = None,
     object_storage: _ArtifactStore | None = None,
+    event_fanout: object | None = None,
 ) -> ProductionWorkerBundle:
     """Wire a production WorkerRuntime against an injected WorkerQueuePort."""
     system_actor = actor or Actor(id=os.environ.get("WORKER_ACTOR_ID", "system-worker"))
@@ -406,6 +417,7 @@ def build_production_worker(
         adapter_mode=adapter_mode,
         cancellation=cancellation,
         object_storage=object_storage,
+        event_fanout=event_fanout,
     )
 
     worker = WorkerRuntime(

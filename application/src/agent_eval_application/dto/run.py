@@ -38,18 +38,56 @@ class ScoreDTO:
 
 
 @dataclass(frozen=True, slots=True)
+class RunTelemetryDTO:
+    """Nullable execution telemetry — never fabricates provider cost/tokens."""
+
+    wall_clock_ms: int | None
+    compute_ms: int | None
+    input_tokens: int | None
+    output_tokens: int | None
+    total_tokens: int | None
+    estimated_cost: None
+    provider_usage_available: bool
+
+    @classmethod
+    def from_cost(cls, cost: object | None) -> RunTelemetryDTO:
+        if cost is None:
+            return cls(
+                wall_clock_ms=None,
+                compute_ms=None,
+                input_tokens=None,
+                output_tokens=None,
+                total_tokens=None,
+                estimated_cost=None,
+                provider_usage_available=False,
+            )
+        usage = bool(getattr(cost, "provider_usage_available", False))
+        return cls(
+            wall_clock_ms=int(getattr(cost, "wall_clock_ms", 0) or 0),
+            compute_ms=int(getattr(cost, "compute_ms", 0) or 0),
+            input_tokens=getattr(cost, "input_tokens", None) if usage else None,
+            output_tokens=getattr(cost, "output_tokens", None) if usage else None,
+            total_tokens=getattr(cost, "total_tokens", None) if usage else None,
+            estimated_cost=None,
+            provider_usage_available=usage,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class RunDTO:
     id: str
     status: str
     created_at: datetime
     pins: RunPinsDTO
     failure_reason: str | None
+    failure_category: str | None
     cancellation_reason: str | None
     sandbox_id: str | None
     expected_grader_count: int
     produced_score_count: int
     is_partially_graded: bool
     scores: tuple[ScoreDTO, ...]
+    telemetry: RunTelemetryDTO
 
     @classmethod
     def from_domain(cls, run: EvaluationRun) -> RunDTO:
@@ -71,6 +109,9 @@ class RunDTO:
                 ),
             ),
             failure_reason=run.failure_reason,
+            failure_category=(
+                run.failure_category.value if run.failure_category is not None else None
+            ),
             cancellation_reason=run.cancellation_reason,
             sandbox_id=run.sandbox.id.value if run.sandbox else None,
             expected_grader_count=run.expected_grader_count,
@@ -95,6 +136,7 @@ class RunDTO:
                 )
                 for score in run.scores
             ),
+            telemetry=RunTelemetryDTO.from_cost(run.cost),
         )
 
 

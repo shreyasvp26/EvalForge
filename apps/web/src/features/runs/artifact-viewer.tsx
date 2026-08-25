@@ -14,6 +14,7 @@ import {
   Text,
   toast,
 } from "@agent-eval/ui";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import {
@@ -30,7 +31,7 @@ import {
 import type { ArtifactTabId } from "./utils";
 import type { Artifact, ExecutionEvent } from "@/lib/api/runs";
 
-import { downloadRunArtifact } from "@/lib/api/runs";
+import { downloadRunArtifact, previewRunArtifact } from "@/lib/api/runs";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 export interface ArtifactViewerProps {
@@ -154,8 +155,24 @@ export function ArtifactViewer({
 function ArtifactPane({ artifact, preview }: { artifact: Artifact; preview: string | null }) {
   const { token } = useAuth();
   const [downloading, setDownloading] = useState(false);
-  const metadata = artifactMetadataDocument(artifact, preview);
-  const viewText = preview ?? metadata;
+  const bodyPreviewQuery = useQuery({
+    queryKey: ["runs", artifact.run_id, "artifacts", artifact.id, "preview"],
+    enabled: Boolean(token),
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return previewRunArtifact(token, artifact.run_id, artifact.id);
+    },
+    staleTime: 60_000,
+  });
+  const bodyPreview =
+    bodyPreviewQuery.data?.previewable && bodyPreviewQuery.data.preview
+      ? bodyPreviewQuery.data.preview
+      : null;
+  const linkedPreview = preview;
+  const activePreview = bodyPreview ?? linkedPreview;
+  const metadata = artifactMetadataDocument(artifact, activePreview);
+  const viewText = activePreview ?? metadata;
+  const truncated = bodyPreviewQuery.data?.truncated === true;
 
   async function handleDownloadBytes() {
     if (!token) {
@@ -223,9 +240,9 @@ function ArtifactPane({ artifact, preview }: { artifact: Artifact; preview: stri
             leftIcon={FileText}
             onClick={() => {
               downloadTextFile(
-                `${artifact.kind}-${truncateId(artifact.id, 8)}.${preview ? "txt" : "json"}`,
+                `${artifact.kind}-${truncateId(artifact.id, 8)}.${activePreview ? "txt" : "json"}`,
                 viewText,
-                preview ? "text/plain" : "application/json",
+                activePreview ? "text/plain" : "application/json",
               );
               toast.success("Metadata download started");
             }}
@@ -247,9 +264,13 @@ function ArtifactPane({ artifact, preview }: { artifact: Artifact; preview: stri
       </div>
 
       <Text variant="caption">
-        {preview
-          ? "Inline preview from linked execution events. Use Download for stored artifact bytes."
-          : "Use Download for stored artifact bytes from object storage."}
+        {bodyPreview
+          ? truncated
+            ? "Safe truncated preview from object storage. Use Download for full bytes."
+            : "Safe inline preview from object storage. Use Download for full bytes."
+          : linkedPreview
+            ? "Inline preview from linked execution events. Use Download for stored artifact bytes."
+            : "Use Download for stored artifact bytes from object storage."}
       </Text>
 
       <ScrollArea className="h-[min(24rem,50vh)] rounded-[var(--ef-radius-control)] border border-border bg-muted/40">

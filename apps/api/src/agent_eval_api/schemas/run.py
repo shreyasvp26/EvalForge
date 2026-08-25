@@ -144,6 +144,18 @@ class ArtifactResponse(BaseModel):
         )
 
 
+class RunTelemetryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    wall_clock_ms: int | None
+    compute_ms: int | None
+    input_tokens: int | None
+    output_tokens: int | None
+    total_tokens: int | None
+    estimated_cost: None = None
+    provider_usage_available: bool
+
+
 class RunResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -152,15 +164,18 @@ class RunResponse(BaseModel):
     created_at: datetime
     pins: RunPinsResponse
     failure_reason: str | None
+    failure_category: str | None = None
     cancellation_reason: str | None
     sandbox_id: str | None
     expected_grader_count: int
     produced_score_count: int
     is_partially_graded: bool
     scores: list[ScoreResponse]
+    telemetry: RunTelemetryResponse | None = None
 
     @classmethod
     def from_dto(cls, dto: RunDTO) -> RunResponse:
+        telem = dto.telemetry
         return cls(
             id=dto.id,
             status=dto.status,
@@ -176,12 +191,22 @@ class RunResponse(BaseModel):
                 suite_version_id=dto.pins.suite_version_id,
             ),
             failure_reason=dto.failure_reason,
+            failure_category=dto.failure_category,
             cancellation_reason=dto.cancellation_reason,
             sandbox_id=dto.sandbox_id,
             expected_grader_count=dto.expected_grader_count,
             produced_score_count=dto.produced_score_count,
             is_partially_graded=dto.is_partially_graded,
             scores=[ScoreResponse.from_dto(s) for s in dto.scores],
+            telemetry=RunTelemetryResponse(
+                wall_clock_ms=telem.wall_clock_ms,
+                compute_ms=telem.compute_ms,
+                input_tokens=telem.input_tokens,
+                output_tokens=telem.output_tokens,
+                total_tokens=telem.total_tokens,
+                estimated_cost=None,
+                provider_usage_available=telem.provider_usage_available,
+            ),
         )
 
 
@@ -195,6 +220,14 @@ class ScoreAggregateResponse(BaseModel):
     reason: str
 
 
+class ReproducibilityResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    can_reproduce: bool
+    missing: list[str]
+    notes: str
+
+
 class RunProvenanceResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -202,6 +235,7 @@ class RunProvenanceResponse(BaseModel):
     status: str
     created_at: datetime
     failure_reason: str | None
+    failure_category: str | None = None
     cancellation_reason: str | None
     project_id: str
     case_version_id: str
@@ -224,3 +258,84 @@ class RunProvenanceResponse(BaseModel):
     expected_grader_count: int
     produced_score_count: int
     is_partially_graded: bool
+    telemetry: RunTelemetryResponse
+    event_count: int
+    artifact_count: int
+    execution_mode: str | None = None
+    reproducibility: ReproducibilityResponse
+
+
+class CompareRunsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_ids: list[str] = Field(min_length=2, max_length=5)
+
+
+class RunComparisonEntryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    status: str
+    failure_reason: str | None
+    failure_category: str | None = None
+    pins: RunPinsResponse
+    repository_url: str | None
+    commit_sha: str | None
+    adapter_key: str | None
+    adapter_name: str | None
+    prompt_version: str | None
+    agent_version: str | None
+    telemetry: RunTelemetryResponse
+    score_aggregate: ScoreAggregateResponse
+    duration_ms: int | None
+
+
+class RunComparisonDeltaResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    score_delta: float | None
+    pass_changed: bool | None
+    duration_delta_ms: int | None
+    pin_differences: list[str]
+
+
+class RunComparisonResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    baseline_run_id: str
+    runs: list[RunComparisonEntryResponse]
+    deltas: list[RunComparisonDeltaResponse]
+
+
+class FailingGraderReasonResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    grader_id: str
+    grader_version_id: str
+    reason: str
+
+
+class RunDiagnosisResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    status: str
+    summary: str
+    category: str | None = None
+    reason: str | None
+    evidence: list[str]
+    failing_grader_reasons: list[FailingGraderReasonResponse]
+    last_events: list[ExecutionEventResponse]
+    relevant_artifact_ids: list[str]
+
+
+class ArtifactPreviewResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    artifact_id: str
+    content_type: str
+    size_bytes: int
+    preview: str | None
+    truncated: bool
+    previewable: bool

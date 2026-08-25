@@ -79,6 +79,12 @@ class GetRunProvenanceQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class DiagnoseRunFailureQuery:
+    actor: Actor
+    run_id: str
+
+
+@dataclass(frozen=True, slots=True)
 class GetAgentQuery:
     actor: Actor
     agent_id: str

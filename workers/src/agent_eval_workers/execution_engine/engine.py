@@ -222,5 +222,7 @@ def _failure_trigger_for(cause: FailureCause) -> LifecycleTrigger:
         FailureCause.WORKER_FAILURE: LifecycleTrigger.WORKER_FAILED,
         FailureCause.TIMEOUT: LifecycleTrigger.TIMEOUT,
         FailureCause.RESOURCE_EXHAUSTION: LifecycleTrigger.RESOURCE_EXHAUSTED,
+        FailureCause.REPOSITORY_PREPARATION: LifecycleTrigger.REPOSITORY_FAILED,
+        FailureCause.GRADING_FAILURE: LifecycleTrigger.GRADING_FAILED,
     }
     return mapping[cause]
