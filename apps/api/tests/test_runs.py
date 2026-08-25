@@ -88,4 +88,6 @@ def test_download_run_artifact(client, services, auth_headers, container) -> Non
 def test_list_run_scores(client, services, auth_headers) -> None:
     response = client.get("/v1/runs/run-1/scores", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json()["items"][0]["grader_id"] == "g-1"
+    item = response.json()["items"][0]
+    assert item["grader_id"] == "g-1"
+    assert item["value"]["detail"]["reason"] == "expected files present"

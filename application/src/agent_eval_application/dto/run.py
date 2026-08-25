@@ -25,6 +25,7 @@ class ScoreValueDTO:
     numeric: float | None
     categorical: str | None
     passed: bool | None
+    detail: dict[str, object]
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,6 +85,7 @@ class RunDTO:
                         numeric=score.value.numeric,
                         categorical=score.value.categorical,
                         passed=score.value.passed,
+                        detail=dict(score.value.detail),
                     ),
                     explanation_artifact_id=(
                         score.explanation_artifact_id.value

@@ -114,6 +114,12 @@ export function ScoreViewer({
                     <Text variant="caption" className="font-mono">
                       version {truncateId(score.grader_version_id, 16)}
                     </Text>
+                    {typeof score.value.detail?.["reason"] === "string" &&
+                    score.value.detail["reason"].trim() ? (
+                      <Text variant="secondary" className="line-clamp-2">
+                        {score.value.detail["reason"]}
+                      </Text>
+                    ) : null}
                   </div>
                 </button>
 
@@ -131,6 +137,7 @@ export function ScoreViewer({
                       value={score.value.numeric === null ? "—" : String(score.value.numeric)}
                     />
                     <ScoreField label="Categorical" value={score.value.categorical ?? "—"} />
+                    <ScoreDetailField detail={score.value.detail} />
                     <ScoreField
                       label="Explanation artifact"
                       value={score.explanation_artifact_id ?? "None"}
@@ -185,6 +192,29 @@ function ScoreField({
       >
         {value}
       </Text>
+    </div>
+  );
+}
+
+function ScoreDetailField({ detail }: { detail: Record<string, unknown> | undefined }) {
+  const entries = Object.entries(detail ?? {});
+  if (entries.length === 0) {
+    return <ScoreField label="Detail" value="—" />;
+  }
+  const reason = detail?.["reason"];
+  return (
+    <div className="space-y-2">
+      {typeof reason === "string" && reason.trim() ? (
+        <ScoreField label="Reason" value={reason} />
+      ) : null}
+      <div className="space-y-1">
+        <Text as="div" variant="caption">
+          Detail
+        </Text>
+        <pre className="max-h-48 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-3 font-mono text-[length:var(--ef-text-caption)] whitespace-pre-wrap break-all">
+          {JSON.stringify(detail, null, 2)}
+        </pre>
+      </div>
     </div>
   );
 }
