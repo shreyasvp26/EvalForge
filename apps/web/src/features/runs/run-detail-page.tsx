@@ -27,6 +27,7 @@ import { listAdapters, listAgents } from "@/lib/api/agents";
 import { listCases } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
 import { getProject } from "@/lib/api/projects";
+import { diagnoseRunFailure } from "@/lib/api/runs";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 export function RunDetailPage({ runId }: { runId: string }) {
@@ -35,10 +36,23 @@ export function RunDetailPage({ runId }: { runId: string }) {
 
   const runQuery = useRun(runId);
   const status = runQuery.data?.status;
-  const polling = useRunPolling(status);
+  const polling = useRunPolling(runId, status);
   const eventsQuery = useRunEvents(runId, status, runQuery.isSuccess);
   const artifactsQuery = useRunArtifacts(runId, status, runQuery.isSuccess);
   const scoresQuery = useRunScores(runId, status, runQuery.isSuccess);
+
+  const showDiagnosis =
+    runQuery.data?.status === "failed" ||
+    (runQuery.data?.status === "completed" && runPassSignal(runQuery.data) === false);
+
+  const diagnosisQuery = useQuery({
+    queryKey: ["runs", runId, "diagnosis"],
+    enabled: !!token && showDiagnosis,
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return diagnoseRunFailure(token, runId);
+    },
+  });
 
   const projectId = runQuery.data?.pins.project_id;
 
@@ -227,6 +241,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
           <ExecutionHeader
             run={{ ...run, scores }}
             events={events}
+            connection={polling.connection}
             {...(projectQuery.data?.name ? { projectName: projectQuery.data.name } : {})}
             {...(caseLabel ? { caseLabel } : {})}
             {...(agentLabel ? { agentLabel } : {})}
@@ -245,7 +260,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
             }}
           />
 
-          {(run.failure_reason ?? run.cancellation_reason) && (
+          {(run.failure_reason ?? run.cancellation_reason ?? run.failure_category) && (
             <section
               aria-label="Failure information"
               className="rounded-[var(--ef-radius-panel)] border border-danger/40 bg-danger-muted/40 px-4 py-3"
@@ -255,8 +270,17 @@ export function RunDetailPage({ runId }: { runId: string }) {
                 variant="caption"
                 className="font-mono uppercase tracking-[0.12em] text-danger"
               >
-                {run.failure_reason ? "Failure" : "Cancellation"}
+                {run.failure_reason
+                  ? "Failure"
+                  : run.cancellation_reason
+                    ? "Cancellation"
+                    : "Failure category"}
               </Text>
+              {run.failure_category ? (
+                <Text variant="secondary" className="mt-2 font-mono text-foreground">
+                  Category: {run.failure_category}
+                </Text>
+              ) : null}
               {run.failure_reason ? (
                 <Text variant="secondary" className="mt-2 whitespace-pre-wrap text-foreground">
                   {run.failure_reason}
@@ -269,6 +293,68 @@ export function RunDetailPage({ runId }: { runId: string }) {
               ) : null}
             </section>
           )}
+
+          {diagnosisQuery.data ? (
+            <section
+              aria-label="Failure diagnosis"
+              className="rounded-[var(--ef-radius-panel)] border border-border bg-muted/30 px-4 py-3"
+            >
+              <Text
+                as="div"
+                variant="caption"
+                className="font-mono uppercase tracking-[0.12em] text-muted-foreground"
+              >
+                Diagnosis
+              </Text>
+              <Text variant="secondary" className="mt-2 text-foreground">
+                {diagnosisQuery.data.summary}
+              </Text>
+              {diagnosisQuery.data.category ? (
+                <Text variant="secondary" className="mt-1 font-mono text-foreground">
+                  {diagnosisQuery.data.category}
+                </Text>
+              ) : null}
+              {diagnosisQuery.data.evidence.length > 0 ? (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {diagnosisQuery.data.evidence.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ) : null}
+
+          {run.telemetry?.wall_clock_ms != null ? (
+            <section
+              aria-label="Run telemetry"
+              className="rounded-[var(--ef-radius-panel)] border border-border bg-muted/20 px-4 py-3"
+            >
+              <Text
+                as="div"
+                variant="caption"
+                className="font-mono uppercase tracking-[0.12em] text-muted-foreground"
+              >
+                Telemetry
+              </Text>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <MetaField
+                  label="Wall clock"
+                  value={`${String(run.telemetry.wall_clock_ms)} ms`}
+                  mono
+                />
+                {run.telemetry.compute_ms != null ? (
+                  <MetaField
+                    label="Compute"
+                    value={`${String(run.telemetry.compute_ms)} ms`}
+                    mono
+                  />
+                ) : null}
+                {run.telemetry.provider_usage_available && run.telemetry.total_tokens != null ? (
+                  <MetaField label="Tokens" value={String(run.telemetry.total_tokens)} mono />
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           <div className="grid gap-6 lg:grid-cols-3">
             <Section
