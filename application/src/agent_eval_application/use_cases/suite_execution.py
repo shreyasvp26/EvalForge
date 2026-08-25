@@ -232,6 +232,7 @@ class AggregateSuiteResults:
             }
             case_results: list[SuiteCaseResultDTO] = []
             completed = failed = cancelled = queued = passed = 0
+            evaluation_failed = objective_failed_count = 0
             score_values: list[float] = []
 
             for run in runs:
@@ -240,6 +241,8 @@ class AggregateSuiteResults:
                 status = dto.status
                 if status == "completed":
                     completed += 1
+                    if agg.passed is False:
+                        evaluation_failed += 1
                 elif status == "failed":
                     failed += 1
                 elif status == "cancelled":
@@ -248,6 +251,8 @@ class AggregateSuiteResults:
                     queued += 1
                 if agg.passed is True:
                     passed += 1
+                if agg.objective_failed:
+                    objective_failed_count += 1
                 if agg.overall_score is not None:
                     score_values.append(agg.overall_score)
                 case_results.append(
@@ -285,9 +290,12 @@ class AggregateSuiteResults:
                 run_count=len(case_results),
                 completed=completed,
                 failed=failed,
+                execution_failed=failed,
                 cancelled=cancelled,
                 queued_or_running=queued,
                 passed=passed,
+                evaluation_failed=evaluation_failed,
+                objective_failed_count=objective_failed_count,
                 pass_rate=pass_rate,
                 average_score=average_score,
                 cases=tuple(case_results),
