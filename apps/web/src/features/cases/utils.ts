@@ -88,3 +88,25 @@ export function pinnablePromptVersions(caseItem: Case): PromptVersion[] {
     caseItem.prompt_versions.filter((version) => version.status !== "retired"),
   );
 }
+
+/**
+ * Versions that a Run may pin (mirrors domain RunFactory): not draft, not retired.
+ * Active and superseded are allowed.
+ */
+export function isPinnableVersionStatus(status: string): boolean {
+  return status !== "draft" && status !== "retired";
+}
+
+/** Case versions eligible for run launch (active or superseded). */
+export function pinnableCaseVersions(caseItem: Case): CaseVersion[] {
+  return sortCaseVersionsNewestFirst(
+    caseItem.versions.filter((version) => isPinnableVersionStatus(version.status)),
+  );
+}
+
+/** Prompt versions eligible for run launch (active or superseded). */
+export function pinnableRunPromptVersions(caseItem: Case): PromptVersion[] {
+  return sortPromptVersionsNewestFirst(
+    caseItem.prompt_versions.filter((version) => isPinnableVersionStatus(version.status)),
+  );
+}
