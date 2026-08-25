@@ -349,7 +349,8 @@ def test_live_gemini_docker_calculator_evaluation(
             f"expected COMPLETED, got {result.kind} cause={result.failure_cause} "
             f"phase={result.phase} status={final.status} "
             f"failure_reason={final.failure_reason!r} "
-            f"scores={scores} event_count={len(events)}"
+            f"scores={[(s.value.passed, s.value.reason) for s in scores]} "
+            f"event_count={len(events)}"
         )
 
     assert final.status == "completed"
