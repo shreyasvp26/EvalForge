@@ -2,6 +2,7 @@
 
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,7 +20,7 @@ import {
   Textarea,
   toast,
 } from "@agent-eval/ui";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
 import { z } from "zod";
 
@@ -28,8 +29,10 @@ import { caseQueryKey, casesQueryKey, pinnablePromptVersions, versionStatusLabel
 import type { Case } from "@/lib/api/cases";
 
 import { InlineError } from "@/components/patterns/inline-error";
+import { gradersQueryKey } from "@/features/graders/utils";
 import { createCaseDraftVersion } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
+import { listGraders } from "@/lib/api/graders";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const schema = z.object({
@@ -47,7 +50,6 @@ const schema = z.object({
   subdirectory: z.string().max(500, "Subdirectory is too long"),
   prompt_version_id: z.string().min(1, "Select a prompt version"),
   expected_checks: z.string().max(5000),
-  applicable_grader_ids: z.string().max(5000),
 });
 
 function splitList(value: string): string[] {
@@ -75,9 +77,21 @@ export function CreateCaseDraftDialog({
   const shaId = useId();
   const subdirId = useId();
   const checksId = useId();
-  const gradersId = useId();
 
   const promptOptions = useMemo(() => pinnablePromptVersions(caseItem), [caseItem]);
+
+  const gradersQuery = useQuery({
+    queryKey: [...gradersQueryKey, "case-draft"],
+    enabled: Boolean(token) && open,
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return listGraders(token, { limit: 100, sort: "-created_at" });
+    },
+  });
+
+  const availableGraders = useMemo(() => {
+    return (gradersQuery.data?.items ?? []).filter((grader) => grader.status !== "deprecated");
+  }, [gradersQuery.data]);
 
   const [description, setDescription] = useState("");
   const [repositoryUrl, setRepositoryUrl] = useState("");
@@ -85,7 +99,7 @@ export function CreateCaseDraftDialog({
   const [subdirectory, setSubdirectory] = useState("");
   const [promptVersionId, setPromptVersionId] = useState("");
   const [expectedChecks, setExpectedChecks] = useState("");
-  const [graderIds, setGraderIds] = useState("");
+  const [selectedGraderIds, setSelectedGraderIds] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof z.infer<typeof schema>, string>>
   >({});
@@ -99,7 +113,7 @@ export function CreateCaseDraftDialog({
     setSubdirectory("");
     setPromptVersionId("");
     setExpectedChecks("");
-    setGraderIds("");
+    setSelectedGraderIds({});
     setFieldErrors({});
     setFormError(null);
     setSubmitting(false);
@@ -120,6 +134,16 @@ export function CreateCaseDraftDialog({
     }
   }
 
+  function toggleGrader(graderId: string, checked: boolean) {
+    setSelectedGraderIds((current) => {
+      if (!checked) {
+        const { [graderId]: _removed, ...rest } = current;
+        return rest;
+      }
+      return { ...current, [graderId]: true };
+    });
+  }
+
   function onSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
@@ -136,7 +160,6 @@ export function CreateCaseDraftDialog({
       subdirectory,
       prompt_version_id: promptVersionId,
       expected_checks: expectedChecks,
-      applicable_grader_ids: graderIds,
     });
 
     if (!parsed.success) {
@@ -168,7 +191,7 @@ export function CreateCaseDraftDialog({
           subdirectory: parsed.data.subdirectory.trim() || null,
           prompt_version_id: parsed.data.prompt_version_id,
           expected_checks: splitList(parsed.data.expected_checks),
-          applicable_grader_ids: splitList(parsed.data.applicable_grader_ids),
+          applicable_grader_ids: Object.keys(selectedGraderIds),
         });
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: caseQueryKey(caseItem.id) }),
@@ -333,20 +356,40 @@ export function CreateCaseDraftDialog({
             <Text variant="caption">Comma or newline separated.</Text>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor={gradersId}>Applicable grader IDs (optional)</Label>
-            <Textarea
-              id={gradersId}
-              value={graderIds}
-              disabled={submitting}
-              rows={2}
-              placeholder="Grader IDs, one per line or comma-separated"
-              className="font-mono text-[length:var(--ef-text-caption)]"
-              onChange={(event) => {
-                setGraderIds(event.target.value);
-                clearField("applicable_grader_ids");
-              }}
-            />
+          <div className="space-y-2">
+            <Label>Applicable graders</Label>
+            <Text variant="caption">
+              Graders declared here can be pinned when launching a run against this case version.
+            </Text>
+            {gradersQuery.isLoading ? (
+              <Text variant="secondary">Loading graders…</Text>
+            ) : availableGraders.length === 0 ? (
+              <Text variant="secondary">
+                No graders available. Create a grader first, then declare it on this case.
+              </Text>
+            ) : (
+              <ul className="max-h-48 divide-y divide-border overflow-y-auto rounded-[var(--ef-radius-panel)] border border-border">
+                {availableGraders.map((grader) => (
+                  <li key={grader.id} className="px-3 py-2">
+                    <label className="flex items-center gap-3">
+                      <Checkbox
+                        checked={Boolean(selectedGraderIds[grader.id])}
+                        disabled={submitting}
+                        onCheckedChange={(value) => {
+                          toggleGrader(grader.id, value === true);
+                        }}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="font-medium">{grader.name}</span>
+                        <Text as="span" variant="caption" className="ml-2">
+                          {grader.family}
+                        </Text>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <DialogFooter>
