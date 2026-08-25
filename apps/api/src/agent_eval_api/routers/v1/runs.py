@@ -14,6 +14,7 @@ from agent_eval_application.errors import NotFoundApplicationError
 from agent_eval_application.queries.queries import (
     GetRunArtifactsQuery,
     GetRunEventsQuery,
+    GetRunProvenanceQuery,
     GetRunQuery,
     GetRunScoresQuery,
     ListRunsByProjectQuery,
@@ -32,7 +33,9 @@ from agent_eval_api.schemas.run import (
     CancelRunRequest,
     CreateRunRequest,
     ExecutionEventResponse,
+    RunProvenanceResponse,
     RunResponse,
+    ScoreAggregateResponse,
     ScoreResponse,
 )
 
@@ -104,6 +107,55 @@ def get_run(
 ) -> RunResponse:
     dto = services.get_run.execute(GetRunQuery(actor=actor, run_id=run_id))
     return RunResponse.from_dto(dto)
+
+
+@router.get(
+    "/{run_id}/provenance",
+    response_model=RunProvenanceResponse,
+    summary="Get Run provenance (pins, repo SHA, adapter identity, score rollup)",
+)
+def get_run_provenance(
+    run_id: str,
+    actor: ActorDep,
+    services: ServicesDep,
+) -> RunProvenanceResponse:
+    dto = services.get_run_provenance.execute(
+        GetRunProvenanceQuery(actor=actor, run_id=run_id)
+    )
+    return RunProvenanceResponse(
+        run_id=dto.run_id,
+        status=dto.status,
+        created_at=dto.created_at,
+        failure_reason=dto.failure_reason,
+        cancellation_reason=dto.cancellation_reason,
+        project_id=dto.project_id,
+        case_version_id=dto.case_version_id,
+        prompt_version_id=dto.prompt_version_id,
+        agent_version_id=dto.agent_version_id,
+        adapter_version_id=dto.adapter_version_id,
+        platform_version_id=dto.platform_version_id,
+        grader_version_ids=list(dto.grader_version_ids),
+        suite_version_id=dto.suite_version_id,
+        repository_url=dto.repository_url,
+        commit_sha=dto.commit_sha,
+        subdirectory=dto.subdirectory,
+        agent_name=dto.agent_name,
+        agent_version_label=dto.agent_version_label,
+        adapter_name=dto.adapter_name,
+        adapter_version_label=dto.adapter_version_label,
+        adapter_key=dto.adapter_key,
+        grader_summaries=[dict(row) for row in dto.grader_summaries],
+        score_aggregate=ScoreAggregateResponse(
+            passed=dto.score_aggregate.passed,
+            overall_score=dto.score_aggregate.overall_score,
+            objective_failed=dto.score_aggregate.objective_failed,
+            score_count=dto.score_aggregate.score_count,
+            reason=dto.score_aggregate.reason,
+        ),
+        expected_grader_count=dto.expected_grader_count,
+        produced_score_count=dto.produced_score_count,
+        is_partially_graded=dto.is_partially_graded,
+    )
 
 
 @router.post(

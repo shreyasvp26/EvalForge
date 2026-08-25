@@ -20,6 +20,7 @@ from agent_eval_graders.providers.anthropic import (
     AnthropicJudgeProvider,
 )
 from agent_eval_graders.providers.gemini import GeminiJudgeConfig, GeminiJudgeProvider
+from agent_eval_graders.providers.groq import GroqJudgeConfig, GroqJudgeProvider
 from agent_eval_graders.providers.openai import OpenAIJudgeConfig, OpenAIJudgeProvider
 from agent_eval_graders.rubric.models import (
     DeterminismControls,
@@ -392,9 +393,55 @@ def test_provider_selection_builds_each_vendor() -> None:
         "gemini",
         config=GeminiJudgeConfig(api_key="k"),
     )
+    groq = create_judge_provider(
+        "groq",
+        config=GroqJudgeConfig(api_key="k"),
+    )
     assert isinstance(anthropic, AnthropicJudgeProvider)
     assert isinstance(openai, OpenAIJudgeProvider)
     assert isinstance(gemini, GeminiJudgeProvider)
+    assert isinstance(groq, GroqJudgeProvider)
+
+
+def _groq_ok(request: httpx.Request) -> httpx.Response:
+    body = json.loads(request.content.decode())
+    assert body["model"] == "llama-test"
+    assert body["temperature"] == 0.0
+    return httpx.Response(
+        200,
+        json={
+            "id": "chatcmpl-g",
+            "model": "llama-test",
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": JUDGE_JSON},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 2},
+        },
+    )
+
+
+def test_groq_provider_completes_with_structured_json() -> None:
+    provider = GroqJudgeProvider(
+        config=GroqJudgeConfig(api_key="k", model="llama-test", retry_count=0),
+        http_client=httpx.Client(transport=_transport(_groq_ok)),
+    )
+    raw = provider.complete(_request(model_hint="llama-test"))
+    assert json.loads(raw.content)["passed"] is True
+    assert raw.model == "llama-test"
+    assert raw.metadata["provider"] == "groq"
+
+
+def test_groq_config_requires_api_key() -> None:
+    with pytest.raises(ValueError, match="GROQ_API_KEY"):
+        GroqJudgeConfig.from_env(environ={})
+
+
+def test_groq_config_accepts_graq_alias() -> None:
+    config = GroqJudgeConfig.from_env(environ={"GRAQ_API_KEY": "alias-key"})
+    assert config.api_key == "alias-key"
 
 
 def test_provider_selection_from_env_keys() -> None:

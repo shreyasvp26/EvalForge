@@ -32,6 +32,7 @@ from agent_eval_graders.sdk.context import GradingContext
 from agent_eval_graders.sdk.exceptions import GraderError, GraderTimeoutError
 from agent_eval_graders.sdk.grader import BaseGrader
 from agent_eval_graders.sdk.models import ProducedScore, make_score
+from agent_eval_graders.sdk.result import structured_detail
 
 
 @dataclass
@@ -198,12 +199,16 @@ class RubricGrader(BaseGrader):
         criteria_detail = [
             {
                 "criterion_id": c.criterion_id,
+                "name": c.criterion_id,
                 "score": c.score,
                 "reason": c.reason,
                 "passed": c.passed,
             }
             for c in parsed.criteria
         ]
+        score_value = parsed.numeric
+        if score_value is None and parsed.passed is not None:
+            score_value = 1.0 if parsed.passed else 0.0
         return (
             make_score(
                 score_id=ScoreId(f"score-{uuid4().hex[:12]}"),
@@ -213,18 +218,32 @@ class RubricGrader(BaseGrader):
                 passed=parsed.passed,
                 numeric=parsed.numeric,
                 reason=parsed.reason,
-                detail={
-                    "grader": self.name,
-                    "family": "rubric",
-                    "rubric_fingerprint": fingerprint,
-                    "criteria": criteria_detail,
-                    "judge_metadata": dict(parsed.metadata),
-                    "determinism": {
+                detail=structured_detail(
+                    grader=self.name,
+                    family="rubric",
+                    passed=parsed.passed,
+                    score=score_value,
+                    max_score=self.rubric.scale_max,
+                    reason=parsed.reason,
+                    evidence={"criteria": criteria_detail},
+                    metadata={
+                        "rubric_fingerprint": fingerprint,
+                        "judge_metadata": dict(parsed.metadata),
+                        "determinism": {
+                            "temperature": self.controls.temperature,
+                            "seed": self.controls.seed,
+                            "model_hint": self.controls.model_hint,
+                        },
+                    },
+                    criteria=criteria_detail,
+                    rubric_fingerprint=fingerprint,
+                    judge_metadata=dict(parsed.metadata),
+                    determinism={
                         "temperature": self.controls.temperature,
                         "seed": self.controls.seed,
                         "model_hint": self.controls.model_hint,
                     },
-                },
+                ),
                 metadata={
                     "family": "rubric",
                     "rubric_fingerprint": fingerprint,

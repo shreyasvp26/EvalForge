@@ -66,6 +66,10 @@ from agent_eval_workers.integration.adapter_registry import (
 from agent_eval_workers.integration.composition import default_claude_factory
 from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolver
 from agent_eval_workers.integration.grading_scheduler import GraderSdkScheduler
+from agent_eval_workers.integration.judge_wiring import (
+    build_judge_provider,
+    make_rubric_factory,
+)
 from agent_eval_workers.integration.prompt_resolver import PinnedPromptResolver
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.integration.repository_materializer import (
@@ -299,6 +303,17 @@ def build_production_lifecycle_factory(
         get_run=get_run,
         list_graders=ListGraders(uow_factory, worker_auth),
     )
+    judge = build_judge_provider()
+    if judge is not None:
+        resolver.rubric_factory = make_rubric_factory(judge)
+    else:
+        logger.info(
+            "judge_provider_unconfigured",
+            detail=(
+                "Rubric grader pins will fail closed until JUDGE_PROVIDER "
+                "(or a supported judge API key) is configured"
+            ),
+        )
     workspace_probe = WorkspaceExpectedFileProbe(
         manager=manager,
         sandboxes=sandbox_registry,

@@ -162,6 +162,8 @@ def mock_services() -> MagicMock:
     services.publish_suite_version.execute.return_value = MagicMock()
     services.retire_suite_version.execute.return_value = MagicMock()
     services.deprecate_suite.execute.return_value = sample_suite(status="deprecated")
+    services.create_suite_runs.execute.return_value = MagicMock()
+    services.aggregate_suite_results.execute.return_value = MagicMock()
 
     services.create_run.execute.return_value = sample_run()
     services.get_run.execute.return_value = sample_run()
@@ -172,6 +174,7 @@ def mock_services() -> MagicMock:
     services.get_run_events.execute.return_value = [sample_event()]
     services.get_run_artifacts.execute.return_value = [sample_artifact()]
     services.get_run_scores.execute.return_value = [sample_score()]
+    services.get_run_provenance.execute.return_value = MagicMock()
 
     # Remaining use cases return Magics; individual tests override as needed.
     return services

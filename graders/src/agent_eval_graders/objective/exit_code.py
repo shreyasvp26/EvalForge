@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from uuid import uuid4
 
-from agent_eval_domain.common.ids import ScoreId
 from agent_eval_domain.execution.entities import Artifact, ExecutionEvent
 
 from agent_eval_graders.objective._helpers import matching_shell, shell_events
 from agent_eval_graders.sdk.context import GradingContext
 from agent_eval_graders.sdk.grader import BaseGrader
-from agent_eval_graders.sdk.models import ProducedScore, make_score
+from agent_eval_graders.sdk.models import ProducedScore
+from agent_eval_graders.sdk.result import produce_objective_score
 
 
 @dataclass
@@ -58,17 +57,9 @@ class ExitCodeGrader(BaseGrader):
         context: GradingContext,
         judgment: object,
     ) -> Sequence[ProducedScore]:
-        data = judgment if isinstance(judgment, dict) else {}
-        passed = bool(data.get("passed"))
-        return (
-            make_score(
-                score_id=ScoreId(f"score-{uuid4().hex[:12]}"),
-                run_id=context.reader.metadata().run_id,
-                grader_id=context.grader_id,
-                grader_version_id=context.grader_version_id,
-                passed=passed,
-                numeric=1.0 if passed else 0.0,
-                reason=str(data.get("reason", "")),
-                detail={"grader": self.name, "exit_code": data.get("exit_code")},
-            ),
+        return produce_objective_score(
+            context,
+            grader_name=self.name,
+            judgment=judgment,
+            evidence_keys=("exit_code", "command"),
         )

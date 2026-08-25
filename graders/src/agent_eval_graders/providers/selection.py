@@ -7,7 +7,7 @@ from typing import Literal
 
 from agent_eval_graders.rubric.ports import JudgeProvider
 
-ProviderName = Literal["anthropic", "openai", "gemini", "mock"]
+ProviderName = Literal["anthropic", "openai", "gemini", "groq", "mock"]
 
 
 def normalize_provider_name(name: str) -> str:
@@ -22,7 +22,7 @@ def create_judge_provider(
 ) -> JudgeProvider:
     """Build a production (or mock) judge provider by name.
 
-    Supported names: ``anthropic``, ``openai``, ``gemini``, ``mock``.
+    Supported names: ``anthropic``, ``openai``, ``gemini``, ``groq``, ``mock``.
     Vendor SDKs are imported lazily so unused providers stay optional at
     import time.
     """
@@ -75,9 +75,21 @@ def create_judge_provider(
             )
         return GeminiJudgeProvider(config=config)
 
+    if key == "groq":
+        from agent_eval_graders.providers.groq.config import GroqJudgeConfig
+        from agent_eval_graders.providers.groq.provider import GroqJudgeProvider
+
+        config = overrides.get("config")
+        if not isinstance(config, GroqJudgeConfig):
+            config = GroqJudgeConfig.from_env(
+                environ=environ,
+                **_filter_config(overrides),
+            )
+        return GroqJudgeProvider(config=config)
+
     raise ValueError(
         f"Unknown judge provider {name!r}; "
-        "expected one of: anthropic, openai, gemini, mock"
+        "expected one of: anthropic, openai, gemini, groq, mock"
     )
 
 

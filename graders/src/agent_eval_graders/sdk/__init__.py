@@ -24,6 +24,10 @@ from agent_eval_graders.sdk.models import (
 )
 from agent_eval_graders.sdk.ports import RunReader, ScoreSink
 from agent_eval_graders.sdk.registry import GraderRegistry
+from agent_eval_graders.sdk.result import (
+    produce_objective_score,
+    structured_detail,
+)
 
 __all__ = [
     "BaseGrader",
@@ -44,6 +48,8 @@ __all__ = [
     "ProducedScore",
     "RunReader",
     "ScoreSink",
+    "produce_objective_score",
     "run_grader",
     "run_graders_isolated",
+    "structured_detail",
 ]
