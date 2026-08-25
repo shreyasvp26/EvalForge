@@ -68,6 +68,9 @@ from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolve
 from agent_eval_workers.integration.grading_scheduler import GraderSdkScheduler
 from agent_eval_workers.integration.prompt_resolver import PinnedPromptResolver
 from agent_eval_workers.integration.registry import RunSandboxRegistry
+from agent_eval_workers.integration.repository_materializer import (
+    SandboxRepositoryPreparer,
+)
 from agent_eval_workers.integration.run_status import ApplicationRunStatus
 from agent_eval_workers.integration.sandbox_adapter import (
     ManagedSandboxAdapter,
@@ -192,15 +195,25 @@ def build_production_lifecycle_factory(
     manager = SandboxManager(runtime=DockerSandbox(engine=docker_engine))
     sandbox = ManagedSandboxAdapter(manager=manager, registry=sandbox_registry)
 
-    if os.environ.get("WORKER_SANDBOX_VERIFY", "0").strip().lower() in {
+    get_run = GetRun(uow_factory, worker_auth)
+    list_cases = ListCasesByProject(uow_factory, worker_auth)
+    repo_preparer = SandboxRepositoryPreparer(
+        actor=system_actor,
+        get_run=get_run,
+        list_cases=list_cases,
+        manager=manager,
+        sandboxes=sandbox_registry,
+    )
+
+    verify_enabled = os.environ.get("WORKER_SANDBOX_VERIFY", "0").strip().lower() in {
         "1",
         "true",
         "yes",
         "on",
-    }:
+    }
 
-        def _verify_sandbox_ready(run_id: RunId) -> None:
-            """Prove the provisioned container accepts exec (real Docker path)."""
+    def _after_provision(run_id: RunId) -> None:
+        if verify_enabled:
             handle = sandbox.handle_for(run_id)
             result = manager.execute(
                 handle,
@@ -212,8 +225,9 @@ def build_production_lifecycle_factory(
                     f"(exit={result.exit_code}, timed_out={result.timed_out})",
                     cause=FailureCause.SANDBOX_FAILURE,
                 )
+        repo_preparer(run_id)
 
-        sandbox.after_provision = _verify_sandbox_ready
+    sandbox.after_provision = _after_provision
 
     writer = UseCaseEventWriter(
         record_event_uc=RecordExecutionEvent(uow_factory, worker_auth, events),
@@ -226,8 +240,6 @@ def build_production_lifecycle_factory(
         batch_size=1,
     )
 
-    get_run = GetRun(uow_factory, worker_auth)
-    list_cases = ListCasesByProject(uow_factory, worker_auth)
     list_adapters = ListAdapters(uow_factory, worker_auth)
     prompt_resolver = PinnedPromptResolver(
         actor=system_actor,
@@ -276,6 +288,9 @@ def build_production_lifecycle_factory(
         environment=sandbox_environment_from_allowlist(),
         run_metadata_factory=run_metadata_factory,
         prompt_factory=prompt_resolver.resolve,
+        working_directory_factory=lambda rid: repo_preparer.workspaces.get(
+            rid.value, "/workspace"
+        ),
     )
 
     resolver = PinBasedGraderResolver(

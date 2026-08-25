@@ -35,6 +35,7 @@ AdapterHook = Callable[[RunId], None]
 RunMetadataFactory = Callable[[RunId], RunMetadata]
 PromptFactory = Callable[[RunId], str]
 AdapterFactoryResolver = Callable[[RunId], AdapterFactory]
+WorkingDirectoryFactory = Callable[[RunId], str]
 
 
 class _ArtifactStore(Protocol):
@@ -106,6 +107,7 @@ class SdkAdapterBridge:
     prompt: str = "solve the case"
     prompt_factory: PromptFactory | None = None
     working_directory: str = "/workspace"
+    working_directory_factory: WorkingDirectoryFactory | None = None
     environment: dict[str, str] = field(default_factory=dict)
     fail_on_run: bool = False
     after_start: AdapterHook | None = None
@@ -120,6 +122,11 @@ class SdkAdapterBridge:
         if self.prompt_factory is not None:
             return self.prompt_factory(run_id)
         return self.prompt
+
+    def _resolve_working_directory(self, run_id: RunId) -> str:
+        if self.working_directory_factory is not None:
+            return self.working_directory_factory(run_id)
+        return self.working_directory
 
     def _resolve_adapter(self, run_id: RunId) -> Adapter:
         if self.adapter_factory_resolver is not None:
@@ -139,7 +146,7 @@ class SdkAdapterBridge:
             if self.cancellation is not None:
                 cancel = RegistryCancellation(registry=self.cancellation, run_id=run_id)
             context = ExecutionContext(
-                working_directory=self.working_directory,
+                working_directory=self._resolve_working_directory(run_id),
                 sandbox=handle,
                 sandbox_exec=ManagerSandboxExec(manager=self.manager),
                 environment=dict(self.environment),

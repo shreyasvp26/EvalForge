@@ -70,6 +70,10 @@ class FakeDockerEngine:
     create_calls: list[dict[str, Any]] = field(default_factory=list)
     removed_ids: list[str] = field(default_factory=list)
     _block_exec: Event | None = field(default=None, repr=False)
+    # Simulated git HEAD for repository materialization tests.
+    checked_out_sha: str | None = None
+    fail_git: bool = False
+    git_fail_message: bytes = b"fake git failure"
 
     def create_container(
         self,
@@ -173,7 +177,43 @@ class FakeDockerEngine:
             time.sleep(self.exec_delay_seconds)
         if self.force_timeout:
             return 124, b"", b"timed out", True
+
+        git_result = self._maybe_handle_git(command)
+        if git_result is not None:
+            return git_result
+
         return self.exec_exit_code, self.exec_stdout, self.exec_stderr, False
+
+    def _maybe_handle_git(
+        self, command: list[str]
+    ) -> tuple[int, bytes, bytes, bool] | None:
+        if not command:
+            return None
+        if command[0] == "test" and len(command) >= 3 and command[1] == "-d":
+            # Subdirectory exists checks succeed by default in fake sandboxes.
+            return 0, b"", b"", False
+        if command[0] == "sh":
+            # Workspace cleanup / shell helpers used by materializer.
+            return 0, b"", b"", False
+        if command[0] != "git" and not (len(command) >= 2 and command[0] == "rm"):
+            return None
+        if self.fail_git and command[0] == "git":
+            return 1, b"", self.git_fail_message, False
+        if command[0] == "rm":
+            return 0, b"", b"", False
+        # git …
+        if "checkout" in command:
+            # git … checkout --detach <sha>
+            sha = command[-1]
+            if sha not in {"--detach", "checkout"}:
+                self.checked_out_sha = sha
+            return 0, b"", b"", False
+        if "rev-parse" in command:
+            sha = (self.checked_out_sha or "deadbeef").encode()
+            return 0, sha + b"\n", b"", False
+        if command[0] == "git":
+            return 0, b"", b"", False
+        return None
 
     def get_archive(self, container_id: str, path: str) -> bytes:
         if self.fail_archive:
