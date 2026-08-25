@@ -93,6 +93,7 @@ services:
       dockerfile: infrastructure/docker/Dockerfile.sandbox
       args:
         EVALFORGE_INSTALL_CLAUDE_CLI: ${EVALFORGE_INSTALL_CLAUDE_CLI:-0}
+        EVALFORGE_INSTALL_GEMINI_CLI: ${EVALFORGE_INSTALL_GEMINI_CLI:-0}
     entrypoint: ["true"]
     restart: "no"
 
@@ -181,7 +182,7 @@ services:
       WORKER_SANDBOX_VERIFY: ${WORKER_SANDBOX_VERIFY:-0}
       RUN_CANCEL_KEY_PREFIX: ${RUN_CANCEL_KEY_PREFIX:-evalforge:cancel}
       # Explicit allow-list for sandbox env injection (never pass full host env).
-      WORKER_SANDBOX_ENV_ALLOWLIST: ${WORKER_SANDBOX_ENV_ALLOWLIST:-ANTHROPIC_API_KEY,PATH,HOME,TERM}
+      WORKER_SANDBOX_ENV_ALLOWLIST: ${WORKER_SANDBOX_ENV_ALLOWLIST:-ANTHROPIC_API_KEY,GEMINI_API_KEY,GOOGLE_API_KEY,PATH,HOME,TERM}
     volumes:
       # Docker-out-of-Docker: workers drive the host Docker daemon for sandboxes.
       - /var/run/docker.sock:/var/run/docker.sock

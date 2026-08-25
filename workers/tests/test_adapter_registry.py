@@ -10,6 +10,7 @@ from agent_eval_domain.common.ids import RunId
 from agent_eval_workers.integration.adapter_registry import (
     CLAUDE_CODE,
     CURSOR,
+    GEMINI_CLI,
     AdapterRegistry,
     AdapterResolutionError,
     PinnedAdapterResolver,
@@ -304,3 +305,36 @@ def test_process_worker_fails_live_without_credentials(
     assert dto.status in {"failed", "cancelled"}
     assert dto.failure_reason
     assert "ANTHROPIC_API_KEY" in dto.failure_reason
+
+
+def test_registry_live_gemini_requires_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    registry = default_adapter_registry()
+    with pytest.raises(AdapterResolutionError, match="GEMINI_API_KEY"):
+        registry.resolve(GEMINI_CLI, mode="live")
+
+
+def test_registry_live_gemini_with_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key-not-real")
+    registry = default_adapter_registry()
+    factory = registry.resolve(GEMINI_CLI, mode="live")
+    assert factory().name == "gemini"
+
+
+def test_registry_gemini_has_no_deterministic_factory() -> None:
+    registry = default_adapter_registry()
+    with pytest.raises(AdapterResolutionError, match="no deterministic factory"):
+        registry.resolve(GEMINI_CLI, mode="deterministic")
+
+
+def test_normalize_adapter_key_maps_gemini_aliases() -> None:
+    from agent_eval_workers.integration.adapter_registry import GEMINI_CLI
+
+    assert normalize_adapter_key("gemini") == GEMINI_CLI
+    assert normalize_adapter_key("gemini_cli") == GEMINI_CLI
+    assert normalize_adapter_key("Gemini CLI") == GEMINI_CLI

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from time import monotonic
 
@@ -31,6 +32,7 @@ class GradingContext:
     grader_specification: str
     correlation_id: str
     config: GradingConfig = field(default_factory=GradingConfig)
+    workspace_test_results: Mapping[str, object] | None = None
     _started_at: float = field(default_factory=monotonic)
 
     def check_timeout(self) -> None:

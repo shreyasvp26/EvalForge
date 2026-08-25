@@ -44,6 +44,8 @@ class TestPassGrader(BaseGrader):
     ) -> object:
         del artifacts
         context.check_timeout()
+        if context.grader_specification.strip().lower().startswith("workspace:"):
+            return self._grade_workspace(context)
         matches = matching_shell(events, self.command_patterns)
         if not matches:
             return {"passed": False, "reason": "no test command found in run record"}
@@ -57,6 +59,36 @@ class TestPassGrader(BaseGrader):
         if any(m.exit_code is None for m in matches):
             return {"passed": False, "reason": "test command missing exit code"}
         return {"passed": True, "reason": "all test commands exited 0"}
+
+    def _grade_workspace(self, context: GradingContext) -> object:
+        results = context.workspace_test_results or {}
+        record = results.get(context.grader_version_id.value)
+        if record is None:
+            return {
+                "passed": False,
+                "reason": "workspace test was not executed for this grader pin",
+            }
+        passed = bool(getattr(record, "passed", False))
+        command = getattr(record, "command", ())
+        exit_code = getattr(record, "exit_code", None)
+        timed_out = bool(getattr(record, "timed_out", False))
+        if timed_out:
+            return {
+                "passed": False,
+                "reason": f"workspace test timed out: {' '.join(command)}",
+                "exit_code": exit_code,
+            }
+        if passed:
+            return {
+                "passed": True,
+                "reason": f"workspace test passed: {' '.join(command)}",
+                "exit_code": exit_code,
+            }
+        return {
+            "passed": False,
+            "reason": f"workspace test failed: {' '.join(command)}",
+            "exit_code": exit_code,
+        }
 
     def produce_scores(
         self,

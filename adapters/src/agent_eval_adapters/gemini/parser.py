@@ -55,9 +55,22 @@ def parse_stream_line(
         )
 
     event_type = event_type.lower()
+    if event_type in {"init", "session"}:
+        return [
+            observation_now(
+                ObservationKind.MESSAGE,
+                payload={
+                    "role": "system",
+                    "content": f"session:{payload.get('session_id', '')}",
+                    "model": str(payload.get("model") or ""),
+                },
+                raw=line,
+                timestamp=stamp,
+            )
+        ]
     if event_type in {"message", "model", "assistant"}:
         return _parse_message(payload, stamp, raw=line, event_type=event_type)
-    if event_type in {"tool_call", "functioncall", "function_call"}:
+    if event_type in {"tool_call", "tool_use", "functioncall", "function_call"}:
         return _parse_tool_call(payload, stamp, raw=line)
     if event_type in {"tool_response", "tool_result"}:
         return _parse_tool_result(payload, stamp, raw=line)
@@ -173,6 +186,7 @@ def _parse_tool_call(
         "edit_file",
         "search_replace",
         "apply_patch",
+        "replace",
     }:
         path = str(
             arguments.get("path")

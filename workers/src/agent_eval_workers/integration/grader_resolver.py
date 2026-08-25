@@ -78,6 +78,8 @@ def _objective_factory(*, name: str, specification: str) -> GraderFactory:
     if "build" in lowered:
         return BuildSuccessGrader
     if "test" in lowered and "expected" not in lowered:
+        if specification.strip().lower().startswith("workspace:"):
+            return TestPassGrader
         return TestPassGrader
     if "lint" in lowered:
         return LintGrader

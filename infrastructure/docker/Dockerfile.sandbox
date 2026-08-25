@@ -24,15 +24,33 @@ RUN apt-get update \
         gzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Optional Claude Code CLI — installed only when EVALFORGE_INSTALL_CLAUDE_CLI=1
-# at build time (requires network). Default image stays lean for deterministic runs.
+# Optional agent CLIs — installed only when build args are set (requires network).
+# Default image stays lean for deterministic-only runs.
+# Gemini CLI requires Node >= 20; Debian bookworm ships Node 18, so use NodeSource.
 ARG EVALFORGE_INSTALL_CLAUDE_CLI=0
-RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ]; then \
+ARG EVALFORGE_INSTALL_GEMINI_CLI=0
+RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ] || [ "$EVALFORGE_INSTALL_GEMINI_CLI" = "1" ]; then \
       apt-get update \
-      && apt-get install -y --no-install-recommends nodejs npm \
-      && npm install -g @anthropic-ai/claude-code \
-      && rm -rf /var/lib/apt/lists/* /root/.npm; \
+      && apt-get install -y --no-install-recommends gnupg \
+      && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+      && apt-get install -y --no-install-recommends nodejs \
+      && rm -rf /var/lib/apt/lists/*; \
     fi
+RUN if [ "$EVALFORGE_INSTALL_CLAUDE_CLI" = "1" ]; then \
+      npm install -g @anthropic-ai/claude-code \
+      && rm -rf /root/.npm; \
+    fi
+RUN if [ "$EVALFORGE_INSTALL_GEMINI_CLI" = "1" ]; then \
+      npm install -g @google/gemini-cli \
+      && node --version \
+      && gemini --version \
+      && rm -rf /root/.npm; \
+    fi
+
+# pytest for workspace test graders (objective evaluation of agent edits).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-pytest \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /workspace \
     && chmod 777 /workspace
