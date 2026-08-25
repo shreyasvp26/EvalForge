@@ -16,15 +16,23 @@ from agent_eval_infrastructure.auth.membership import (
     ProjectRole,
     SqlAlchemyMembershipStore,
 )
+from agent_eval_infrastructure.auth.oauth_identity import (
+    InMemoryOAuthIdentityStore,
+    OAuthIdentityOrm,
+    SqlAlchemyOAuthIdentityStore,
+)
 
 __all__ = [
     "ROLE_RANK",
     "InMemoryIdentityStore",
+    "InMemoryOAuthIdentityStore",
     "InMemoryMembershipStore",
+    "OAuthIdentityOrm",
     "MembershipStore",
     "ProjectMembershipOrm",
     "ProjectRole",
     "SqlAlchemyIdentityStore",
+    "SqlAlchemyOAuthIdentityStore",
     "SqlAlchemyMembershipStore",
     "UserOrm",
     "ensure_bootstrap_user",

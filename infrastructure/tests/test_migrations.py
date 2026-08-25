@@ -16,6 +16,7 @@ EXPECTED_TABLES = {
     "projects",
     "project_memberships",
     "users",
+    "oauth_identities",
     "suites",
     "suite_versions",
     "cases",
@@ -62,7 +63,7 @@ def test_upgrade_head_creates_schema(alembic_cfg: Config) -> None:
             version = conn.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar()
-        assert version == "e7b4a1c05f29"
+        assert version == "f8a1c3d5e7b9"
     finally:
         engine.dispose()
 
