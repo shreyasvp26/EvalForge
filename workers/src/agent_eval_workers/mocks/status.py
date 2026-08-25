@@ -18,6 +18,7 @@ class RecordingRunStatus:
     completed: list[RunId] = field(default_factory=list)
     failed: list[tuple[RunId, FailureCause]] = field(default_factory=list)
     cancelled: list[RunId] = field(default_factory=list)
+    pending_failure_detail: str | None = None
 
     def project_running(self, run_id: RunId) -> None:
         self.running.append(run_id)
@@ -37,6 +38,7 @@ class RecordingRunStatus:
     ) -> None:
         del detail
         self.failed.append((run_id, cause))
+        self.pending_failure_detail = None
 
     def project_cancelled(self, run_id: RunId) -> None:
         self.cancelled.append(run_id)
