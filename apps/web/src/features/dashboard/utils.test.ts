@@ -25,6 +25,15 @@ function makeRun(partial: Partial<Run> & Pick<Run, "id" | "status">): Run {
     produced_score_count: 0,
     is_partially_graded: false,
     scores: [],
+    telemetry: {
+      wall_clock_ms: null,
+      compute_ms: null,
+      input_tokens: null,
+      output_tokens: null,
+      total_tokens: null,
+      estimated_cost: null,
+      provider_usage_available: false,
+    },
     ...partial,
   };
 }

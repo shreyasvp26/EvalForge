@@ -105,8 +105,8 @@ def _cost_to_domain(row: RunOrm) -> ExecutionCost | None:
     ):
         return None
     return ExecutionCost(
-        input_tokens=row.input_tokens or 0,
-        output_tokens=row.output_tokens or 0,
+        input_tokens=row.input_tokens,
+        output_tokens=row.output_tokens,
         wall_clock_ms=row.wall_clock_ms or 0,
         compute_ms=row.compute_ms or 0,
     )

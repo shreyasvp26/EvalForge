@@ -18,6 +18,7 @@ import {
   truncateId,
 } from "./utils";
 
+import type { RunLiveConnectionState } from "./hooks/use-run-polling";
 import type { ExecutionEvent, Run } from "@/lib/api/runs";
 
 import { StatusBadge } from "@/components/status/status-badge";
@@ -28,8 +29,22 @@ export interface ExecutionHeaderProps {
   projectName?: string;
   caseLabel?: string;
   agentLabel?: string;
+  connection?: RunLiveConnectionState;
   onCancel?: () => void;
   onCopyId?: () => void;
+}
+
+function connectionLabelFor(state: RunLiveConnectionState | undefined): string {
+  switch (state) {
+    case "live":
+      return "Live · stream";
+    case "connecting":
+      return "Live · connecting";
+    case "polling":
+      return "Live · polling";
+    default:
+      return "Live · polling";
+  }
 }
 
 export function ExecutionHeader({
@@ -38,10 +53,12 @@ export function ExecutionHeader({
   projectName,
   caseLabel,
   agentLabel,
+  connection,
   onCancel,
   onCopyId,
 }: ExecutionHeaderProps) {
   const live = isLiveRunStatus(run.status);
+  const connectionLabel = connectionLabelFor(connection);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -77,7 +94,7 @@ export function ExecutionHeader({
                 variant="caption"
                 className="rounded-[var(--ef-radius-control)] bg-running-muted px-2 py-0.5 font-mono uppercase tracking-[0.1em] text-running"
               >
-                Live · polling
+                {connectionLabel}
               </Text>
             ) : null}
             {run.is_partially_graded ? (

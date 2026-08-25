@@ -69,6 +69,23 @@ class CancelRunCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordRunTelemetryCommand:
+    """Persist wall-clock / optional provider usage once per Run.
+
+    Token and cost fields must only be set when the provider actually exposed
+    reliable usage. Never fabricate estimated_cost.
+    """
+
+    actor: Actor
+    run_id: str
+    wall_clock_ms: int = 0
+    compute_ms: int = 0
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    provider_usage_available: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class RecordScoreCommand:
     """Persist a Score produced by the Grader Layer via Application."""
 

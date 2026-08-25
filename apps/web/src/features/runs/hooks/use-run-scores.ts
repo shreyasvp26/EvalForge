@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 
 export function useRunScores(runId: string, status: RunStatus | undefined, enabled = true) {
   const { token } = useAuth();
-  const polling = useRunPolling(status);
+  const polling = useRunPolling(runId, status);
 
   return useQuery({
     queryKey: runScoresQueryKey(runId),
