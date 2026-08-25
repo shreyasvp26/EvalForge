@@ -62,6 +62,7 @@ class ScoreValueResponse(BaseModel):
     numeric: float | None
     categorical: str | None
     passed: bool | None
+    detail: dict[str, Any] = Field(default_factory=dict)
 
 
 class ScoreResponse(BaseModel):
@@ -83,6 +84,7 @@ class ScoreResponse(BaseModel):
                 numeric=dto.value.numeric,
                 categorical=dto.value.categorical,
                 passed=dto.value.passed,
+                detail=dict(dto.value.detail),
             ),
             explanation_artifact_id=dto.explanation_artifact_id,
         )

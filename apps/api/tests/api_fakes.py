@@ -117,7 +117,12 @@ def sample_score(**overrides: Any) -> ScoreDTO:
         id="score-1",
         grader_id="g-1",
         grader_version_id="gv-1",
-        value=ScoreValueDTO(numeric=1.0, categorical=None, passed=True),
+        value=ScoreValueDTO(
+            numeric=1.0,
+            categorical=None,
+            passed=True,
+            detail={"reason": "expected files present"},
+        ),
         explanation_artifact_id=None,
     )
     base.update(overrides)

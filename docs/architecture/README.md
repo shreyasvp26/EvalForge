@@ -11,6 +11,8 @@ Architecture documents are the **source of truth** for EvalForge system design.
 | [database-design.md](./database-design.md) | Persistence strategy |
 | [schema-design.md](./schema-design.md) | Schema shapes |
 | [execution-engine-architecture.md](./execution-engine-architecture.md) | Run orchestration |
+| [phase-4-execution-contract-audit.md](./phase-4-execution-contract-audit.md) | Phase 4 real-evaluation contract (audit) |
+| [how-evalforge-evaluates-coding-agents.md](./how-evalforge-evaluates-coding-agents.md) | Operator recipe: Case → sandbox → grade |
 | [adaptar-architecture.md](./adaptar-architecture.md) | Agent adapters |
 | [grader-architecture.md](./grader-architecture.md) | Graders |
 

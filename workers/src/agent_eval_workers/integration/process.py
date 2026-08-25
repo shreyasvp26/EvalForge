@@ -20,6 +20,8 @@ from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.models import RunMetadata
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.queries.queries import GetRunQuery
+from agent_eval_application.use_cases.agent import ListAdapters
+from agent_eval_application.use_cases.case import ListCasesByProject
 from agent_eval_application.use_cases.grader import ListGraders
 from agent_eval_application.use_cases.run import (
     CancelRun,
@@ -56,16 +58,26 @@ from agent_eval_workers.event_pipeline.projector import ProjectionHub
 from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.execution_engine.lifecycle_driver import LifecycleDriver
 from agent_eval_workers.integration.adapter_bridge import SdkAdapterBridge
+from agent_eval_workers.integration.adapter_registry import (
+    AdapterResolutionError,
+    PinnedAdapterResolver,
+    resolve_adapter_mode,
+)
 from agent_eval_workers.integration.composition import default_claude_factory
 from agent_eval_workers.integration.grader_resolver import PinBasedGraderResolver
 from agent_eval_workers.integration.grading_scheduler import GraderSdkScheduler
+from agent_eval_workers.integration.prompt_resolver import PinnedPromptResolver
 from agent_eval_workers.integration.registry import RunSandboxRegistry
+from agent_eval_workers.integration.repository_materializer import (
+    SandboxRepositoryPreparer,
+)
 from agent_eval_workers.integration.run_status import ApplicationRunStatus
 from agent_eval_workers.integration.sandbox_adapter import (
     ManagedSandboxAdapter,
     sandbox_environment_from_allowlist,
 )
 from agent_eval_workers.integration.worker_auth import WorkerAuthorization
+from agent_eval_workers.integration.workspace_grader import WorkspaceExpectedFileProbe
 from agent_eval_workers.lifecycle.machine import RunLifecycle
 from agent_eval_workers.lifecycle.orchestrator import LifecycleOrchestrator
 from agent_eval_workers.lifecycle.phases import OrchestrationPhase
@@ -129,21 +141,29 @@ def select_docker_engine(*, mode: str | None = None) -> tuple[DockerEngine, str]
 
 
 def select_adapter_factory(*, mode: str | None = None) -> tuple[AdapterFactory, str]:
-    """Choose Claude adapter mode: ``deterministic`` (injected stream) | ``claude``."""
-    resolved = (
-        (mode or os.environ.get("WORKER_ADAPTER_MODE", "deterministic")).strip().lower()
-    )
-    if resolved in {"claude", "live", "cli"}:
-        logger.info("worker_adapter_mode_claude_cli")
+    """Legacy composition helper — prefers pin resolution in production.
+
+    Kept for tests that call ``select_adapter_factory`` directly. Production
+    workers resolve adapters from Run pins via ``PinnedAdapterResolver``.
+    ``deterministic`` is synthetic development/test execution only.
+    """
+    resolved = resolve_adapter_mode(mode)
+    if resolved == "live":
+        logger.info(
+            "worker_adapter_mode_live",
+            detail="Live mode selected; pin resolution still required at run time",
+        )
 
         def live_factory() -> Adapter:
             return ClaudeCodeAdapter()
 
-        return live_factory, "claude"
-    # deterministic — real ClaudeCodeAdapter through injected NDJSON stream
+        return live_factory, "live"
     logger.info(
         "worker_adapter_mode_deterministic",
-        detail="ClaudeCodeAdapter with injected stream (Phase 1 canonical path)",
+        detail=(
+            "Synthetic development/test execution via injected NDJSON stream "
+            "(not a live coding agent)"
+        ),
     )
     return default_claude_factory(), "deterministic"
 
@@ -157,6 +177,7 @@ def build_production_lifecycle_factory(
     actor: Actor | None = None,
     auth: object | None = None,
     adapter_factory: AdapterFactory | None = None,
+    adapter_mode: str | None = None,
     cancellation: CancellationPort | None = None,
     object_storage: _ArtifactStore | None = None,
 ) -> tuple[
@@ -175,15 +196,25 @@ def build_production_lifecycle_factory(
     manager = SandboxManager(runtime=DockerSandbox(engine=docker_engine))
     sandbox = ManagedSandboxAdapter(manager=manager, registry=sandbox_registry)
 
-    if os.environ.get("WORKER_SANDBOX_VERIFY", "0").strip().lower() in {
+    get_run = GetRun(uow_factory, worker_auth)
+    list_cases = ListCasesByProject(uow_factory, worker_auth)
+    repo_preparer = SandboxRepositoryPreparer(
+        actor=system_actor,
+        get_run=get_run,
+        list_cases=list_cases,
+        manager=manager,
+        sandboxes=sandbox_registry,
+    )
+
+    verify_enabled = os.environ.get("WORKER_SANDBOX_VERIFY", "0").strip().lower() in {
         "1",
         "true",
         "yes",
         "on",
-    }:
+    }
 
-        def _verify_sandbox_ready(run_id: RunId) -> None:
-            """Prove the provisioned container accepts exec (real Docker path)."""
+    def _after_provision(run_id: RunId) -> None:
+        if verify_enabled:
             handle = sandbox.handle_for(run_id)
             result = manager.execute(
                 handle,
@@ -195,8 +226,9 @@ def build_production_lifecycle_factory(
                     f"(exit={result.exit_code}, timed_out={result.timed_out})",
                     cause=FailureCause.SANDBOX_FAILURE,
                 )
+        repo_preparer(run_id)
 
-        sandbox.after_provision = _verify_sandbox_ready
+    sandbox.after_provision = _after_provision
 
     writer = UseCaseEventWriter(
         record_event_uc=RecordExecutionEvent(uow_factory, worker_auth, events),
@@ -209,7 +241,18 @@ def build_production_lifecycle_factory(
         batch_size=1,
     )
 
-    get_run = GetRun(uow_factory, worker_auth)
+    list_adapters = ListAdapters(uow_factory, worker_auth)
+    prompt_resolver = PinnedPromptResolver(
+        actor=system_actor,
+        get_run=get_run,
+        list_cases=list_cases,
+    )
+    pinned_adapter_resolver = PinnedAdapterResolver(
+        actor=system_actor,
+        get_run=get_run,
+        list_adapters=list_adapters,
+        mode=adapter_mode,
+    )
 
     def run_metadata_factory(run_id: RunId) -> RunMetadata:
         dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
@@ -221,22 +264,47 @@ def build_production_lifecycle_factory(
             case_version_id=dto.pins.case_version_id,
         )
 
-    factory = adapter_factory or default_claude_factory()
+    def resolve_adapter_factory(run_id: RunId) -> AdapterFactory:
+        try:
+            return pinned_adapter_resolver.resolve_factory(run_id)
+        except AdapterResolutionError as exc:
+            raise RecoverableExecutionError(
+                str(exc),
+                cause=FailureCause.ADAPTER_FAILURE,
+            ) from exc
+
+    # Injected factory overrides pin resolution (tests / explicit composition).
+    # When absent, resolve from the Run's pinned Adapter Version at start time.
+    fallback_factory = adapter_factory or default_claude_factory()
     adapter = SdkAdapterBridge(
         stream=pipeline,
         sandboxes=sandbox_registry,
         manager=manager,
-        adapter_factory=factory,
+        adapter_factory=fallback_factory,
+        adapter_factory_resolver=(
+            None if adapter_factory is not None else resolve_adapter_factory
+        ),
         cancellation=cancel,  # type: ignore[arg-type]
         object_storage=object_storage,
         environment=sandbox_environment_from_allowlist(),
         run_metadata_factory=run_metadata_factory,
+        prompt_factory=prompt_resolver.resolve,
+        working_directory_factory=lambda rid: repo_preparer.workspaces.get(
+            rid.value, "/workspace"
+        ),
     )
 
     resolver = PinBasedGraderResolver(
         actor=system_actor,
         get_run=get_run,
         list_graders=ListGraders(uow_factory, worker_auth),
+    )
+    workspace_probe = WorkspaceExpectedFileProbe(
+        manager=manager,
+        sandboxes=sandbox_registry,
+        working_directory_factory=lambda rid: repo_preparer.workspaces.get(
+            rid.value, "/workspace"
+        ),
     )
     grading = GraderSdkScheduler(
         actor=system_actor,
@@ -245,6 +313,7 @@ def build_production_lifecycle_factory(
         get_artifacts=GetRunArtifacts(uow_factory, worker_auth),
         record_score=RecordScore(uow_factory, ids, worker_auth, events),
         grader_resolver=resolver.resolve,
+        workspace_probe=workspace_probe.verify,
     )
 
     status = ApplicationRunStatus(
@@ -296,9 +365,12 @@ def build_production_worker(
         engine, resolved_sandbox = docker_engine, sandbox_mode or "injected"
 
     if adapter_factory is None:
-        factory, resolved_adapter = select_adapter_factory(mode=adapter_mode)
+        # Pin-based resolution; mode controls live vs deterministic factories.
+        resolved_adapter = resolve_adapter_mode(adapter_mode)
+        factory: AdapterFactory | None = None
     else:
-        factory, resolved_adapter = adapter_factory, adapter_mode or "injected"
+        factory = adapter_factory
+        resolved_adapter = adapter_mode or "injected"
 
     (
         lifecycle_factory,
@@ -315,6 +387,7 @@ def build_production_worker(
         actor=system_actor,
         auth=auth,
         adapter_factory=factory,
+        adapter_mode=adapter_mode,
         cancellation=cancellation,
         object_storage=object_storage,
     )

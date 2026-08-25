@@ -19,6 +19,7 @@ export interface ScoreValue {
   numeric: number | null;
   categorical: string | null;
   passed: boolean | null;
+  detail?: Record<string, unknown>;
 }
 
 export interface Score {

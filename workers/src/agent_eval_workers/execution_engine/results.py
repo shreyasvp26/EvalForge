@@ -34,3 +34,5 @@ class EngineResult:
     failure_cause: FailureCause | None = None
     resume_phase: OrchestrationPhase | None = None
     """Last durable phase before a recoverable failure or interruption."""
+    detail: str | None = None
+    """Human-readable failure detail (credentials, git errors, etc.)."""

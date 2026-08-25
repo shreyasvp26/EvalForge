@@ -128,6 +128,7 @@ class ExecutionEngine:
                     phase=self.lifecycle.phase,
                     failure_cause=exc.cause,
                     resume_phase=resume_before,
+                    detail=str(exc),
                 )
             observe_execution_step(
                 trigger=trigger.value,
@@ -145,7 +146,9 @@ class ExecutionEngine:
 
         return self._result_for_terminal()
 
-    def finalize_failure(self, cause: FailureCause) -> EngineResult:
+    def finalize_failure(
+        self, cause: FailureCause, *, detail: str | None = None
+    ) -> EngineResult:
         """Apply a terminal Failed transition after the Worker exhausts retries."""
         applied_cause = cause
         try:
@@ -164,6 +167,7 @@ class ExecutionEngine:
             kind=EngineOutcomeKind.FAILED,
             phase=self.lifecycle.phase,
             failure_cause=applied_cause,
+            detail=detail,
         )
 
     def _apply_timeout(self) -> EngineResult:

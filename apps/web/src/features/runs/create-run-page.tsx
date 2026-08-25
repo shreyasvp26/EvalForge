@@ -25,8 +25,14 @@ import { PageLayout } from "@/components/layouts/page-layout";
 import { Section } from "@/components/layouts/section";
 import { InlineError } from "@/components/patterns/inline-error";
 import { adapterQueryKey, agentsQueryKey } from "@/features/agents/utils";
-import { casesQueryKey } from "@/features/cases/utils";
-import { gradersQueryKey, versionStatusLabel } from "@/features/graders/utils";
+import {
+  casesQueryKey,
+  isPinnableVersionStatus,
+  pinnableCaseVersions,
+  pinnableRunPromptVersions,
+  versionStatusLabel,
+} from "@/features/cases/utils";
+import { gradersQueryKey } from "@/features/graders/utils";
 import { projectsQueryKey } from "@/features/projects/utils";
 import { getAdapter, listAgents } from "@/lib/api/agents";
 import { getCase, listCases } from "@/lib/api/cases";
@@ -37,6 +43,17 @@ import { createRun } from "@/lib/api/runs";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const STEPS = ["Project", "Case", "Prompt", "Agent", "Graders", "Review"] as const;
+
+function preferredPinnableVersionId(
+  versions: { id: string; status: string; version_number: number }[],
+  activeVersionId: string | null | undefined,
+): string {
+  const preferred =
+    versions.find((version) => version.id === activeVersionId) ??
+    versions.find((version) => version.status === "active") ??
+    versions[0];
+  return preferred?.id ?? "";
+}
 
 export function CreateRunPage() {
   const { token } = useAuth();
@@ -115,28 +132,50 @@ export function CreateRunPage() {
   });
 
   const caseVersions = useMemo(() => {
-    const versions = caseQuery.data?.versions ?? [];
-    return [...versions].sort((a, b) => b.version_number - a.version_number);
+    if (!caseQuery.data) return [];
+    return pinnableCaseVersions(caseQuery.data);
   }, [caseQuery.data]);
 
   const promptVersions = useMemo(() => {
-    const versions = caseQuery.data?.prompt_versions ?? [];
-    return [...versions].filter((v) => v.status !== "retired");
+    if (!caseQuery.data) return [];
+    return pinnableRunPromptVersions(caseQuery.data);
   }, [caseQuery.data]);
 
   const agentVersions = useMemo(() => {
     const versions = selectedAgent?.versions ?? [];
-    return [...versions].filter((v) => v.status !== "retired");
+    return [...versions]
+      .filter((v) => isPinnableVersionStatus(v.status))
+      .sort((a, b) => b.version_number - a.version_number);
   }, [selectedAgent]);
 
   const adapterVersions = useMemo(() => {
     const versions = adapterQuery.data?.versions ?? [];
-    return [...versions].filter((v) => v.status !== "retired");
+    return [...versions]
+      .filter((v) => isPinnableVersionStatus(v.status))
+      .sort((a, b) => b.version_number - a.version_number);
   }, [adapterQuery.data]);
 
+  const selectedCaseVersion = useMemo(
+    () => caseVersions.find((version) => version.id === caseVersionId) ?? null,
+    [caseVersions, caseVersionId],
+  );
+
+  const applicableGraderIds = useMemo(() => {
+    return new Set(selectedCaseVersion?.applicable_grader_ids ?? []);
+  }, [selectedCaseVersion]);
+
+  const applicableGraders = useMemo(() => {
+    return (gradersQuery.data?.items ?? []).filter(
+      (grader) =>
+        grader.status !== "deprecated" &&
+        applicableGraderIds.has(grader.id) &&
+        grader.versions.some((version) => isPinnableVersionStatus(version.status)),
+    );
+  }, [gradersQuery.data, applicableGraderIds]);
+
   const selectedGraders = useMemo(() => {
-    return (gradersQuery.data?.items ?? []).filter((grader) => grader.id in graderSelections);
-  }, [gradersQuery.data, graderSelections]);
+    return applicableGraders.filter((grader) => grader.id in graderSelections);
+  }, [applicableGraders, graderSelections]);
 
   function canContinue(): boolean {
     if (step === 0) return Boolean(projectId);
@@ -152,14 +191,26 @@ export function CreateRunPage() {
     setCaseId(nextCaseId);
     setCaseVersionId("");
     setPromptVersionId("");
+    setGraderSelections({});
   }
 
   function onSelectCaseVersion(nextVersionId: string) {
     setCaseVersionId(nextVersionId);
+    setGraderSelections({});
     const version = caseVersions.find((item) => item.id === nextVersionId);
     if (version?.prompt_version_id) {
-      setPromptVersionId(version.prompt_version_id);
+      const promptOk = promptVersions.some(
+        (prompt) =>
+          prompt.id === version.prompt_version_id && isPinnableVersionStatus(prompt.status),
+      );
+      if (promptOk) {
+        setPromptVersionId(version.prompt_version_id);
+        return;
+      }
     }
+    setPromptVersionId(
+      preferredPinnableVersionId(promptVersions, caseQuery.data?.active_prompt_version_id),
+    );
   }
 
   function onSelectAgent(nextAgentId: string) {
@@ -174,13 +225,14 @@ export function CreateRunPage() {
         const { [graderId]: _removed, ...rest } = current;
         return rest;
       }
-      const grader = gradersQuery.data?.items.find((item) => item.id === graderId);
-      const preferred =
-        grader?.versions.find((version) => version.id === grader.active_version_id) ??
-        grader?.versions.find((version) => version.status === "active") ??
-        grader?.versions.find((version) => version.status === "draft");
-      if (!preferred) return current;
-      return { ...current, [graderId]: preferred.id };
+      const grader = applicableGraders.find((item) => item.id === graderId);
+      if (!grader) return current;
+      const pinnable = grader.versions
+        .filter((version) => isPinnableVersionStatus(version.status))
+        .sort((a, b) => b.version_number - a.version_number);
+      const preferredId = preferredPinnableVersionId(pinnable, grader.active_version_id);
+      if (!preferredId) return current;
+      return { ...current, [graderId]: preferredId };
     });
   }
 
@@ -349,6 +401,11 @@ export function CreateRunPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {caseId && !caseQuery.isLoading && caseVersions.length === 0 ? (
+                    <Text variant="caption">
+                      No published case versions. Publish a draft before launching a run.
+                    </Text>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -371,6 +428,11 @@ export function CreateRunPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {promptVersions.length === 0 ? (
+                  <Text variant="caption">
+                    No published prompt versions. Publish a prompt draft before launching.
+                  </Text>
+                ) : null}
                 {promptVersion ? (
                   <pre className="mt-3 max-h-48 overflow-auto rounded-[var(--ef-radius-control)] border border-border bg-muted/40 p-3 font-mono text-[length:var(--ef-text-caption)] whitespace-pre-wrap">
                     {promptVersion.content}
@@ -411,11 +473,16 @@ export function CreateRunPage() {
                       <SelectContent>
                         {agentVersions.map((version) => (
                           <SelectItem key={version.id} value={version.id}>
-                            {`v${String(version.version_number)} · ${version.label}`}
+                            {`v${String(version.version_number)} · ${version.label} · ${versionStatusLabel(version.status)}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {agentId && agentVersions.length === 0 ? (
+                      <Text variant="caption">
+                        No published agent versions. Publish an agent draft first.
+                      </Text>
+                    ) : null}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Adapter version</Label>
@@ -430,13 +497,18 @@ export function CreateRunPage() {
                       <SelectContent>
                         {adapterVersions.map((version) => (
                           <SelectItem key={version.id} value={version.id}>
-                            {`v${String(version.version_number)} · ${version.label}`}
+                            {`v${String(version.version_number)} · ${version.label} · ${versionStatusLabel(version.status)}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {!adapterId && agentId ? (
                       <Text variant="caption">Selected agent has no connected adapter.</Text>
+                    ) : null}
+                    {adapterId && !adapterQuery.isLoading && adapterVersions.length === 0 ? (
+                      <Text variant="caption">
+                        No published adapter versions. Publish an adapter draft first.
+                      </Text>
                     ) : null}
                   </div>
                 </div>
@@ -446,16 +518,27 @@ export function CreateRunPage() {
             {step === 4 ? (
               <div className="space-y-3">
                 <Text variant="secondary">
-                  Select one or more graders. Each selected grader pins a version (defaults to the
-                  active version when available).
+                  Select graders declared on this case version. Only published versions can be
+                  pinned.
                 </Text>
-                <ul className="divide-y divide-border rounded-[var(--ef-radius-panel)] border border-border">
-                  {(gradersQuery.data?.items ?? [])
-                    .filter((grader) => grader.status !== "deprecated")
-                    .map((grader) => {
+                {!caseVersionId ? (
+                  <Text variant="secondary">Select a case version first.</Text>
+                ) : applicableGraderIds.size === 0 ? (
+                  <Text variant="secondary">
+                    This case version declares no applicable graders. Edit the case version to add
+                    grader IDs, then publish it.
+                  </Text>
+                ) : applicableGraders.length === 0 ? (
+                  <Text variant="secondary">
+                    Declared graders were not found or have no published versions. Check case
+                    declarations and publish grader versions.
+                  </Text>
+                ) : (
+                  <ul className="divide-y divide-border rounded-[var(--ef-radius-panel)] border border-border">
+                    {applicableGraders.map((grader) => {
                       const checked = grader.id in graderSelections;
                       const versions = [...grader.versions]
-                        .filter((version) => version.status !== "retired")
+                        .filter((version) => isPinnableVersionStatus(version.status))
                         .sort((a, b) => b.version_number - a.version_number);
                       return (
                         <li key={grader.id} className="space-y-3 p-4">
@@ -499,7 +582,8 @@ export function CreateRunPage() {
                         </li>
                       );
                     })}
-                </ul>
+                  </ul>
+                )}
               </div>
             ) : null}
 

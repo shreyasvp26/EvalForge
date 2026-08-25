@@ -20,6 +20,7 @@ from agent_eval_workers.integration.score_sink import ApplicationScoreSink
 
 GraderFactory = Callable[[], Grader]
 GraderSpecResolver = Callable[[RunId], Sequence["GraderInvocationSpec"]]
+WorkspaceProbe = Callable[[RunId, Sequence["GraderInvocationSpec"]], None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +50,7 @@ class GraderSdkScheduler:
     record_score: object
     graders: Sequence[GraderInvocationSpec] = ()
     grader_resolver: GraderSpecResolver | None = None
+    workspace_probe: WorkspaceProbe | None = None
     scores: list[ProducedScore] = field(default_factory=list)
     failures: list[tuple[str, str, str]] = field(default_factory=list)
     scheduled: list[RunId] = field(default_factory=list)
@@ -72,6 +74,8 @@ class GraderSdkScheduler:
             if self.grader_resolver is not None
             else tuple(self.graders)
         )
+        if self.workspace_probe is not None:
+            self.workspace_probe(run_id, specs)
         invocations: list[tuple[str, Grader, GradingContext]] = []
         for spec in specs:
             context = GradingContext(

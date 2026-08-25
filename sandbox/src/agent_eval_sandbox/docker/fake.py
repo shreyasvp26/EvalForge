@@ -70,6 +70,10 @@ class FakeDockerEngine:
     create_calls: list[dict[str, Any]] = field(default_factory=list)
     removed_ids: list[str] = field(default_factory=list)
     _block_exec: Event | None = field(default=None, repr=False)
+    # Simulated git HEAD for repository materialization tests.
+    checked_out_sha: str | None = None
+    fail_git: bool = False
+    git_fail_message: bytes = b"fake git failure"
 
     def create_container(
         self,
@@ -173,7 +177,79 @@ class FakeDockerEngine:
             time.sleep(self.exec_delay_seconds)
         if self.force_timeout:
             return 124, b"", b"timed out", True
+
+        git_result = self._maybe_handle_git(container_id, command)
+        if git_result is not None:
+            return git_result
+
+        fs_result = self._maybe_handle_filesystem(container, command)
+        if fs_result is not None:
+            return fs_result
+
         return self.exec_exit_code, self.exec_stdout, self.exec_stderr, False
+
+    def _maybe_handle_filesystem(
+        self,
+        container: FakeContainer,
+        command: list[str],
+    ) -> tuple[int, bytes, bytes, bool] | None:
+        if not command:
+            return None
+        if command[0] == "test" and len(command) >= 3:
+            flag, path = command[1], command[2]
+            exists = path in container.filesystem or any(
+                key.startswith(path.rstrip("/") + "/") for key in container.filesystem
+            )
+            is_dir = any(
+                key == path or key.startswith(path.rstrip("/") + "/")
+                for key in container.filesystem
+            )
+            if flag == "-e":
+                return (0 if exists else 1), b"", b"", False
+            if flag == "-d":
+                return (0 if is_dir else 1), b"", b"", False
+            if flag == "-f":
+                return (0 if path in container.filesystem else 1), b"", b"", False
+            return None
+        if command[0] == "sh" and len(command) >= 3 and command[1] == "-c":
+            script = command[2]
+            if ">" in script:
+                target = script.rsplit(">", 1)[-1].strip().split()[0]
+                if target:
+                    container.filesystem[target] = b"deterministic\n"
+            return 0, b"", b"", False
+        if command[0] == "sh":
+            # Materializer cleanup helpers.
+            return 0, b"", b"", False
+        return None
+
+    def _maybe_handle_git(
+        self,
+        container_id: str,
+        command: list[str],
+    ) -> tuple[int, bytes, bytes, bool] | None:
+        if not command:
+            return None
+        if command[0] != "git" and not (len(command) >= 2 and command[0] == "rm"):
+            return None
+        if self.fail_git and command[0] == "git":
+            return 1, b"", self.git_fail_message, False
+        if command[0] == "rm":
+            return 0, b"", b"", False
+        # git …
+        if "checkout" in command:
+            sha = command[-1]
+            if sha not in {"--detach", "checkout"}:
+                self.checked_out_sha = sha
+                container = self.containers[container_id]
+                container.filesystem.setdefault("/workspace/README.md", b"# repo\n")
+            return 0, b"", b"", False
+        if "rev-parse" in command:
+            sha = (self.checked_out_sha or "deadbeef").encode()
+            return 0, sha + b"\n", b"", False
+        if command[0] == "git":
+            return 0, b"", b"", False
+        return None
 
     def get_archive(self, container_id: str, path: str) -> bytes:
         if self.fail_archive:

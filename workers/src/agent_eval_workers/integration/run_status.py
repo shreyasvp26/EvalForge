@@ -34,6 +34,7 @@ class ApplicationRunStatus:
     completed: list[RunId] = field(default_factory=list)
     failed: list[tuple[RunId, FailureCause]] = field(default_factory=list)
     cancelled: list[RunId] = field(default_factory=list)
+    pending_failure_detail: str | None = None
 
     def project_running(self, run_id: RunId) -> None:
         handle = self.sandbox_registry.get(run_id)
@@ -58,8 +59,16 @@ class ApplicationRunStatus:
         )
         self.completed.append(run_id)
 
-    def project_failed(self, run_id: RunId, *, cause: FailureCause) -> None:
+    def project_failed(
+        self,
+        run_id: RunId,
+        *,
+        cause: FailureCause,
+        detail: str | None = None,
+    ) -> None:
         self.failed.append((run_id, cause))
+        reason = (detail or self.pending_failure_detail or cause.value).strip()
+        self.pending_failure_detail = None
         # Domain allows Queued→Cancelled but not Queued→Failed. If the Run never
         # reached Running (sandbox failure / timeout before StartRun), cancel.
         try:
@@ -67,7 +76,7 @@ class ApplicationRunStatus:
                 FailRunCommand(
                     actor=self.actor,
                     run_id=run_id.value,
-                    reason=cause.value,
+                    reason=reason,
                 )
             )
         except Exception:
@@ -75,7 +84,7 @@ class ApplicationRunStatus:
                 CancelRunCommand(
                     actor=self.actor,
                     run_id=run_id.value,
-                    reason=cause.value,
+                    reason=reason,
                 )
             )
             self.cancelled.append(run_id)
