@@ -6,8 +6,16 @@ import shutil
 
 import docker
 import pytest
+from agent_eval_application.commands.case import (
+    CreateCaseDraftVersionCommand,
+    PublishCaseVersionCommand,
+)
 from agent_eval_application.commands.run import CreateRunCommand
 from agent_eval_application.queries.queries import GetRunQuery, GetRunScoresQuery
+from agent_eval_application.use_cases.case import (
+    CreateCaseDraftVersion,
+    PublishCaseVersion,
+)
 from agent_eval_application.use_cases.run import CreateRun, GetRun, GetRunScores
 from agent_eval_domain.common.ids import RunId
 from agent_eval_infrastructure.storage.memory import InMemoryObjectStorage
@@ -28,6 +36,10 @@ pytestmark = [
     ),
 ]
 
+# Tiny public repository used to prove exact-SHA materialization in Docker.
+_PUBLIC_REPO = "https://github.com/octocat/Hello-World.git"
+_PUBLIC_SHA = "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d"
+
 
 def _docker_available() -> bool:
     if shutil.which("docker") is None:
@@ -45,33 +57,49 @@ def live_engine() -> DockerPyEngine:
     if not _docker_available():
         pytest.skip("Docker daemon not available")
     engine = DockerPyEngine.from_env()
-    # Prefer the Compose sandbox image when present; else busybox for CI/local.
     images = {tag for img in engine.client.images.list() for tag in img.tags}
     if "evalforge/sandbox:local" not in images:
-        engine.client.images.pull("busybox:1.36")
+        pytest.skip(
+            "evalforge/sandbox:local image required for git materialization "
+            "(busybox has no git). Build via Compose sandbox-image service."
+        )
     return engine
 
 
 def test_production_worker_real_docker_deterministic(
     world, live_engine: DockerPyEngine, monkeypatch
 ) -> None:
-    """API-shaped CreateRun → worker → real DockerSandbox → grade → COMPLETED."""
-    monkeypatch.setenv(
-        "WORKER_SANDBOX_IMAGE",
-        (
-            "evalforge/sandbox:local"
-            if any(
-                "evalforge/sandbox:local" in (img.tags or [])
-                for img in live_engine.client.images.list()
-            )
-            else "busybox:1.36"
-        ),
-    )
-    monkeypatch.setenv("WORKER_SANDBOX_NETWORK", "none")
+    """CreateRun → real Docker sandbox → git checkout SHA → grade → COMPLETED."""
+    monkeypatch.setenv("WORKER_SANDBOX_IMAGE", "evalforge/sandbox:local")
+    # bridge: repository fetch requires egress; none would block materialization.
+    monkeypatch.setenv("WORKER_SANDBOX_NETWORK", "bridge")
     monkeypatch.setenv("WORKER_SANDBOX_ENV_ALLOWLIST", "PATH,HOME,TERM")
-    # Live Docker exec can be slow under Desktop load; skip verify in this test —
-    # sandbox integration suite already covers create/exec/timeout/cleanup.
     monkeypatch.setenv("WORKER_SANDBOX_VERIFY", "0")
+
+    # Replace fixture example.com URL with a real public repo + exact SHA.
+    draft = CreateCaseDraftVersion(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateCaseDraftVersionCommand(
+            actor=world["actor"],
+            case_id=world["case_id"],
+            description="Phase 4 Docker materialization",
+            repository_url=_PUBLIC_REPO,
+            commit_sha=_PUBLIC_SHA,
+            expected_checks=("pytest",),
+            applicable_grader_ids=(world["grader_id"],),
+            prompt_version_id=world["prompt_version_id"],
+        )
+    )
+    case_version = PublishCaseVersion(
+        world["uow"], world["auth"], world["events"]
+    ).execute(
+        PublishCaseVersionCommand(
+            actor=world["actor"],
+            case_id=world["case_id"],
+            version_id=draft.id,
+        )
+    )
 
     storage = InMemoryObjectStorage()
     queue = InMemoryWorkerQueue()
@@ -101,7 +129,7 @@ def test_production_worker_real_docker_deterministic(
             actor=world["actor"],
             project_id=world["project_id"],
             case_id=world["case_id"],
-            case_version_id=world["case_version_id"],
+            case_version_id=case_version.id,
             prompt_version_id=world["prompt_version_id"],
             agent_id=world["agent_id"],
             agent_version_id=world["agent_version_id"],
@@ -114,10 +142,14 @@ def test_production_worker_real_docker_deterministic(
     result = bundle.worker.run_once(block=False)
     assert result is not None, "worker returned no result"
     if result.kind is not EngineOutcomeKind.COMPLETED:
-        # Surface sandbox/adapter diagnostics for live Docker failures.
+        final = GetRun(world["uow"], world["auth"]).execute(
+            GetRunQuery(actor=world["actor"], run_id=run.id)
+        )
         raise AssertionError(
             f"expected COMPLETED, got {result.kind} cause={result.failure_cause} "
-            f"phase={result.phase} provisioned={bundle.sandbox.provisioned} "
+            f"phase={result.phase} status={final.status} "
+            f"failure_reason={final.failure_reason!r} "
+            f"provisioned={bundle.sandbox.provisioned} "
             f"destroyed={bundle.sandbox.destroyed}"
         )
 
@@ -130,6 +162,5 @@ def test_production_worker_real_docker_deterministic(
     )
     assert scores
     assert any(s.value.passed for s in scores)
-    # Sandbox was destroyed after completion.
     assert RunId(run.id) in bundle.sandbox.destroyed
     assert RunId(run.id) in bundle.sandbox.provisioned

@@ -244,3 +244,63 @@ def test_process_worker_uses_pin_registry_without_factory_override(world) -> Non
     assert result is not None
     assert result.kind is EngineOutcomeKind.COMPLETED
     assert seen == ["claude_code"]
+
+
+def test_process_worker_fails_live_without_credentials(
+    world, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from agent_eval_application.commands.run import CreateRunCommand
+    from agent_eval_application.queries.queries import GetRunQuery
+    from agent_eval_application.use_cases.run import CreateRun, GetRun
+    from agent_eval_sandbox.docker.fake import FakeDockerEngine
+    from agent_eval_workers.integration.process import build_production_worker
+    from agent_eval_workers.integration.worker_auth import WorkerAuthorization
+    from agent_eval_workers.lifecycle.triggers import FailureCause
+    from agent_eval_workers.worker.memory_queue import InMemoryWorkerQueue
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    run = CreateRun(
+        world["uow"],
+        world["ids"],
+        world["auth"],
+        world["events"],
+        world["queue"],
+        world["idempotency"],
+    ).execute(
+        CreateRunCommand(
+            actor=world["actor"],
+            project_id=world["project_id"],
+            case_id=world["case_id"],
+            case_version_id=world["case_version_id"],
+            prompt_version_id=world["prompt_version_id"],
+            agent_id=world["agent_id"],
+            agent_version_id=world["agent_version_id"],
+            adapter_version_id=world["adapter_version_id"],
+            grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
+            platform_version_id="platform-v1",
+        )
+    )
+    queue = InMemoryWorkerQueue()
+    queue.enqueue(RunId(run.id))
+    bundle = build_production_worker(
+        queue=queue,
+        uow_factory=world["uow"],
+        ids=world["ids"],
+        events=world["events"],
+        docker_engine=FakeDockerEngine(),
+        actor=Actor(id="system-worker"),
+        auth=WorkerAuthorization(),
+        sandbox_mode="fake",
+        adapter_mode="live",
+        max_attempts=1,
+    )
+    result = bundle.worker.run_once(block=False)
+    assert result is not None
+    assert result.failure_cause is FailureCause.ADAPTER_FAILURE
+    assert result.detail is None or "ANTHROPIC_API_KEY" in (result.detail or "")
+    dto = GetRun(world["uow"], world["auth"]).execute(
+        GetRunQuery(actor=world["actor"], run_id=run.id)
+    )
+    assert dto.status in {"failed", "cancelled"}
+    assert dto.failure_reason
+    assert "ANTHROPIC_API_KEY" in dto.failure_reason

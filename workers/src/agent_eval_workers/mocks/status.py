@@ -28,7 +28,14 @@ class RecordingRunStatus:
     def project_completed(self, run_id: RunId) -> None:
         self.completed.append(run_id)
 
-    def project_failed(self, run_id: RunId, *, cause: FailureCause) -> None:
+    def project_failed(
+        self,
+        run_id: RunId,
+        *,
+        cause: FailureCause,
+        detail: str | None = None,
+    ) -> None:
+        del detail
         self.failed.append((run_id, cause))
 
     def project_cancelled(self, run_id: RunId) -> None:

@@ -211,6 +211,9 @@ class WorkerRuntime:
 
             # Retries exhausted — finalize terminal Failed via the Engine.
             final_lifecycle = self.lifecycle_factory(task.run_id, result.phase)
+            status = getattr(final_lifecycle, "status", None)
+            if status is not None and result.detail:
+                status.pending_failure_detail = result.detail
             final_engine = ExecutionEngine(
                 lifecycle=final_lifecycle,
                 checkpoints=self.checkpoints,
@@ -219,7 +222,9 @@ class WorkerRuntime:
                 run_id=task.run_id,
                 attempt=attempt,
             )
-            return final_engine.finalize_failure(result.failure_cause)
+            return final_engine.finalize_failure(
+                result.failure_cause, detail=result.detail
+            )
 
         return result
 

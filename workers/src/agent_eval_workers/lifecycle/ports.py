@@ -54,6 +54,12 @@ class RunStatusPort(Protocol):
 
     def project_completed(self, run_id: RunId) -> None: ...
 
-    def project_failed(self, run_id: RunId, *, cause: FailureCause) -> None: ...
+    def project_failed(
+        self,
+        run_id: RunId,
+        *,
+        cause: FailureCause,
+        detail: str | None = None,
+    ) -> None: ...
 
     def project_cancelled(self, run_id: RunId) -> None: ...

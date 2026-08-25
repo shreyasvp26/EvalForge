@@ -74,7 +74,12 @@ class LifecycleOrchestrator:
         elif transition.to_phase is OrchestrationPhase.FAILED:
             assert transition.failure_cause is not None
             self.sandbox.destroy(run_id)
-            self.status.project_failed(run_id, cause=transition.failure_cause)
+            detail = getattr(self.status, "pending_failure_detail", None)
+            self.status.project_failed(
+                run_id,
+                cause=transition.failure_cause,
+                detail=detail,
+            )
         elif transition.to_phase is OrchestrationPhase.CANCELLED:
             self.sandbox.destroy(run_id)
             self.status.project_cancelled(run_id)
