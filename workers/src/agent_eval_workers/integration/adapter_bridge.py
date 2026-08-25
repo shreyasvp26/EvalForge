@@ -15,7 +15,12 @@ from agent_eval_adapters.sdk.exceptions import (
     AdapterError,
     AdapterTimeoutError,
 )
-from agent_eval_adapters.sdk.models import NativeObservation, RunMetadata
+from agent_eval_adapters.sdk.models import (
+    AdapterOutcome,
+    NativeObservation,
+    ObservationKind,
+    RunMetadata,
+)
 from agent_eval_adapters.sdk.ports import CancellationPort
 from agent_eval_adapters.sdk.translator import DefaultTranslator, Translator
 from agent_eval_domain.common.ids import RunId
@@ -29,6 +34,33 @@ from agent_eval_workers.integration.event_sink import PipelineEventSink
 from agent_eval_workers.integration.registry import RunSandboxRegistry
 from agent_eval_workers.lifecycle.triggers import FailureCause
 from agent_eval_workers.mocks.stream import EventStreamPort
+
+
+def _outcome_failure_detail(
+    adapter: Adapter,
+    observations: list[NativeObservation],
+) -> str:
+    detail_fn = getattr(adapter, "failure_detail", None)
+    if callable(detail_fn):
+        detail = detail_fn()
+        if detail:
+            return str(detail)
+    for observation in reversed(observations):
+        if observation.kind is ObservationKind.ERROR:
+            message = observation.payload.get("message")
+            if message:
+                return str(message)
+        if (
+            observation.kind is ObservationKind.COMPLETION
+            and observation.payload.get("status") == "agent_failed"
+        ):
+            return str(
+                observation.payload.get("subtype")
+                or observation.payload.get("message")
+                or "agent_failed"
+            )
+    return "adapter reported agent failure"
+
 
 AdapterFactory = Callable[[], Adapter]
 AdapterHook = Callable[[RunId], None]
@@ -276,6 +308,25 @@ class SdkAdapterBridge:
         if session is None:
             return
         try:
-            session.adapter.finish(session.context, tuple(session.observations))
+            outcome = session.adapter.finish(
+                session.context, tuple(session.observations)
+            )
+            if outcome is AdapterOutcome.COMPLETED:
+                return
+            if outcome is AdapterOutcome.TIMED_OUT:
+                raise RecoverableExecutionError(
+                    f"Adapter timed out for {run_id.value}",
+                    cause=FailureCause.TIMEOUT,
+                )
+            if outcome is AdapterOutcome.CANCELLED:
+                raise RecoverableExecutionError(
+                    f"Adapter cancelled for {run_id.value}",
+                    cause=FailureCause.WORKER_FAILURE,
+                )
+            detail = _outcome_failure_detail(session.adapter, session.observations)
+            raise RecoverableExecutionError(
+                f"Adapter failed for {run_id.value}: {detail}",
+                cause=FailureCause.ADAPTER_FAILURE,
+            )
         finally:
             session.adapter.cleanup(session.context)

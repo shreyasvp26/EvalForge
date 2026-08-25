@@ -242,6 +242,48 @@ def test_gemini_sandbox_process_startup_path() -> None:
     assert "-p" in exec_port.commands[0]
 
 
+def test_gemini_rate_limit_exit_is_agent_failed() -> None:
+    exec_port = MockSandboxExec(
+        stdout=(
+            '{"type":"result","status":"error","error":{"message":'
+            '"[API Error: You have exhausted your daily quota on this model.]"}}'
+        ),
+        stderr="cause: { code: 429, message: 'You exceeded your current quota' }",
+        exit_code=173,
+    )
+    sink = RecordingSink()
+    result = run_adapter(
+        GeminiAdapter(),
+        _context(sandbox_exec=exec_port),
+        sink,
+    )
+    assert result.outcome is AdapterOutcome.AGENT_FAILED
+    assert any(
+        "rate limit" in str(getattr(e.action, "content_summary", "")).lower()
+        or "rate limit" in str(getattr(e.action, "message", "")).lower()
+        or "rate limit" in repr(e.action).lower()
+        for e in sink.events
+    )
+
+
+def test_gemini_benign_stderr_does_not_fail_success() -> None:
+    stdout = "\n".join(SAMPLE_STREAM)
+    exec_port = MockSandboxExec(
+        stdout=stdout,
+        stderr=(
+            "YOLO mode is enabled. All tool calls will be automatically approved.\n"
+            "Ripgrep is not available. Falling back to GrepTool.\n"
+        ),
+        exit_code=0,
+    )
+    result = run_adapter(
+        GeminiAdapter(),
+        _context(sandbox_exec=exec_port),
+        RecordingSink(),
+    )
+    assert result.outcome is AdapterOutcome.COMPLETED
+
+
 def test_gemini_initialize_requires_prompt() -> None:
     with pytest.raises(AdapterInitializationError):
         run_adapter(GeminiAdapter(), _context(prompt=""), RecordingSink())

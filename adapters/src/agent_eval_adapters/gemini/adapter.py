@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 
 from agent_eval_sandbox.models import ExecutionRequest
 
+from agent_eval_adapters.gemini.errors import classify_gemini_cli_failure
 from agent_eval_adapters.gemini.parser import parse_stream_line
 from agent_eval_adapters.sdk.adapter import BaseAdapter
 from agent_eval_adapters.sdk.capabilities import AdapterCapabilities
@@ -59,6 +60,7 @@ class GeminiAdapter(BaseAdapter):
     _started_at: float | None = field(default=None, init=False, repr=False)
     _saw_completion: bool = field(default=False, init=False, repr=False)
     _saw_agent_error: bool = field(default=False, init=False, repr=False)
+    _failure_detail: str | None = field(default=None, init=False, repr=False)
     _lines: list[str] = field(default_factory=list, init=False, repr=False)
 
     def initialize(self, context: ExecutionContext) -> None:
@@ -77,6 +79,7 @@ class GeminiAdapter(BaseAdapter):
         self._started_at = time.monotonic()
         self._saw_completion = False
         self._saw_agent_error = False
+        self._failure_detail = None
         if context.logger is not None:
             context.logger.info(
                 "gemini_adapter_start",
@@ -105,8 +108,16 @@ class GeminiAdapter(BaseAdapter):
                     self._saw_completion = True
                     if observation.payload.get("status") == "agent_failed":
                         self._saw_agent_error = True
+                        detail = str(
+                            observation.payload.get("subtype")
+                            or observation.payload.get("message")
+                            or "agent_failed"
+                        )
+                        self._failure_detail = self._failure_detail or detail
                 if observation.kind is ObservationKind.ERROR:
                     self._saw_agent_error = True
+                    message = str(observation.payload.get("message") or "error")
+                    self._failure_detail = message
                 yield observation
 
     def finish(
@@ -121,7 +132,7 @@ class GeminiAdapter(BaseAdapter):
             elapsed = time.monotonic() - self._started_at
             if elapsed > context.config.timeout_seconds and not self._saw_completion:
                 return AdapterOutcome.TIMED_OUT
-        if self._saw_agent_error and self._saw_completion:
+        if self._saw_agent_error:
             return AdapterOutcome.AGENT_FAILED
         if self._saw_completion:
             return AdapterOutcome.COMPLETED
@@ -130,6 +141,10 @@ class GeminiAdapter(BaseAdapter):
     def cleanup(self, context: ExecutionContext) -> None:
         del context
         self._reset_transient()
+
+    def failure_detail(self) -> str | None:
+        """Last actionable provider/CLI failure message, if any."""
+        return self._failure_detail
 
     def _iter_lines(self, context: ExecutionContext) -> Iterator[str]:
         if self.stream_source is not None:
@@ -154,10 +169,33 @@ class GeminiAdapter(BaseAdapter):
                     "timeout_seconds": context.config.timeout_seconds,
                 },
             )
-        for err_line in result.stderr.splitlines():
+
+        stdout = result.stdout or ""
+        stderr = result.stderr or ""
+        classified = classify_gemini_cli_failure(
+            stderr=stderr,
+            stdout=stdout,
+            exit_code=result.exit_code,
+        )
+
+        # Preserve benign stderr as STDERR observations (not ERROR) so YOLO /
+        # color / ripgrep notices do not fail a successful coding run.
+        for err_line in stderr.splitlines():
             if err_line.strip():
-                yield json.dumps({"type": "error", "message": err_line})
-        yield from result.stdout.splitlines()
+                yield json.dumps({"type": "stderr", "content": err_line})
+
+        yield from stdout.splitlines()
+
+        if classified is not None:
+            yield json.dumps({"type": "error", "message": classified})
+            if not _stdout_has_result(stdout):
+                yield json.dumps(
+                    {
+                        "type": "result",
+                        "status": "error",
+                        "error": {"message": classified},
+                    }
+                )
 
     def _check_bounds(self, context: ExecutionContext) -> None:
         if context.is_cancelled():
@@ -181,4 +219,13 @@ class GeminiAdapter(BaseAdapter):
         self._started_at = None
         self._saw_completion = False
         self._saw_agent_error = False
+        self._failure_detail = None
         self._lines.clear()
+
+
+def _stdout_has_result(stdout: str) -> bool:
+    for line in stdout.splitlines():
+        text = line.strip()
+        if '"type":"result"' in text or '"type": "result"' in text:
+            return True
+    return False
