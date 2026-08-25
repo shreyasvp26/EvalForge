@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from agent_eval_application.commands.run import CancelRunCommand, CreateRunCommand
+from api_fakes import sample_artifact
 
 
 def test_create_run(client, services, auth_headers) -> None:
@@ -91,3 +92,54 @@ def test_list_run_scores(client, services, auth_headers) -> None:
     item = response.json()["items"][0]
     assert item["grader_id"] == "g-1"
     assert item["value"]["detail"]["reason"] == "expected files present"
+
+
+def test_compare_runs(client, services, auth_headers) -> None:
+    response = client.post(
+        "/v1/runs/compare",
+        json={"run_ids": ["run-1", "run-2"]},
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["baseline_run_id"] == "run-1"
+    assert len(body["runs"]) == 2
+    services.compare_runs.execute.assert_called_once()
+
+
+def test_diagnose_run_failure(client, services, auth_headers) -> None:
+    response = client.get("/v1/runs/run-1/diagnosis", headers=auth_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["category"] == "sandbox_failure"
+    services.diagnose_run_failure.execute.assert_called_once()
+
+
+def test_preview_run_artifact_truncates(
+    client, services, auth_headers, container
+) -> None:
+    large = b"a" * (256 * 1024 + 50)
+    container.infrastructure.object_storage.get.return_value = large
+    response = client.get(
+        "/v1/runs/run-1/artifacts/art-1/preview",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["previewable"] is True
+    assert body["truncated"] is True
+    assert len(body["preview"]) == 256 * 1024
+
+
+def test_preview_run_artifact_rejects_html(client, services, auth_headers) -> None:
+    services.get_run_artifacts.execute.return_value = [
+        sample_artifact(content_type="text/html")
+    ]
+    response = client.get(
+        "/v1/runs/run-1/artifacts/art-1/preview",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["previewable"] is False
+    assert body["preview"] is None

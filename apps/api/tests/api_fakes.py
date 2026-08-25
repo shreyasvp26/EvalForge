@@ -8,13 +8,23 @@ from unittest.mock import MagicMock
 
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.dto.project import ProjectDTO
+from agent_eval_application.dto.provenance import ReproducibilityDTO, RunProvenanceDTO
 from agent_eval_application.dto.run import (
     ArtifactDTO,
     ExecutionEventDTO,
     RunDTO,
     RunPinsDTO,
+    RunTelemetryDTO,
     ScoreDTO,
     ScoreValueDTO,
+)
+from agent_eval_application.dto.run_comparison import (
+    RunComparisonDeltaDTO,
+    RunComparisonEntryDTO,
+    RunComparisonResultDTO,
+)
+from agent_eval_application.dto.run_diagnosis import (
+    RunDiagnosisDTO,
 )
 from agent_eval_application.dto.suite import SuiteDTO
 from agent_eval_application.dto.user import UserDTO
@@ -23,6 +33,7 @@ from agent_eval_application.errors import (
     AuthorizationError,
     NotFoundApplicationError,
 )
+from agent_eval_application.scoring.aggregation import ScoreAggregate
 
 
 def sample_project(**overrides: Any) -> ProjectDTO:
@@ -77,6 +88,7 @@ def sample_run(**overrides: Any) -> RunDTO:
         produced_score_count=0,
         is_partially_graded=False,
         scores=(),
+        telemetry=RunTelemetryDTO.from_cost(None),
     )
     base.update(overrides)
     return RunDTO(**base)
@@ -130,6 +142,114 @@ def sample_score(**overrides: Any) -> ScoreDTO:
     return ScoreDTO(**base)
 
 
+def sample_provenance(**overrides: Any) -> RunProvenanceDTO:
+    aggregate = ScoreAggregate(
+        passed=True,
+        overall_score=1.0,
+        objective_failed=False,
+        score_count=1,
+        reason="all graders reported passed=true",
+    )
+    base = dict(
+        run_id="run-1",
+        status="completed",
+        created_at=datetime(2026, 1, 1, tzinfo=UTC),
+        failure_reason=None,
+        failure_category=None,
+        cancellation_reason=None,
+        project_id="proj-1",
+        case_version_id="cv-1",
+        prompt_version_id="pv-1",
+        agent_version_id="av-1",
+        adapter_version_id="adv-1",
+        platform_version_id="plat-1",
+        grader_version_ids=("gv-1",),
+        suite_version_id=None,
+        repository_url="https://example.com/r.git",
+        commit_sha="deadbeef",
+        subdirectory=None,
+        agent_name="Agent",
+        agent_version_label="1.0",
+        adapter_name="claude_code",
+        adapter_version_label="1.0",
+        adapter_key="claude_code",
+        grader_summaries=(),
+        score_aggregate=aggregate,
+        expected_grader_count=1,
+        produced_score_count=1,
+        is_partially_graded=False,
+        telemetry=RunTelemetryDTO.from_cost(None),
+        event_count=0,
+        artifact_count=0,
+        execution_mode=None,
+        reproducibility=ReproducibilityDTO(
+            can_reproduce=True,
+            missing=(),
+            notes="All repository pins and version pins are present for reproduction.",
+        ),
+    )
+    base.update(overrides)
+    return RunProvenanceDTO(**base)
+
+
+def sample_comparison(**overrides: Any) -> RunComparisonResultDTO:
+    run = sample_run()
+    aggregate = ScoreAggregate(
+        passed=True,
+        overall_score=1.0,
+        objective_failed=False,
+        score_count=1,
+        reason="all graders reported passed=true",
+    )
+    entry = RunComparisonEntryDTO(
+        run_id=run.id,
+        status=run.status,
+        failure_reason=run.failure_reason,
+        failure_category=run.failure_category,
+        pins=run.pins,
+        repository_url="https://example.com/r.git",
+        commit_sha="deadbeef",
+        adapter_key="claude_code",
+        adapter_name="claude_code",
+        prompt_version="v1",
+        agent_version="1.0",
+        telemetry=run.telemetry,
+        score_aggregate=aggregate,
+        duration_ms=None,
+    )
+    base = dict(
+        baseline_run_id=run.id,
+        runs=(entry, entry),
+        deltas=(
+            RunComparisonDeltaDTO(
+                run_id=run.id,
+                score_delta=0.0,
+                pass_changed=False,
+                duration_delta_ms=0,
+                pin_differences=(),
+            ),
+        ),
+    )
+    base.update(overrides)
+    return RunComparisonResultDTO(**base)
+
+
+def sample_diagnosis(**overrides: Any) -> RunDiagnosisDTO:
+    base = dict(
+        run_id="run-1",
+        status="failed",
+        summary="Run failed during execution.",
+        category="sandbox_failure",
+        reason="sandbox died",
+        evidence=("sandbox died",),
+        failing_grader_reasons=(),
+        last_events=(),
+        relevant_artifact_ids=(),
+    )
+    base.update(overrides)
+    return RunDiagnosisDTO(**base)
+
+
 def sample_user(**overrides: Any) -> UserDTO:
     base = dict(
         id="user-1",
@@ -175,7 +295,9 @@ def mock_services() -> MagicMock:
     services.get_run_events.execute.return_value = [sample_event()]
     services.get_run_artifacts.execute.return_value = [sample_artifact()]
     services.get_run_scores.execute.return_value = [sample_score()]
-    services.get_run_provenance.execute.return_value = MagicMock()
+    services.get_run_provenance.execute.return_value = sample_provenance()
+    services.compare_runs.execute.return_value = sample_comparison()
+    services.diagnose_run_failure.execute.return_value = sample_diagnosis()
 
     # Remaining use cases return Magics; individual tests override as needed.
     return services
@@ -213,7 +335,10 @@ __all__ = [
     "NotFoundApplicationError",
     "mock_services",
     "sample_artifact",
+    "sample_comparison",
+    "sample_diagnosis",
     "sample_event",
+    "sample_provenance",
     "sample_project",
     "sample_run",
     "sample_score",
