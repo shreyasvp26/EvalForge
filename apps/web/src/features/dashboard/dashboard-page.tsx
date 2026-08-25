@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Button, FadeIn, Text } from "@agent-eval/ui";
+import { Button, FadeIn, Icon, Play, Text } from "@agent-eval/ui";
 import Link from "next/link";
 
 import { ActiveExecution, RecentFailures } from "./active-execution";
@@ -9,7 +9,6 @@ import { EvaluationHealthStrip } from "./evaluation-health";
 import { useDashboardData } from "./hooks";
 import { QuickActions } from "./quick-actions";
 import { RecentEvaluations } from "./recent-evaluations";
-import { RecentResults } from "./recent-results";
 
 import { ErrorContent } from "@/components/layouts/error-content";
 import { PageHeader } from "@/components/layouts/page-header";
@@ -18,12 +17,15 @@ import { Section } from "@/components/layouts/section";
 import { DetailSkeleton } from "@/components/patterns/detail-skeleton";
 import { ApiError } from "@/lib/api/client";
 
+const launchRunClassName =
+  "ef-auth-primary-fill border-0 shadow-[0_2px_12px_var(--ef-auth-primary-glow)] hover:bg-transparent hover:brightness-110";
+
 export function DashboardPage() {
   const query = useDashboardData();
 
   if (query.isLoading) {
     return (
-      <PageLayout>
+      <PageLayout width="full">
         <DetailSkeleton withInspector={false} />
       </PageLayout>
     );
@@ -31,7 +33,7 @@ export function DashboardPage() {
 
   if (query.isError) {
     return (
-      <PageLayout>
+      <PageLayout width="full">
         <ErrorContent
           fill
           title="Couldn’t load overview"
@@ -55,14 +57,23 @@ export function DashboardPage() {
 
   if (snapshot.isEmpty) {
     return (
-      <PageLayout>
+      <PageLayout width="full">
         <FadeIn>
           <PageHeader
-            eyebrow="Evaluation control plane"
-            title="Evaluation overview"
-            description="Operational snapshot of recent evaluations across sampled projects."
+            eyebrow="Workspace"
+            title="Overview"
+            description="Here's what's happening with your evaluations."
+            className="space-y-2 [&_.flex]:gap-3"
+            actions={
+              <Button asChild size="md" className={launchRunClassName}>
+                <Link href="/runs/new" className="inline-flex items-center gap-2">
+                  <Icon icon={Play} size="sm" aria-hidden />
+                  Launch run
+                </Link>
+              </Button>
+            }
           />
-          <div className="mt-8">
+          <div className="mt-5">
             <DashboardEmpty />
           </div>
         </FadeIn>
@@ -71,48 +82,37 @@ export function DashboardPage() {
   }
 
   return (
-    <PageLayout width="full" className="max-w-6xl">
+    <PageLayout width="full">
       <FadeIn>
         <PageHeader
-          eyebrow="Evaluation control plane"
-          title="Evaluation overview"
-          description="Operational snapshot of recent evaluations across sampled projects."
+          eyebrow="Workspace"
+          title="Overview"
+          description="Here's what's happening with your evaluations."
+          className="space-y-2 [&_.flex]:gap-3"
           actions={
-            <Button asChild size="lg" rightIcon={ArrowRight}>
-              <Link href="/runs/new">Launch evaluation</Link>
+            <Button asChild size="md" className={launchRunClassName}>
+              <Link href="/runs/new" className="inline-flex items-center gap-2">
+                <Icon icon={Play} size="sm" aria-hidden />
+                Launch run
+              </Link>
             </Button>
           }
         />
 
-        <div className="mt-8 space-y-8">
+        <div className="mt-5 space-y-5">
           <EvaluationHealthStrip health={snapshot.health} />
 
-          <div className="grid gap-8 lg:grid-cols-3">
-            <Section
-              title="Active execution"
-              description="Queued, running, and grading right now."
-              className="lg:col-span-1"
-            >
-              <ActiveExecution
-                runs={snapshot.activeRuns}
-                projectNameById={snapshot.projectNameById}
-              />
-            </Section>
+          <Section title="Quick actions" description="What should you do next?">
+            <QuickActions />
+          </Section>
 
-            <Section
-              title="Needs attention"
-              description="Failed runs and completed runs with failing scores."
-              className="lg:col-span-2"
-            >
-              <RecentFailures runs={snapshot.failures} projectNameById={snapshot.projectNameById} />
-            </Section>
-
+          <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
             <Section
               title="Recent evaluations"
               className="lg:col-span-2"
               description="Latest runs across sampled projects."
               actions={
-                <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="ghost" size="sm" className="text-[var(--ef-accent)]">
                   <Link href="/runs">View all</Link>
                 </Button>
               }
@@ -123,17 +123,40 @@ export function DashboardPage() {
               />
             </Section>
 
-            <Section title="Workflow" description="Start or configure the evaluation model.">
-              <QuickActions />
-            </Section>
+            <div className="space-y-5">
+              <Section
+                title="Active executions"
+                description="Queued, running, and grading right now."
+                actions={
+                  snapshot.activeRuns.length > 0 ? (
+                    <Button asChild variant="ghost" size="sm" className="text-[var(--ef-accent)]">
+                      <Link href="/runs">View all</Link>
+                    </Button>
+                  ) : null
+                }
+              >
+                <ActiveExecution
+                  runs={snapshot.activeRuns}
+                  projectNameById={snapshot.projectNameById}
+                  agentNameByVersionId={snapshot.agentNameByVersionId}
+                />
+              </Section>
 
-            <Section
-              title="Recent scores"
-              className="lg:col-span-3"
-              description="Grader outcomes attached to recent runs."
-            >
-              <RecentResults results={snapshot.results} />
-            </Section>
+              <Section
+                title="Recent failures"
+                description="Failed runs and failing scores."
+                actions={
+                  <Button asChild variant="ghost" size="sm" className="text-[var(--ef-accent)]">
+                    <Link href="/runs">View all</Link>
+                  </Button>
+                }
+              >
+                <RecentFailures
+                  runs={snapshot.failures}
+                  projectNameById={snapshot.projectNameById}
+                />
+              </Section>
+            </div>
           </div>
 
           <Text variant="caption" className="block text-muted-foreground">

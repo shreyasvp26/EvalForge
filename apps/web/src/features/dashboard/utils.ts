@@ -34,6 +34,20 @@ export function formatDashboardDate(value: string): string {
   }).format(date);
 }
 
+/** Relative time for operational panels (honest, based on real timestamps). */
+export function formatRelativeTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const deltaSec = Math.round((date.getTime() - Date.now()) / 1000);
+  const abs = Math.abs(deltaSec);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  if (abs < 60) return rtf.format(deltaSec, "second");
+  if (abs < 3600) return rtf.format(Math.round(deltaSec / 60), "minute");
+  if (abs < 86_400) return rtf.format(Math.round(deltaSec / 3600), "hour");
+  if (abs < 604_800) return rtf.format(Math.round(deltaSec / 86_400), "day");
+  return formatDashboardDate(value);
+}
+
 export function formatCount(count: number, hasMore: boolean): string {
   if (hasMore) return `${String(count)}+`;
   return String(count);
@@ -171,6 +185,7 @@ export interface DashboardSnapshot {
   failures: Run[];
   results: DashboardScoreRow[];
   projectNameById: Record<string, string>;
+  agentNameByVersionId: Record<string, string>;
   isEmpty: boolean;
 }
 
@@ -188,6 +203,13 @@ export function buildDashboardSnapshot(input: {
   const projectNameById = Object.fromEntries(
     input.projects.map((project) => [project.id, project.name]),
   );
+
+  const agentNameByVersionId: Record<string, string> = {};
+  for (const agent of input.agents) {
+    for (const version of agent.versions) {
+      agentNameByVersionId[version.id] = agent.name;
+    }
+  }
 
   const runs = sortByDateDesc(input.runs, (run) => run.created_at);
   const suites = sortByDateDesc(input.suites, latestResourceAt);
@@ -253,6 +275,7 @@ export function buildDashboardSnapshot(input: {
     failures,
     results: results.slice(0, DASHBOARD_RESULTS_LIMIT),
     projectNameById,
+    agentNameByVersionId,
     isEmpty,
   };
 }

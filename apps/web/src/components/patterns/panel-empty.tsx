@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, EmptyState, Play } from "@agent-eval/ui";
+import { Button, EmptyState, Play, cn } from "@agent-eval/ui";
 import Link from "next/link";
 
 import type { LucideIcon } from "@agent-eval/ui";
@@ -17,6 +17,7 @@ export function PanelEmpty({
   actionLabel,
   icon,
   action,
+  className,
 }: {
   title: string;
   description: string;
@@ -24,6 +25,7 @@ export function PanelEmpty({
   actionLabel?: string;
   icon?: LucideIcon;
   action?: ReactNode;
+  className?: string;
 }) {
   const resolvedAction =
     action ??
@@ -39,7 +41,7 @@ export function PanelEmpty({
       title={title}
       description={description}
       action={resolvedAction}
-      className="gap-2 px-4 py-8"
+      className={cn("gap-2 px-4 py-6", className)}
     />
   );
 }

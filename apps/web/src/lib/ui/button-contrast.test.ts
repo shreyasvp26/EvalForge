@@ -20,10 +20,10 @@ function contrastRatio(fg: string, bg: string): number {
 
 describe("primary button accent contrast", () => {
   it("light theme accent meets AA for normal text", () => {
-    expect(contrastRatio("#f7f7f8", "#1e3a5f")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#ffffff", "#7c3aed")).toBeGreaterThanOrEqual(4.5);
   });
 
   it("dark theme accent meets AA for normal text", () => {
-    expect(contrastRatio("#0a1420", "#7eb6f0")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#ffffff", "#7c3aed")).toBeGreaterThanOrEqual(4.5);
   });
 });

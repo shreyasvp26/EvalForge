@@ -28,7 +28,8 @@ export function DataGridSearch({
       <Icon
         icon={Search}
         size="sm"
-        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted-foreground"
+        style={{ left: 14 }}
         aria-hidden
       />
       <Input
@@ -39,7 +40,8 @@ export function DataGridSearch({
         }}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="pl-9"
+        className="pr-3"
+        style={{ paddingLeft: 40 }}
       />
     </div>
   );

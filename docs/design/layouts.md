@@ -20,7 +20,7 @@ Import product layouts from `@/components/layouts`. Generic primitives (`Stack`,
 
 **What:** Width-constrained page canvas (`sm` | `md` | `lg` | `xl` | `full`) with standard padding. `flush` for panes inside SplitView.
 
-**When:** Default wrapper for list and simple pages. Use `width="full"` for dense DataGrids.
+**When:** Default wrapper for list and simple pages. Use `width="full"` (`max-w-7xl`, Overview reference) for Overview and DataGrid list pages. Use `lg` for Settings and other readable form columns.
 
 ---
 

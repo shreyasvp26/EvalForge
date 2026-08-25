@@ -23,7 +23,7 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-[var(--ef-z-dropdown)] min-w-44 overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-popover p-1 text-popover-foreground shadow-ef-md",
+          "z-[var(--ef-z-dropdown)] min-w-44 overflow-hidden rounded-[var(--ef-radius-panel)] border border-border bg-popover p-1.5 text-popover-foreground shadow-ef-md",
           className,
         )}
         {...props}
@@ -40,8 +40,8 @@ export function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-[var(--ef-radius-control)] px-2 py-1.5 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        inset === true && "pl-8",
+        "relative flex cursor-default select-none items-center rounded-[var(--ef-radius-control)] px-3 py-2 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        inset === true && "pl-9",
         className,
       )}
       {...props}
@@ -68,7 +68,7 @@ export function DropdownMenuLabel({
   return (
     <DropdownMenuPrimitive.Label
       className={cn(
-        "px-2 py-1.5 text-[length:var(--ef-text-caption)] font-medium text-muted-foreground",
+        "px-3 py-1.5 text-[length:var(--ef-text-caption)] font-medium text-muted-foreground",
         className,
       )}
       {...props}
@@ -85,13 +85,13 @@ export function DropdownMenuCheckboxItem({
   return (
     <DropdownMenuPrimitive.CheckboxItem
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-[var(--ef-radius-control)] py-1.5 pr-2 pl-8 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-default select-none items-center gap-2 rounded-[var(--ef-radius-control)] px-3 py-2 text-[length:var(--ef-text-body)] outline-none transition-colors focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...(checked !== undefined ? { checked } : {})}
       {...props}
     >
-      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <span className="flex h-4 w-4 shrink-0 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
           <Icon icon={Check} size="xs" aria-hidden />
         </DropdownMenuPrimitive.ItemIndicator>

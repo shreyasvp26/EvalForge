@@ -40,7 +40,8 @@ const widthMap = {
   md: "max-w-3xl",
   lg: "max-w-5xl",
   xl: "max-w-6xl",
-  full: "max-w-none",
+  /** Matches app PageLayout `full` — Overview product canvas. */
+  full: "max-w-7xl",
 } as const;
 
 export function Container({ className, width = "xl", ...props }: ContainerProps) {

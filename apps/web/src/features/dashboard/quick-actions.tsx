@@ -1,6 +1,15 @@
 "use client";
 
-import { ArrowRight, Bot, FolderKanban, FlaskConical, Icon, Play, Text, cn } from "@agent-eval/ui";
+import {
+  ArrowRight,
+  BarChart3,
+  Bot,
+  FolderKanban,
+  FlaskConical,
+  Icon,
+  Text,
+  cn,
+} from "@agent-eval/ui";
 import Link from "next/link";
 
 import type { LucideIcon } from "@agent-eval/ui";
@@ -10,59 +19,66 @@ const ACTIONS: {
   label: string;
   hint: string;
   icon: LucideIcon;
-  primary?: boolean;
+  tone: "blue" | "violet" | "amber" | "emerald";
 }[] = [
-  {
-    href: "/runs/new",
-    label: "Launch evaluation",
-    hint: "Pin case, agent, and grader versions",
-    icon: Play,
-    primary: true,
-  },
   {
     href: "/projects?create=1",
     label: "Create project",
-    hint: "New evaluation workspace",
+    hint: "Start a new evaluation workspace",
     icon: FolderKanban,
+    tone: "blue",
   },
   {
     href: "/cases",
-    label: "Define a case",
-    hint: "Prompt and expected outcome",
+    label: "Create case",
+    hint: "Define a prompt and expected outcome",
     icon: FlaskConical,
+    tone: "violet",
   },
   {
     href: "/agents",
     label: "Configure agents",
-    hint: "Adapters and versions",
+    hint: "Adapters, models, and versions",
     icon: Bot,
+    tone: "emerald",
+  },
+  {
+    href: "/graders",
+    label: "Configure graders",
+    hint: "Scoring rules and thresholds",
+    icon: BarChart3,
+    tone: "amber",
   },
 ];
 
+const toneClass: Record<(typeof ACTIONS)[number]["tone"], string> = {
+  blue: "bg-running-muted text-running",
+  violet: "bg-[var(--ef-accent-muted)] text-[var(--ef-accent)]",
+  emerald: "bg-success-muted text-success",
+  amber: "bg-warning-muted text-warning",
+};
+
 export function QuickActions() {
   return (
-    <ul className="space-y-2">
+    <ul className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
       {ACTIONS.map((action) => (
         <li key={action.href}>
           <Link
             href={action.href}
             className={cn(
-              "group flex items-start gap-3 rounded-[var(--ef-radius-panel)] border px-3.5 py-3 transition-[background-color,border-color,box-shadow] duration-[var(--ef-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              action.primary
-                ? "border-accent/30 bg-[var(--ef-accent-muted)]/40 hover:border-accent/50 hover:shadow-[0_0_0_1px_var(--ef-accent-glow)]"
-                : "border-border bg-card hover:bg-muted/40",
+              "group flex h-full items-start gap-2.5 rounded-[var(--ef-radius-panel)] border border-border bg-card px-3 py-2.5 transition-[border-color,background-color,box-shadow] duration-[var(--ef-duration-fast)] hover:border-border-strong hover:bg-muted/25 hover:shadow-ef-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
           >
             <span
               className={cn(
                 "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ef-radius-control)]",
-                action.primary ? "ef-accent-fill" : "bg-muted text-muted-foreground",
+                toneClass[action.tone],
               )}
             >
               <Icon icon={action.icon} size="sm" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <Text as="span" variant="body" className="font-medium">
+              <Text as="span" variant="body" className="block font-medium text-foreground">
                 {action.label}
               </Text>
               <Text as="span" variant="caption" className="mt-0.5 block text-muted-foreground">
@@ -72,7 +88,7 @@ export function QuickActions() {
             <Icon
               icon={ArrowRight}
               size="sm"
-              className="mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:opacity-100"
+              className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:opacity-60"
               aria-hidden
             />
           </Link>
