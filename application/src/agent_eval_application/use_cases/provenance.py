@@ -5,6 +5,7 @@ from __future__ import annotations
 from agent_eval_domain.common.errors import NotFoundError
 from agent_eval_domain.common.ids import PlatformVersionId, RunId
 
+from agent_eval_application.benchmark import benchmark_identity_from_run
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.provenance import ReproducibilityDTO, RunProvenanceDTO
 from agent_eval_application.dto.run import RunDTO
@@ -122,6 +123,11 @@ class GetRunProvenance:
             )
 
             aggregate = aggregate_scores(dto.scores)
+            identity = benchmark_identity_from_run(
+                dto,
+                repository_url=repository_url,
+                commit_sha=commit_sha,
+            )
             return RunProvenanceDTO(
                 run_id=dto.id,
                 status=dto.status,
@@ -158,6 +164,8 @@ class GetRunProvenance:
                 artifact_count=len(run.artifacts),
                 execution_mode=dto.execution_mode,
                 execution_metadata=dict(dto.execution_metadata),
+                benchmark_key=identity.benchmark_key,
+                suite_version_id_as_benchmark=dto.pins.suite_version_id,
                 reproducibility=_build_reproducibility(
                     dto,
                     repository_url=repository_url,

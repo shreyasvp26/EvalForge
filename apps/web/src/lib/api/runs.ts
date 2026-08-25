@@ -274,6 +274,11 @@ export interface RunProvenance {
   artifact_count: number;
   execution_mode: string | null;
   execution_metadata: Record<string, string>;
+  platform_name?: string | null;
+  platform_version_label?: string | null;
+  platform_policy_summaries?: Record<string, Record<string, string>>;
+  benchmark_key?: string | null;
+  suite_version_id_as_benchmark?: string | null;
   reproducibility: Reproducibility;
 }
 
@@ -292,6 +297,9 @@ export interface RunComparisonEntry {
   telemetry: RunTelemetry;
   score_aggregate: ScoreAggregate;
   duration_ms: number | null;
+  execution_mode?: string | null;
+  benchmark_key?: string | null;
+  suite_version_id?: string | null;
 }
 
 export interface RunComparisonDelta {
@@ -302,10 +310,21 @@ export interface RunComparisonDelta {
   pin_differences: string[];
 }
 
+export interface RunComparability {
+  compatible: boolean;
+  shared_dimensions: string[];
+  agent_difference_dimensions: string[];
+  mismatches: string[];
+  expected_agent_differences: string[];
+  benchmark_key: string | null;
+  notes: string;
+}
+
 export interface RunComparisonResult {
   baseline_run_id: string;
   runs: RunComparisonEntry[];
   deltas: RunComparisonDelta[];
+  comparability: RunComparability;
 }
 
 export interface FailingGraderReason {

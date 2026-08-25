@@ -62,3 +62,5 @@ class RunProvenanceDTO:
     platform_name: str | None = None
     platform_version_label: str | None = None
     platform_policy_summaries: dict[str, dict[str, str]] = field(default_factory=dict)
+    benchmark_key: str | None = None
+    suite_version_id_as_benchmark: str | None = None

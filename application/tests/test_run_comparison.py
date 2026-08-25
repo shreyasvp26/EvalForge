@@ -88,3 +88,70 @@ def test_compare_runs_returns_deltas(world):
     assert result.deltas[0].pass_changed is True
     assert result.runs[0].commit_sha == "deadbeef"
     assert result.runs[0].adapter_key == "claude_code"
+    assert result.comparability.compatible is True
+    assert result.comparability.benchmark_key is not None
+    assert result.comparability.mismatches == ()
+
+
+def test_compare_runs_marks_incompatible_when_case_differs(world):
+    """Different case versions are not a fair agent comparison."""
+    from agent_eval_application.commands.case import (
+        CreateCaseDraftVersionCommand,
+        PublishCaseVersionCommand,
+    )
+    from agent_eval_application.use_cases.case import (
+        CreateCaseDraftVersion,
+        PublishCaseVersion,
+    )
+
+    run_a = _create_run(world)
+    _complete_run(world, run_a.id, passed=True)
+
+    cv = CreateCaseDraftVersion(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateCaseDraftVersionCommand(
+            actor=world["actor"],
+            case_id=world["case_id"],
+            description="Different case version",
+            repository_url="https://example.com/r.git",
+            commit_sha="cafebabe",
+            expected_checks=("pytest",),
+            applicable_grader_ids=(world["grader_id"],),
+            prompt_version_id=world["prompt_version_id"],
+        )
+    )
+    cv = PublishCaseVersion(world["uow"], world["auth"], world["events"]).execute(
+        PublishCaseVersionCommand(
+            actor=world["actor"], case_id=world["case_id"], version_id=cv.id
+        )
+    )
+    run_b = CreateRun(
+        world["uow"],
+        world["ids"],
+        world["auth"],
+        world["events"],
+        world["queue"],
+        world["idempotency"],
+    ).execute(
+        CreateRunCommand(
+            actor=world["actor"],
+            project_id=world["project_id"],
+            case_id=world["case_id"],
+            case_version_id=cv.id,
+            prompt_version_id=world["prompt_version_id"],
+            agent_id=world["agent_id"],
+            agent_version_id=world["agent_version_id"],
+            adapter_version_id=world["adapter_version_id"],
+            grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
+            platform_version_id=world["platform_version_id"],
+        )
+    )
+    _complete_run(world, run_b.id, passed=False)
+
+    result = CompareRuns(world["uow"], world["auth"]).execute(
+        CompareRunsCommand(actor=world["actor"], run_ids=(run_a.id, run_b.id))
+    )
+    assert result.comparability.compatible is False
+    assert any("case_version_id" in m for m in result.comparability.mismatches)
+    assert any("commit_sha" in m for m in result.comparability.mismatches)
