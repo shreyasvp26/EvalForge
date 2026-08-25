@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildEvaluationHealth, runPassSignal } from "./utils";
+import { buildEvaluationHealth, formatRelativeTime, runPassSignal } from "./utils";
 
 import type { Run } from "@/lib/api/runs";
 
@@ -74,5 +74,10 @@ describe("dashboard evaluation health", () => {
         }),
       ),
     ).toBe(false);
+  });
+
+  it("formats relative time from real timestamps", () => {
+    const recent = new Date(Date.now() - 90_000).toISOString();
+    expect(formatRelativeTime(recent)).toMatch(/minute/);
   });
 });

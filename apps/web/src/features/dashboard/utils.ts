@@ -34,6 +34,20 @@ export function formatDashboardDate(value: string): string {
   }).format(date);
 }
 
+/** Relative time for operational panels (honest, based on real timestamps). */
+export function formatRelativeTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const deltaSec = Math.round((date.getTime() - Date.now()) / 1000);
+  const abs = Math.abs(deltaSec);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  if (abs < 60) return rtf.format(deltaSec, "second");
+  if (abs < 3600) return rtf.format(Math.round(deltaSec / 60), "minute");
+  if (abs < 86_400) return rtf.format(Math.round(deltaSec / 3600), "hour");
+  if (abs < 604_800) return rtf.format(Math.round(deltaSec / 86_400), "day");
+  return formatDashboardDate(value);
+}
+
 export function formatCount(count: number, hasMore: boolean): string {
   if (hasMore) return `${String(count)}+`;
   return String(count);
