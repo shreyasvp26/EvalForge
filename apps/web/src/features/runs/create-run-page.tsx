@@ -39,6 +39,7 @@ import { getCase, listCases } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
 import { listGraders } from "@/lib/api/graders";
 import { listProjects } from "@/lib/api/projects";
+import { isGeminiAdapterPath, listModels, listProviderConnections } from "@/lib/api/providers";
 import { createRun } from "@/lib/api/runs";
 import { useAuth } from "@/lib/auth/auth-provider";
 
@@ -71,6 +72,9 @@ export function CreateRunPage() {
   const [adapterVersionId, setAdapterVersionId] = useState("");
   const [graderSelections, setGraderSelections] = useState<Record<string, string>>({});
   const [platformVersionId, setPlatformVersionId] = useState("");
+  const [providerKey, setProviderKey] = useState("google");
+  const [modelId, setModelId] = useState("");
+  const [providerConnectionId, setProviderConnectionId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -130,6 +134,32 @@ export function CreateRunPage() {
       return listGraders(token, { limit: 100, sort: "-created_at" });
     },
   });
+
+  const showGeminiRuntime = isGeminiAdapterPath(adapterQuery.data?.name);
+
+  const modelsQuery = useQuery({
+    queryKey: ["models", "google", "create-run"],
+    enabled: Boolean(token) && showGeminiRuntime,
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return listModels(token, { provider_key: "google" });
+    },
+  });
+
+  const connectionsQuery = useQuery({
+    queryKey: ["provider-connections", "create-run"],
+    enabled: Boolean(token) && showGeminiRuntime,
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return listProviderConnections(token);
+    },
+  });
+
+  const googleConnections = useMemo(() => {
+    return (connectionsQuery.data?.items ?? []).filter(
+      (connection) => connection.status === "active" && connection.provider_key === "google",
+    );
+  }, [connectionsQuery.data]);
 
   const caseVersions = useMemo(() => {
     if (!caseQuery.data) return [];
@@ -271,6 +301,15 @@ export function CreateRunPage() {
             }),
           ),
           platform_version_id: platformVersionId.trim(),
+          ...(showGeminiRuntime && modelId
+            ? {
+                provider_key: providerKey || "google",
+                gateway_key: "direct",
+                model_id: modelId,
+                routing_mode: "fixed",
+                provider_connection_id: providerConnectionId || null,
+              }
+            : {}),
         },
         idempotencyKey,
       );
@@ -665,6 +704,77 @@ export function CreateRunPage() {
                     Required pin. Enter a Platform version ID from the catalog.
                   </Text>
                 </div>
+
+                {showGeminiRuntime ? (
+                  <div className="space-y-4 rounded-[var(--ef-radius-panel)] border border-border p-4">
+                    <div>
+                      <Text as="div" variant="caption" className="mb-1">
+                        Model & credential (optional)
+                      </Text>
+                      <Text variant="caption">
+                        Gemini path only. Exact model pinning uses fixed routing and the direct
+                        gateway.
+                      </Text>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label>Provider</Label>
+                        <Select value={providerKey} onValueChange={setProviderKey}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Provider" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="google">Google</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Model</Label>
+                        <Select {...(modelId ? { value: modelId } : {})} onValueChange={setModelId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Optional model pin" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {modelsQuery.data?.items.map((model) => (
+                              <SelectItem key={model.model_id} value={model.model_id}>
+                                {model.display_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Credential</Label>
+                        <Select
+                          {...(providerConnectionId ? { value: providerConnectionId } : {})}
+                          onValueChange={setProviderConnectionId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Optional BYOK connection" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {googleConnections.map((connection) => (
+                              <SelectItem key={connection.id} value={connection.id}>
+                                {connection.display_name} · {connection.masked_key}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {googleConnections.length === 0 ? (
+                          <Text variant="caption">
+                            No Google connections yet. Add one under Settings → Providers.
+                          </Text>
+                        ) : null}
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Gateway / routing</Label>
+                        <Text as="div" variant="body">
+                          direct · fixed
+                        </Text>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>

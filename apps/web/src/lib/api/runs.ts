@@ -46,6 +46,7 @@ export interface Run {
   telemetry?: RunTelemetry | null;
   execution_mode?: string | null;
   execution_metadata?: Record<string, string>;
+  runtime_request?: Record<string, string>;
 }
 
 export interface RunTelemetry {
@@ -106,6 +107,12 @@ export interface CreateRunInput {
   platform_version_id: string;
   suite_id?: string | null;
   suite_version_id?: string | null;
+  provider_key?: string | null;
+  gateway_key?: string | null;
+  model_id?: string | null;
+  routing_mode?: string | null;
+  provider_connection_id?: string | null;
+  credential_ref_id?: string | null;
 }
 
 export interface CancelRunInput {
@@ -170,6 +177,12 @@ export async function createRun(
       platform_version_id: input.platform_version_id,
       suite_id: input.suite_id ?? null,
       suite_version_id: input.suite_version_id ?? null,
+      provider_key: input.provider_key ?? null,
+      gateway_key: input.gateway_key ?? null,
+      model_id: input.model_id ?? null,
+      routing_mode: input.routing_mode ?? null,
+      provider_connection_id: input.provider_connection_id ?? null,
+      credential_ref_id: input.credential_ref_id ?? null,
     },
   });
 }
