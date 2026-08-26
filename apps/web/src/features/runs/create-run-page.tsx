@@ -368,7 +368,7 @@ export function CreateRunPage() {
         <PageHeader
           eyebrow="Execution"
           title="New run"
-          description="Pin immutable versions, then launch. The worker queues immediately after create."
+          description="Select a task revision (exact commit), agent, and credentials — then launch. Failed evaluations never publish to GitHub."
           actions={
             <Button asChild variant="outline">
               <Link href="/runs">Cancel</Link>
@@ -590,19 +590,19 @@ export function CreateRunPage() {
             {step === 4 ? (
               <div className="space-y-3">
                 <Text variant="secondary">
-                  Select graders declared on this case version. Only published versions can be
+                  Select graders declared on this task version. Only published versions can be
                   pinned.
                 </Text>
                 {!caseVersionId ? (
-                  <Text variant="secondary">Select a case version first.</Text>
+                  <Text variant="secondary">Select a task version first.</Text>
                 ) : applicableGraderIds.size === 0 ? (
                   <Text variant="secondary">
-                    This case version declares no applicable graders. Edit the case version to add
+                    This task version declares no applicable graders. Edit the task version to add
                     grader IDs, then publish it.
                   </Text>
                 ) : applicableGraders.length === 0 ? (
                   <Text variant="secondary">
-                    Declared graders were not found or have no published versions. Check case
+                    Declared graders were not found or have no published versions. Check task
                     declarations and publish grader versions.
                   </Text>
                 ) : (
@@ -674,6 +674,14 @@ export function CreateRunPage() {
                           ? `${caseName} · v${String(caseVersion.version_number)}`
                           : caseVersionId
                       }
+                    />
+                    <PinRow
+                      label="Repository"
+                      value={selectedCaseVersion?.repository_url.trim() ?? "—"}
+                    />
+                    <PinRow
+                      label="Exact commit SHA"
+                      value={selectedCaseVersion?.commit_sha.trim() ?? "—"}
                     />
                     <PinRow
                       label="Prompt version"
@@ -754,7 +762,7 @@ export function CreateRunPage() {
                     </SelectContent>
                   </Select>
                   <Text variant="caption">
-                    Required pin for sandbox policy. EvalForge never publishes failed evaluations.
+                    Required sandbox policy pin. Failed evaluations never create a branch or PR.
                   </Text>
                 </div>
 
@@ -762,7 +770,11 @@ export function CreateRunPage() {
                   <div className="space-y-4 rounded-[var(--ef-radius-panel)] border border-border p-4">
                     <div>
                       <Text as="div" variant="caption" className="mb-1">
-                        Model & credential (optional)
+                        Model & credential
+                      </Text>
+                      <Text variant="caption" className="mt-1 block">
+                        Exact model pin for Gemini CLI. Credential stays encrypted — only a
+                        reference is stored on the run.
                       </Text>
                       <Text variant="caption">
                         Gemini path only. Exact model pinning uses fixed routing and the direct

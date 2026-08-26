@@ -216,7 +216,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
     <PageLayout width="full" className="max-w-6xl">
       <FadeIn>
         <PageHeader
-          eyebrow="Evaluation"
+          eyebrow="Run"
           title={
             passed === true ? "Passed" : passed === false ? "Failed" : runStatusLabel(run.status)
           }
@@ -224,7 +224,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
             agentLabel,
             projectQuery.data?.name,
             caseLabel,
-            polling.isLive ? "Live observability" : "Immutable execution record",
+            polling.isLive ? "Live execution" : "Immutable run record",
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -294,7 +294,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
             </section>
           )}
 
-          {run.publication?.status && run.publication.status !== "not_attempted" ? (
+          {run.publication ? (
             <section
               aria-label="GitHub publication"
               className="rounded-[var(--ef-radius-panel)] border border-border px-4 py-3"
@@ -306,9 +306,32 @@ export function RunDetailPage({ runId }: { runId: string }) {
               >
                 GitHub publication
               </Text>
-              <Text variant="secondary" className="mt-2 font-medium text-foreground">
-                Status: {run.publication.status}
-              </Text>
+              {run.publication.status === "published" ? (
+                <Text variant="secondary" className="mt-2 font-medium text-foreground">
+                  Evaluation passed. A reviewable PR was created. You still merge — EvalForge never
+                  modifies main/master directly.
+                </Text>
+              ) : null}
+              {run.publication.status === "skipped" ||
+              (passed === false &&
+                (run.publication.status === "not_attempted" ||
+                  run.publication.status === "skipped")) ? (
+                <Text variant="secondary" className="mt-2 font-medium text-foreground">
+                  Evaluation failed. No GitHub changes were published — no branch, commit, or PR.
+                </Text>
+              ) : null}
+              {run.publication.status === "not_attempted" && passed !== false ? (
+                <Text variant="secondary" className="mt-2 text-foreground">
+                  Publication has not been attempted yet for this run.
+                </Text>
+              ) : null}
+              {run.publication.status &&
+              run.publication.status !== "not_attempted" &&
+              run.publication.status !== "skipped" ? (
+                <Text variant="secondary" className="mt-2 text-muted-foreground">
+                  Status: {run.publication.status}
+                </Text>
+              ) : null}
               {run.publication.pull_request_url ? (
                 <Text variant="secondary" className="mt-2">
                   <a
@@ -336,10 +359,26 @@ export function RunDetailPage({ runId }: { runId: string }) {
               ) : null}
               {run.publication.status === "failed" ? (
                 <Text variant="caption" className="mt-2 text-muted-foreground">
-                  Evaluation result is unchanged. Retry publication from Settings → GitHub after
-                  fixing authorization.
+                  Evaluation result is unchanged. Fix GitHub authorization in Settings → GitHub,
+                  then retry publication. A publication failure is not an evaluation failure.
                 </Text>
               ) : null}
+            </section>
+          ) : passed === false ? (
+            <section
+              aria-label="GitHub publication"
+              className="rounded-[var(--ef-radius-panel)] border border-border px-4 py-3"
+            >
+              <Text
+                as="div"
+                variant="caption"
+                className="font-mono uppercase tracking-[0.12em] text-muted-foreground"
+              >
+                GitHub publication
+              </Text>
+              <Text variant="secondary" className="mt-2 font-medium text-foreground">
+                Evaluation failed. No GitHub changes were published — no branch, commit, or PR.
+              </Text>
             </section>
           ) : null}
 
@@ -540,7 +579,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
                   value={pins.project_id}
                   href={`/projects/${pins.project_id}`}
                 />
-                <PinLine label="Case version" value={pins.case_version_id} />
+                <PinLine label="Task version" value={pins.case_version_id} />
                 <PinLine label="Prompt version" value={pins.prompt_version_id} />
                 <PinLine label="Agent version" value={pins.agent_version_id} />
                 <PinLine label="Adapter version" value={pins.adapter_version_id} />

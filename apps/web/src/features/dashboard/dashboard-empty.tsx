@@ -1,39 +1,39 @@
 "use client";
 
-import { Button, CheckCircle2, FlaskConical, FolderKanban, Icon, Play, Text } from "@agent-eval/ui";
+import { Button, FlaskConical, FolderKanban, GitBranch, Icon, Play, Text } from "@agent-eval/ui";
 import Link from "next/link";
 
 const STEPS = [
   {
     step: "01",
     title: "Create a project",
-    body: "A project is the workspace for cases, suites, and runs.",
+    body: "A project is the workspace for your engineering tasks and runs.",
     href: "/projects?create=1",
     cta: "New project",
     icon: FolderKanban,
   },
   {
     step: "02",
-    title: "Define a case",
-    body: "Specify the prompt, repository context, and expected outcome.",
-    href: "/cases",
-    cta: "Browse cases",
-    icon: FlaskConical,
+    title: "Connect GitHub",
+    body: "Authorize EvalForge to read repositories and open reviewable PRs.",
+    href: "/settings/github",
+    cta: "Settings → GitHub",
+    icon: GitBranch,
   },
   {
     step: "03",
-    title: "Choose agent & grader",
-    body: "Pin an agent adapter and objective grader for reproducible scoring.",
-    href: "/agents",
-    cta: "Open agents",
-    icon: CheckCircle2,
+    title: "Create a task",
+    body: "Describe the work, pick a repository, and pin an exact commit SHA.",
+    href: "/cases",
+    cta: "Browse tasks",
+    icon: FlaskConical,
   },
   {
     step: "04",
-    title: "Launch a run",
-    body: "Execute, observe the timeline, and inspect scores and artifacts.",
+    title: "Run an agent",
+    body: "Choose agent, model, and BYOK credential — then watch evaluation and PR outcome.",
     href: "/runs/new",
-    cta: "Launch run",
+    cta: "New task run",
     icon: Play,
   },
 ] as const;
@@ -54,12 +54,20 @@ export function DashboardEmpty() {
           variant="body"
           className="mt-2 text-[length:var(--ef-text-section)] font-medium"
         >
-          Build your first evaluation loop
+          Run an engineering task with a coding agent
         </Text>
         <Text as="p" variant="secondary" className="mt-2 max-w-2xl">
-          EvalForge evaluates coding agents end-to-end. Follow this sequence once — then iterate on
-          cases, agents, and graders.
+          Connect a GitHub repository, describe a real task, run an agent safely in Docker, grade
+          the result, and get a reviewable PR when it passes — without automatic merges.
         </Text>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/cases">New task</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/settings/providers">Add BYOK credential</Link>
+          </Button>
+        </div>
       </div>
 
       <ol className="grid gap-3 sm:grid-cols-2">

@@ -85,7 +85,7 @@ export function CreateCaseDialog({
     }
 
     if (!token) {
-      setFormError("You must be signed in to create a case.");
+      setFormError("You must be signed in to create a task.");
       return;
     }
 
@@ -94,7 +94,7 @@ export function CreateCaseDialog({
     const idempotencyKey =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
-        : `create-case-${String(Date.now())}`;
+        : `create-task-${String(Date.now())}`;
 
     void (async () => {
       try {
@@ -108,7 +108,7 @@ export function CreateCaseDialog({
           idempotencyKey,
         );
         await queryClient.invalidateQueries({ queryKey: casesQueryKey(projectId) });
-        toast.success("Case created", { description: caseItem.name });
+        toast.success("Task created", { description: caseItem.name });
         reset();
         onOpenChange(false);
         onCreated?.(caseItem.id);
@@ -116,7 +116,7 @@ export function CreateCaseDialog({
         if (cause instanceof ApiError) {
           setFormError(cause.message);
         } else {
-          setFormError("Could not create the case. Please try again.");
+          setFormError("Could not create the task. Please try again.");
         }
       } finally {
         setSubmitting(false);
@@ -137,10 +137,10 @@ export function CreateCaseDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Create case</DialogTitle>
+          <DialogTitle>Create task</DialogTitle>
           <DialogDescription>
-            Cases define an engineering task and own prompt versions. Add a prompt draft and case
-            version after creation.
+            Name the engineering task. Next, add a prompt and pin a GitHub repository to an exact
+            commit SHA.
           </DialogDescription>
         </DialogHeader>
 
@@ -207,7 +207,7 @@ export function CreateCaseDialog({
               Cancel
             </Button>
             <Button type="submit" loading={submitting}>
-              Create case
+              Create task
             </Button>
           </DialogFooter>
         </form>

@@ -166,7 +166,7 @@ export function ExecutionHeader({
           value={projectName ?? truncateId(run.pins.project_id, 12)}
           href={`/projects/${run.pins.project_id}`}
         />
-        <ContextLink label="Case" value={caseLabel ?? truncateId(run.pins.case_version_id, 12)} />
+        <ContextLink label="Task" value={caseLabel ?? truncateId(run.pins.case_version_id, 12)} />
         <ContextLink
           label="Agent"
           value={agentLabel ?? truncateId(run.pins.agent_version_id, 12)}

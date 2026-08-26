@@ -199,15 +199,20 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
     <PageLayout>
       <FadeIn>
         <PageHeader
-          eyebrow="Evaluation workspace"
+          eyebrow="Project"
           title={project.name}
           description={
             project.description.trim()
               ? project.description
-              : "No description provided for this workspace."
+              : "Create engineering tasks, pin a GitHub revision, and launch agent runs."
           }
           actions={
             <Cluster gap={2}>
+              {!isDeprecated ? (
+                <Button asChild variant="outline">
+                  <Link href={`/projects/${project.id}/cases`}>New task</Link>
+                </Button>
+              ) : null}
               {!isDeprecated ? (
                 <Button asChild>
                   <Link href={`/runs/new?project=${encodeURIComponent(project.id)}`}>
@@ -260,13 +265,13 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           <Section
             title="Workspace"
             className="lg:col-span-3"
-            description="Tasks, suites, and settings for this evaluation project."
+            description="Tasks, suites, and settings for this project."
           >
             <div className="grid gap-3 sm:grid-cols-3">
               <WorkspaceNavTile
                 href={`/projects/${project.id}/cases`}
                 label="Tasks"
-                description="Engineering tasks and prompts"
+                description="Engineering tasks pinned to exact GitHub SHAs"
                 {...(casesCountLabel !== undefined ? { countLabel: casesCountLabel } : {})}
               />
               <WorkspaceNavTile
@@ -286,7 +291,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           <Section
             title="Recent runs"
             className="lg:col-span-3"
-            description="Latest evaluations launched in this workspace."
+            description="Latest agent runs in this project — PASS opens a PR; FAIL publishes nothing."
             actions={
               <Button asChild size="sm" variant="ghost">
                 <Link href={`/runs?project=${encodeURIComponent(project.id)}`}>View all runs</Link>
@@ -304,14 +309,19 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
             ) : recentRuns.length === 0 ? (
               <div className="space-y-3">
                 <Text variant="secondary">
-                  No runs yet. Launch a run to evaluate cases in this workspace.
+                  No runs yet. Create a task with an exact commit SHA, then launch a run.
                 </Text>
                 {!isDeprecated ? (
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/runs/new?project=${encodeURIComponent(project.id)}`}>
-                      Launch run
-                    </Link>
-                  </Button>
+                  <Cluster gap={2}>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/projects/${project.id}/cases`}>New task</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/runs/new?project=${encodeURIComponent(project.id)}`}>
+                        Launch run
+                      </Link>
+                    </Button>
+                  </Cluster>
                 ) : null}
               </div>
             ) : (

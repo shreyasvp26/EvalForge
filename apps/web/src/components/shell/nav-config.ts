@@ -42,9 +42,8 @@ export interface NavSection {
 }
 
 /**
- * Primary product navigation.
- * Suites/Cases remain reachable from project workspaces and command palette;
- * they are not top-level destinations (avoids orphaned project-scoped lists).
+ * Primary product navigation — developer-first: Projects → Tasks → Runs.
+ * Benchmarks / agents / graders remain available but secondary to the North Star loop.
  */
 export const navSections: NavSection[] = [
   {
@@ -65,12 +64,13 @@ export const navSections: NavSection[] = [
         chord: "G P",
         keywords: ["project", "create project", "workspace"],
       },
-    ],
-  },
-  {
-    id: "evaluation",
-    label: "Evaluation",
-    items: [
+      {
+        href: "/cases",
+        label: "Tasks",
+        icon: FlaskConical,
+        chord: "G T",
+        keywords: ["case", "task", "create case", "create task", "prompt", "specification"],
+      },
       {
         href: "/runs",
         label: "Runs",
@@ -78,6 +78,12 @@ export const navSections: NavSection[] = [
         chord: "G R",
         keywords: ["run", "create run", "new run", "execution", "timeline"],
       },
+    ],
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    items: [
       {
         href: "/benchmarks",
         label: "Benchmarks",
@@ -115,19 +121,13 @@ export const navSections: NavSection[] = [
   },
 ];
 
-/** Project-scoped resources — command palette / deep links only. */
+/** Secondary destinations — command palette / deep links only. */
 export const secondaryNavItems: NavItem[] = [
   {
     href: "/suites",
     label: "Suites",
     icon: Layers,
     keywords: ["suite", "create suite", "composition"],
-  },
-  {
-    href: "/cases",
-    label: "Tasks",
-    icon: FlaskConical,
-    keywords: ["case", "task", "create case", "create task", "prompt", "specification"],
   },
   {
     href: "/design-system",

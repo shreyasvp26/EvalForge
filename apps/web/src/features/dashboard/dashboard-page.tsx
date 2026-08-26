@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, FadeIn, Icon, Play, Text } from "@agent-eval/ui";
+import { Button, Cluster, FadeIn, Icon, Play, Text } from "@agent-eval/ui";
 import Link from "next/link";
 
 import { ActiveExecution, RecentFailures } from "./active-execution";
@@ -62,13 +62,13 @@ export function DashboardPage() {
           <PageHeader
             eyebrow="Workspace"
             title="Overview"
-            description="Here's what's happening with your evaluations."
+            description="Give a coding agent a real GitHub task, evaluate the result, and open a PR when it passes."
             className="space-y-2 [&_.flex]:gap-3"
             actions={
               <Button asChild size="md" className={launchRunClassName}>
-                <Link href="/runs/new" className="inline-flex items-center gap-2">
+                <Link href="/cases" className="inline-flex items-center gap-2">
                   <Icon icon={Play} size="sm" aria-hidden />
-                  Launch run
+                  New task
                 </Link>
               </Button>
             }
@@ -87,30 +87,38 @@ export function DashboardPage() {
         <PageHeader
           eyebrow="Workspace"
           title="Overview"
-          description="Here's what's happening with your evaluations."
+          description="Give a coding agent a real GitHub task, evaluate the result, and open a PR when it passes."
           className="space-y-2 [&_.flex]:gap-3"
           actions={
-            <Button asChild size="md" className={launchRunClassName}>
-              <Link href="/runs/new" className="inline-flex items-center gap-2">
-                <Icon icon={Play} size="sm" aria-hidden />
-                Launch run
-              </Link>
-            </Button>
+            <Cluster gap={2}>
+              <Button asChild size="md" variant="outline">
+                <Link href="/runs/new">Launch run</Link>
+              </Button>
+              <Button asChild size="md" className={launchRunClassName}>
+                <Link href="/cases" className="inline-flex items-center gap-2">
+                  <Icon icon={Play} size="sm" aria-hidden />
+                  New task
+                </Link>
+              </Button>
+            </Cluster>
           }
         />
 
         <div className="mt-5 space-y-5">
           <EvaluationHealthStrip health={snapshot.health} />
 
-          <Section title="Quick actions" description="What should you do next?">
+          <Section
+            title="Quick actions"
+            description="Stay on the path from GitHub task to reviewable PR."
+          >
             <QuickActions />
           </Section>
 
           <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
             <Section
-              title="Recent evaluations"
+              title="Recent runs"
               className="lg:col-span-2"
-              description="Latest runs across sampled projects."
+              description="Latest task executions — PASS/FAIL and publication when available."
               actions={
                 <Button asChild variant="ghost" size="sm" className="text-[var(--ef-accent)]">
                   <Link href="/runs">View all</Link>

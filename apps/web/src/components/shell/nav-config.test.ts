@@ -8,6 +8,7 @@ describe("nav-config", () => {
     expect(primaryNavItems.map((item) => item.href)).toEqual([
       "/",
       "/projects",
+      "/cases",
       "/runs",
       "/benchmarks",
       "/agents",
@@ -16,6 +17,15 @@ describe("nav-config", () => {
     ]);
   });
 
+  it("puts Tasks in primary workspace navigation", () => {
+    const workspace = navSections.find((section) => section.id === "workspace");
+    expect(workspace?.items.map((item) => item.href)).toEqual([
+      "/",
+      "/projects",
+      "/cases",
+      "/runs",
+    ]);
+  });
   it("keeps design system out of primary product navigation", () => {
     expect(primaryNavItems.some((item) => item.href === "/design-system")).toBe(false);
   });
