@@ -113,13 +113,17 @@ export function BenchmarkExecutionPage({
   const inFlight = results.queued_or_running > 0;
   const decided = results.passed + results.evaluation_failed;
   const progressDone = results.completed + results.execution_failed + results.cancelled;
-  const providerBlocked = results.cases.filter(
-    (row) =>
-      row.failure_category === "provider" ||
-      row.failure_category === "PROVIDER" ||
-      (row.failure_reason ?? "").toLowerCase().includes("quota") ||
-      (row.failure_reason ?? "").toLowerCase().includes("rate limit"),
-  ).length;
+  const providerBlocked = results.cases.filter((row) => {
+    const reason = (row.failure_reason ?? "").toLowerCase();
+    return (
+      reason.includes("quota") ||
+      reason.includes("rate limit") ||
+      reason.includes("rate_limit") ||
+      reason.includes("authentication") ||
+      reason.includes("api key") ||
+      reason.includes("permission denied")
+    );
+  }).length;
 
   return (
     <PageLayout>
