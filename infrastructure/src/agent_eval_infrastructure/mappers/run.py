@@ -34,6 +34,7 @@ from agent_eval_domain.execution.entities import (
 )
 from agent_eval_domain.execution.failure import FailureCategory
 from agent_eval_domain.execution.normalized_model import action_kind_of
+from agent_eval_domain.execution.publication import RunPublication
 from agent_eval_domain.execution.run import EvaluationRun, RunPins
 from agent_eval_domain.execution.run_status import RunStatus
 
@@ -170,6 +171,9 @@ def run_to_domain(
             }
         ),
         execution_group_id=getattr(row, "execution_group_id", None),
+        publication=RunPublication.from_mapping(
+            dict(getattr(row, "publication", None) or {})
+        ),
         sandbox=None,
         _execution_events=mapped_events,
         _artifacts=mapped_artifacts,
@@ -195,6 +199,7 @@ def apply_run_to_orm(run: EvaluationRun, row: RunOrm) -> None:
     )
     row.execution_metadata = sanitize_execution_metadata(dict(run.execution_metadata))
     row.runtime_request = sanitize_runtime_request(dict(run.runtime_request))
+    row.publication = dict(run.publication.to_public_dict())
     if run.cost is not None:
         row.input_tokens = run.cost.input_tokens
         row.output_tokens = run.cost.output_tokens
