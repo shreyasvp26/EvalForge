@@ -19,6 +19,10 @@ from agent_eval_domain.common.ids import (
     ScoreId,
     SuiteVersionId,
 )
+from agent_eval_domain.execution.configuration import (
+    ExecutionMode,
+    sanitize_execution_metadata,
+)
 from agent_eval_domain.execution.entities import (
     Artifact,
     ArtifactKind,
@@ -152,6 +156,12 @@ def run_to_domain(
             FailureCategory(row.failure_category) if row.failure_category else None
         ),
         cancellation_reason=row.cancellation_reason,
+        execution_mode=(
+            ExecutionMode(row.execution_mode) if row.execution_mode else None
+        ),
+        execution_metadata=sanitize_execution_metadata(
+            {str(k): str(v) for k, v in dict(row.execution_metadata or {}).items()}
+        ),
         sandbox=None,
         _execution_events=mapped_events,
         _artifacts=mapped_artifacts,
@@ -172,6 +182,10 @@ def apply_run_to_orm(run: EvaluationRun, row: RunOrm) -> None:
         run.failure_category.value if run.failure_category is not None else None
     )
     row.cancellation_reason = run.cancellation_reason
+    row.execution_mode = (
+        run.execution_mode.value if run.execution_mode is not None else None
+    )
+    row.execution_metadata = sanitize_execution_metadata(dict(run.execution_metadata))
     if run.cost is not None:
         row.input_tokens = run.cost.input_tokens
         row.output_tokens = run.cost.output_tokens

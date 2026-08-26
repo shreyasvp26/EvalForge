@@ -19,6 +19,7 @@ from agent_eval_application.dto.run import (
     ScoreValueDTO,
 )
 from agent_eval_application.dto.run_comparison import (
+    RunComparabilityDTO,
     RunComparisonDeltaDTO,
     RunComparisonEntryDTO,
     RunComparisonResultDTO,
@@ -182,6 +183,7 @@ def sample_provenance(**overrides: Any) -> RunProvenanceDTO:
         event_count=0,
         artifact_count=0,
         execution_mode=None,
+        execution_metadata={},
         reproducibility=ReproducibilityDTO(
             can_reproduce=True,
             missing=(),
@@ -216,6 +218,9 @@ def sample_comparison(**overrides: Any) -> RunComparisonResultDTO:
         telemetry=run.telemetry,
         score_aggregate=aggregate,
         duration_ms=None,
+        execution_mode=None,
+        benchmark_key="|cv|pv|plat|gv|url|sha",
+        suite_version_id=None,
     )
     base = dict(
         baseline_run_id=run.id,
@@ -228,6 +233,27 @@ def sample_comparison(**overrides: Any) -> RunComparisonResultDTO:
                 duration_delta_ms=0,
                 pin_differences=(),
             ),
+        ),
+        comparability=RunComparabilityDTO(
+            compatible=True,
+            shared_dimensions=(
+                "case_version_id",
+                "prompt_version_id",
+                "platform_version_id",
+                "grader_version_ids",
+                "repository_url",
+                "commit_sha",
+            ),
+            agent_difference_dimensions=(
+                "agent_version_id",
+                "adapter_version_id",
+                "adapter_key",
+                "execution_mode",
+            ),
+            mismatches=(),
+            expected_agent_differences=(),
+            benchmark_key="|cv|pv|plat|gv|url|sha",
+            notes="Runs share benchmark dimensions.",
         ),
     )
     base.update(overrides)

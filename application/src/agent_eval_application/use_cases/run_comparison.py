@@ -1,13 +1,19 @@
-"""Compare multiple Runs side-by-side with deltas vs the first."""
+"""Compare multiple Runs side-by-side with explicit benchmark comparability."""
 
 from __future__ import annotations
 
 from agent_eval_domain.common.ids import RunId
 
+from agent_eval_application.benchmark import (
+    AGENT_COMPARISON_DIMENSIONS,
+    BENCHMARK_COMPARABILITY_DIMENSIONS,
+    benchmark_identity_from_run,
+)
 from agent_eval_application.commands.run_comparison import CompareRunsCommand
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.run import RunDTO
 from agent_eval_application.dto.run_comparison import (
+    RunComparabilityDTO,
     RunComparisonDeltaDTO,
     RunComparisonEntryDTO,
     RunComparisonResultDTO,
@@ -52,6 +58,99 @@ def _pin_differences(baseline: RunDTO, other: RunDTO) -> tuple[str, ...]:
             f"{list(other.pins.grader_version_ids)!r}"
         )
     return tuple(diffs)
+
+
+def _comparability(
+    baseline: RunComparisonEntryDTO,
+    others: tuple[RunComparisonEntryDTO, ...],
+    *,
+    baseline_dto: RunDTO,
+    other_dtos: tuple[RunDTO, ...],
+) -> RunComparabilityDTO:
+    baseline_identity = benchmark_identity_from_run(
+        baseline_dto,
+        repository_url=baseline.repository_url,
+        commit_sha=baseline.commit_sha,
+    )
+    mismatches: list[str] = []
+    expected_diffs: list[str] = []
+
+    for entry, dto in zip(others, other_dtos, strict=True):
+        identity = benchmark_identity_from_run(
+            dto,
+            repository_url=entry.repository_url,
+            commit_sha=entry.commit_sha,
+        )
+        if identity.case_version_id != baseline_identity.case_version_id:
+            mismatches.append(
+                f"{entry.run_id}: case_version_id "
+                f"{baseline_identity.case_version_id!r} → {identity.case_version_id!r}"
+            )
+        if identity.prompt_version_id != baseline_identity.prompt_version_id:
+            mismatches.append(
+                f"{entry.run_id}: prompt_version_id "
+                f"{baseline_identity.prompt_version_id!r} → "
+                f"{identity.prompt_version_id!r}"
+            )
+        if identity.platform_version_id != baseline_identity.platform_version_id:
+            mismatches.append(
+                f"{entry.run_id}: platform_version_id "
+                f"{baseline_identity.platform_version_id!r} → "
+                f"{identity.platform_version_id!r}"
+            )
+        if identity.grader_version_ids != baseline_identity.grader_version_ids:
+            mismatches.append(
+                f"{entry.run_id}: grader_version_ids differ from baseline"
+            )
+        if (identity.repository_url or "") != (baseline_identity.repository_url or ""):
+            mismatches.append(f"{entry.run_id}: repository_url differs from baseline")
+        if (identity.commit_sha or "") != (baseline_identity.commit_sha or ""):
+            mismatches.append(
+                f"{entry.run_id}: commit_sha "
+                f"{baseline_identity.commit_sha!r} → {identity.commit_sha!r}"
+            )
+
+        if dto.pins.agent_version_id != baseline_dto.pins.agent_version_id:
+            expected_diffs.append(
+                f"{entry.run_id}: agent_version_id "
+                f"{baseline_dto.pins.agent_version_id!r} → "
+                f"{dto.pins.agent_version_id!r}"
+            )
+        if dto.pins.adapter_version_id != baseline_dto.pins.adapter_version_id:
+            expected_diffs.append(
+                f"{entry.run_id}: adapter_version_id "
+                f"{baseline_dto.pins.adapter_version_id!r} → "
+                f"{dto.pins.adapter_version_id!r}"
+            )
+        if entry.adapter_key != baseline.adapter_key:
+            expected_diffs.append(
+                f"{entry.run_id}: adapter_key "
+                f"{baseline.adapter_key!r} → {entry.adapter_key!r}"
+            )
+        if entry.execution_mode != baseline.execution_mode:
+            expected_diffs.append(
+                f"{entry.run_id}: execution_mode "
+                f"{baseline.execution_mode!r} → {entry.execution_mode!r}"
+            )
+
+    compatible = not mismatches
+    notes = (
+        "Runs share benchmark dimensions (case, SHA, prompt, graders, platform); "
+        "agent/adapter/execution_mode differences are expected for cross-agent "
+        "comparison."
+        if compatible
+        else "Runs are not comparable as the same benchmark — mismatches listed. "
+        "Do not treat score deltas as fair agent comparison."
+    )
+    return RunComparabilityDTO(
+        compatible=compatible,
+        shared_dimensions=BENCHMARK_COMPARABILITY_DIMENSIONS,
+        agent_difference_dimensions=AGENT_COMPARISON_DIMENSIONS,
+        mismatches=tuple(mismatches),
+        expected_agent_differences=tuple(expected_diffs),
+        benchmark_key=baseline_identity.benchmark_key if compatible else None,
+        notes=notes,
+    )
 
 
 class CompareRuns:
@@ -109,6 +208,11 @@ class CompareRuns:
                 aggregate = aggregate_scores(dto.scores)
                 telem = dto.telemetry
                 duration_ms = telem.wall_clock_ms if telem.wall_clock_ms else None
+                identity = benchmark_identity_from_run(
+                    dto,
+                    repository_url=repository_url,
+                    commit_sha=commit_sha,
+                )
                 entries.append(
                     RunComparisonEntryDTO(
                         run_id=dto.id,
@@ -125,6 +229,9 @@ class CompareRuns:
                         telemetry=telem,
                         score_aggregate=aggregate,
                         duration_ms=duration_ms,
+                        execution_mode=dto.execution_mode,
+                        benchmark_key=identity.benchmark_key,
+                        suite_version_id=dto.pins.suite_version_id,
                     )
                 )
 
@@ -159,8 +266,16 @@ class CompareRuns:
                 )
             )
 
+        comparability = _comparability(
+            entries[0],
+            tuple(entries[1:]),
+            baseline_dto=baseline,
+            other_dtos=tuple(dtos[1:]),
+        )
+
         return RunComparisonResultDTO(
             baseline_run_id=entries[0].run_id,
             runs=tuple(entries),
             deltas=tuple(deltas),
+            comparability=comparability,
         )

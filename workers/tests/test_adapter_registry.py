@@ -44,25 +44,21 @@ def test_registry_resolves_claude_deterministic() -> None:
     assert adapter.name == "claude_code"
 
 
-def test_registry_live_claude_requires_credentials(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+def test_registry_live_only_registers_gemini() -> None:
     registry = default_adapter_registry()
-    with pytest.raises(AdapterResolutionError, match="ANTHROPIC_API_KEY"):
+    assert registry.supported_live() == frozenset({GEMINI_CLI})
+    assert registry.supported_deterministic() == frozenset({CLAUDE_CODE})
+    with pytest.raises(AdapterResolutionError, match="adapter_unsupported"):
         registry.resolve(CLAUDE_CODE, mode="live")
-
-
-def test_registry_live_claude_with_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
-    registry = default_adapter_registry()
-    factory = registry.resolve(CLAUDE_CODE, mode="live")
-    assert factory().name == "claude_code"
+    with pytest.raises(AdapterResolutionError, match="adapter_unsupported"):
+        registry.resolve(CURSOR, mode="live")
+    with pytest.raises(AdapterResolutionError, match="not supported for deterministic"):
+        registry.resolve(GEMINI_CLI, mode="deterministic")
 
 
 def test_registry_does_not_fallback_unsupported_key() -> None:
     registry = AdapterRegistry()
-    registry.register_live(CLAUDE_CODE, lambda: object())  # type: ignore[arg-type]
+    registry.register_live(GEMINI_CLI, lambda: object())  # type: ignore[arg-type]
     with pytest.raises(AdapterResolutionError, match="cursor"):
         registry.resolve(CURSOR, mode="live")
 
@@ -89,7 +85,7 @@ def test_pinned_adapter_resolver_resolves_claude(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
 
@@ -174,7 +170,7 @@ def test_pinned_adapter_resolver_rejects_unmapped_name(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
 
@@ -215,7 +211,7 @@ def test_process_worker_uses_pin_registry_without_factory_override(world) -> Non
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()
@@ -247,9 +243,10 @@ def test_process_worker_uses_pin_registry_without_factory_override(world) -> Non
     assert seen == ["claude_code"]
 
 
-def test_process_worker_fails_live_without_credentials(
+def test_process_worker_fails_live_claude_as_unsupported(
     world, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Claude pin + live mode fails closed — live Claude is not registered."""
     from agent_eval_application.commands.run import CreateRunCommand
     from agent_eval_application.queries.queries import GetRunQuery
     from agent_eval_application.use_cases.run import CreateRun, GetRun
@@ -259,7 +256,7 @@ def test_process_worker_fails_live_without_credentials(
     from agent_eval_workers.lifecycle.triggers import FailureCause
     from agent_eval_workers.worker.memory_queue import InMemoryWorkerQueue
 
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "would-not-matter")
     run = CreateRun(
         world["uow"],
         world["ids"],
@@ -278,7 +275,7 @@ def test_process_worker_fails_live_without_credentials(
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()
@@ -297,14 +294,15 @@ def test_process_worker_fails_live_without_credentials(
     )
     result = bundle.worker.run_once(block=False)
     assert result is not None
-    assert result.failure_cause is FailureCause.ADAPTER_FAILURE
-    assert result.detail is None or "ANTHROPIC_API_KEY" in (result.detail or "")
+    assert result.failure_cause is FailureCause.ADAPTER_UNSUPPORTED
+    assert result.detail is None or "adapter_unsupported" in (result.detail or "")
     dto = GetRun(world["uow"], world["auth"]).execute(
         GetRunQuery(actor=world["actor"], run_id=run.id)
     )
     assert dto.status in {"failed", "cancelled"}
     assert dto.failure_reason
-    assert "ANTHROPIC_API_KEY" in dto.failure_reason
+    assert "not supported for live" in dto.failure_reason
+    assert dto.failure_category == "adapter_unsupported"
 
 
 def test_registry_live_gemini_requires_credentials(
@@ -328,7 +326,7 @@ def test_registry_live_gemini_with_credentials(
 
 def test_registry_gemini_has_no_deterministic_factory() -> None:
     registry = default_adapter_registry()
-    with pytest.raises(AdapterResolutionError, match="no deterministic factory"):
+    with pytest.raises(AdapterResolutionError, match="not supported for deterministic"):
         registry.resolve(GEMINI_CLI, mode="deterministic")
 
 

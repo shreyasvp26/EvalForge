@@ -39,6 +39,7 @@ class ApplicationRunStatus:
     failed: list[tuple[RunId, FailureCause]] = field(default_factory=list)
     cancelled: list[RunId] = field(default_factory=list)
     pending_failure_detail: str | None = None
+    pending_failure_cause: FailureCause | None = None
     _started_monotonic: dict[str, float] = field(default_factory=dict)
 
     def project_running(self, run_id: RunId) -> None:
@@ -76,8 +77,12 @@ class ApplicationRunStatus:
         cause: FailureCause,
         detail: str | None = None,
     ) -> None:
-        self.failed.append((run_id, cause))
-        reason = (detail or self.pending_failure_detail or cause.value).strip()
+        effective_cause = self.pending_failure_cause or cause
+        self.pending_failure_cause = None
+        self.failed.append((run_id, effective_cause))
+        reason = (
+            detail or self.pending_failure_detail or effective_cause.value
+        ).strip()
         self.pending_failure_detail = None
         self._record_wall_clock(run_id)
         # Domain allows Queued→Cancelled but not Queued→Failed. If the Run never
@@ -88,7 +93,7 @@ class ApplicationRunStatus:
                     actor=self.actor,
                     run_id=run_id.value,
                     reason=reason,
-                    category=cause.value,
+                    category=effective_cause.value,
                 )
             )
             self._publish_status(run_id, "failed")

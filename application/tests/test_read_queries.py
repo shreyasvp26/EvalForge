@@ -93,6 +93,7 @@ from fakes import (
     RecordingEventDispatcher,
     RecordingRunQueue,
     SharedStore,
+    add_published_platform,
 )
 
 
@@ -130,6 +131,7 @@ def run_world(harness):
     auth = harness["auth"]
     events = harness["events"]
     actor = harness["actor"]
+    platform_version = add_published_platform(harness["store"])
 
     project = CreateProject(uow, ids, auth, events).execute(
         CreateProjectCommand(actor=actor, name="P")
@@ -208,6 +210,7 @@ def run_world(harness):
         "adapter_version_id": adv.id,
         "grader_id": grader.id,
         "grader_version_id": gv.id,
+        "platform_version_id": platform_version.id.value,
     }
 
 
@@ -310,7 +313,7 @@ def test_get_run_events_artifacts_scores(run_world):
             grader_version_refs=(
                 (run_world["grader_id"], run_world["grader_version_id"]),
             ),
-            platform_version_id="platform-1.0.0",
+            platform_version_id=run_world["platform_version_id"],
         )
     )
     StartRun(run_world["uow"], run_world["auth"], run_world["events"]).execute(

@@ -70,7 +70,7 @@ export function CreateRunPage() {
   const [agentVersionId, setAgentVersionId] = useState("");
   const [adapterVersionId, setAdapterVersionId] = useState("");
   const [graderSelections, setGraderSelections] = useState<Record<string, string>>({});
-  const [platformVersionId, setPlatformVersionId] = useState("platform-1.0.0");
+  const [platformVersionId, setPlatformVersionId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -658,12 +658,11 @@ export function CreateRunPage() {
                     onChange={(event) => {
                       setPlatformVersionId(event.target.value);
                     }}
-                    placeholder="platform-1.0.0"
+                    placeholder="Platform version ID"
                     className="font-mono"
                   />
                   <Text variant="caption">
-                    Required pin. No platform catalog API exists yet — enter the Control Plane
-                    platform version identifier.
+                    Required pin. Enter a Platform version ID from the catalog.
                   </Text>
                 </div>
               </div>

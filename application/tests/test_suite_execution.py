@@ -6,6 +6,7 @@ from agent_eval_application.commands.run import (
     CompleteRunCommand,
     CreateRunCommand,
     FailRunCommand,
+    RecordExecutionConfigurationCommand,
     RecordScoreCommand,
     StartGradingCommand,
     StartRunCommand,
@@ -26,6 +27,7 @@ from agent_eval_application.use_cases.run import (
     CompleteRun,
     CreateRun,
     FailRun,
+    RecordExecutionConfiguration,
     RecordScore,
     StartGrading,
     StartRun,
@@ -92,7 +94,7 @@ def test_create_suite_runs_fan_out(world):
             agent_id=world["agent_id"],
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
-            platform_version_id="platform-suite-1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     assert execution.total_cases == 1
@@ -132,7 +134,7 @@ def test_run_provenance_exposes_repo_and_adapter(world):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-1.0.0",
+            platform_version_id=world["platform_version_id"],
         )
     )
     provenance = GetRunProvenance(world["uow"], world["auth"]).execute(
@@ -143,7 +145,40 @@ def test_run_provenance_exposes_repo_and_adapter(world):
     assert provenance.adapter_key == "claude_code"
     assert provenance.adapter_name == "claude_code"
     assert provenance.grader_summaries
-    assert provenance.platform_version_id == "platform-1.0.0"
+    assert provenance.platform_version_id == world["platform_version_id"]
+    assert provenance.platform_name == "Test Platform"
+    assert provenance.platform_version_label == "Test Platform v1"
+    assert provenance.platform_policy_summaries["sandbox"] == {
+        "network_mode": "isolated"
+    }
+    assert provenance.execution_mode is None
+    assert provenance.execution_metadata == {}
+
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run.id, sandbox_id="sb-1")
+    )
+    RecordExecutionConfiguration(world["uow"], world["auth"], world["events"]).execute(
+        RecordExecutionConfigurationCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            execution_mode="deterministic",
+            metadata={
+                "adapter_key": "claude_code",
+                "sandbox_engine": "fake",
+                "api_key": "sk-leak",
+            },
+        )
+    )
+    provenance_after = GetRunProvenance(world["uow"], world["auth"]).execute(
+        GetRunProvenanceQuery(actor=world["actor"], run_id=run.id)
+    )
+    assert provenance_after.execution_mode == "deterministic"
+    assert provenance_after.execution_metadata == {
+        "adapter_key": "claude_code",
+        "sandbox_engine": "fake",
+    }
+    assert "api_key" not in provenance_after.execution_metadata
+    assert "sk-leak" not in str(provenance_after.execution_metadata)
 
 
 def _start_run(world, run_id: str) -> None:
@@ -222,7 +257,7 @@ def test_suite_aggregate_evaluation_failed_vs_execution_failed(world):
             agent_id=world["agent_id"],
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
-            platform_version_id="platform-suite-1",
+            platform_version_id=world["platform_version_id"],
             idempotency_key="suite-exec-1",
         )
     )
@@ -248,7 +283,7 @@ def test_suite_aggregate_evaluation_failed_vs_execution_failed(world):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-suite-1",
+            platform_version_id=world["platform_version_id"],
             suite_id=suite.id,
             suite_version_id=published.id,
         )

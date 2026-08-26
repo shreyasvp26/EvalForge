@@ -82,6 +82,12 @@ class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     failure_category: Mapped[str | None] = mapped_column(String(64), nullable=True)
     cancellation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    execution_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    execution_metadata: Mapped[dict[str, Any]] = mapped_column(
+        _JsonType,
+        nullable=False,
+        default=dict,
+    )
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     wall_clock_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)

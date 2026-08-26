@@ -37,7 +37,7 @@ def test_pinned_prompt_resolver_returns_case_prompt(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
 
@@ -86,7 +86,7 @@ def test_pinned_prompt_resolver_falls_back_when_missing(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     assert resolver.resolve(RunId(run.id)) == DEFAULT_PROMPT
@@ -119,7 +119,7 @@ def test_process_worker_uses_pinned_prompt(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()

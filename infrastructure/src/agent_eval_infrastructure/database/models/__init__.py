@@ -35,7 +35,11 @@ from agent_eval_infrastructure.database.models.grading import (
     GraderOrm,
     GraderVersionOrm,
 )
-from agent_eval_infrastructure.database.models.platform import AuditLogOrm
+from agent_eval_infrastructure.database.models.platform import (
+    AuditLogOrm,
+    PlatformOrm,
+    PlatformVersionOrm,
+)
 
 __all__ = [
     "AdapterOrm",
@@ -54,6 +58,8 @@ __all__ = [
     "ProjectOrm",
     "PromptOrm",
     "PromptVersionOrm",
+    "PlatformOrm",
+    "PlatformVersionOrm",
     "RunOrm",
     "ScoreOrm",
     "SuiteCompositionOrm",

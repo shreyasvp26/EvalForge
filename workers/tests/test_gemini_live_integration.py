@@ -259,7 +259,7 @@ def test_live_gemini_missing_api_key_fails_fast(
             grader_version_refs=(
                 (gemini_world["grader_id"], gemini_world["grader_version_id"]),
             ),
-            platform_version_id="platform-gemini-live",
+            platform_version_id=gemini_world["platform_version_id"],
         )
     )
     queue.enqueue(RunId(run.id))
@@ -327,7 +327,7 @@ def test_live_gemini_docker_calculator_evaluation(
             grader_version_refs=(
                 (gemini_world["grader_id"], gemini_world["grader_version_id"]),
             ),
-            platform_version_id="platform-gemini-live",
+            platform_version_id=gemini_world["platform_version_id"],
         )
     )
     queue.enqueue(RunId(run.id))

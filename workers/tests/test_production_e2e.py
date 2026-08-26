@@ -104,7 +104,7 @@ def _create_queued_run(world, *, grader_refs=None):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=tuple(refs),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
 
