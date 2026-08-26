@@ -121,7 +121,7 @@ def _seed_run(uow: SqlAlchemyUnitOfWork) -> None:
         description="d",
         reference_repository=ReferenceRepositoryState(
             repository_url="https://example.com/r.git",
-            commit_sha="abc",
+            commit_sha="abc1234",
         ),
         expected_checks=(),
         applicable_grader_ids=(grader.id,),

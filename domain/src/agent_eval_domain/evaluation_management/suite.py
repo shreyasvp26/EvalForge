@@ -59,12 +59,18 @@ class SuiteVersion:
 
 @dataclass(slots=True)
 class EvaluationSuite(AggregateRoot):
-    """Stable identity of a named collection of Cases."""
+    """Stable identity of a named collection of Cases.
+
+    Published SuiteVersions are the product's immutable benchmarks. Catalog
+    fields make discoverable suites answer \"what benchmark can I run?\".
+    """
 
     id: SuiteId
     project_id: ProjectId
     name: str
     description: str = ""
+    catalog_key: str = ""
+    catalog_visible: bool = False
     status: EntityAdminStatus = EntityAdminStatus.ACTIVE
     created_at: datetime = field(default_factory=utc_now)
     _versions: list[SuiteVersion] = field(default_factory=list, repr=False)
@@ -77,6 +83,7 @@ class EvaluationSuite(AggregateRoot):
                 code="INVALID_SUITE_NAME",
             )
         self.name = self.name.strip()
+        self.catalog_key = self.catalog_key.strip()
 
     @classmethod
     def create(
@@ -86,13 +93,29 @@ class EvaluationSuite(AggregateRoot):
         project_id: ProjectId,
         name: str,
         description: str = "",
+        catalog_key: str = "",
+        catalog_visible: bool = False,
     ) -> EvaluationSuite:
         return cls(
             id=suite_id,
             project_id=project_id,
             name=name,
             description=description,
+            catalog_key=catalog_key,
+            catalog_visible=catalog_visible,
         )
+
+    def set_catalog(
+        self,
+        *,
+        catalog_key: str | None = None,
+        catalog_visible: bool | None = None,
+    ) -> None:
+        """Update catalog discovery fields (identity-level, not version history)."""
+        if catalog_key is not None:
+            self.catalog_key = catalog_key.strip()
+        if catalog_visible is not None:
+            self.catalog_visible = catalog_visible
 
     @property
     def versions(self) -> tuple[SuiteVersion, ...]:

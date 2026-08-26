@@ -55,6 +55,8 @@ class SuiteDTO:
     project_id: str
     name: str
     description: str
+    catalog_key: str
+    catalog_visible: bool
     status: str
     created_at: datetime
     active_version_id: str | None
@@ -68,8 +70,29 @@ class SuiteDTO:
             project_id=suite.project_id.value,
             name=suite.name,
             description=suite.description,
+            catalog_key=suite.catalog_key,
+            catalog_visible=suite.catalog_visible,
             status=suite.status.value,
             created_at=suite.created_at,
             active_version_id=active.id.value if active else None,
             versions=tuple(SuiteVersionDTO.from_domain(v) for v in suite.versions),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class BenchmarkCatalogEntryDTO:
+    """Discoverable benchmark (published Suite) for catalog listing."""
+
+    suite_id: str
+    project_id: str
+    catalog_key: str
+    name: str
+    description: str
+    status: str
+    active_version_id: str | None
+    active_version_number: int | None
+    case_count: int
+    categories: tuple[str, ...]
+    difficulties: tuple[str, ...]
+    created_at: datetime
+    catalog_visible: bool

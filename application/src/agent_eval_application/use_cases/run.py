@@ -203,6 +203,9 @@ def _resolve_pins(
         platform_version_id=platform_version_id,
         suite_version=suite_version,
         suite_project_id=suite_project_id,
+        execution_group_id=(
+            command.execution_group_id.strip() if command.execution_group_id else None
+        ),
     )
 
 

@@ -35,6 +35,10 @@ class CaseOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    category: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    difficulty: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    language: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    tags: Mapped[list[Any]] = mapped_column(_JsonType, nullable=False, default=list)
     status: Mapped[str] = mapped_column(String(64), nullable=False, default="active")
 
 

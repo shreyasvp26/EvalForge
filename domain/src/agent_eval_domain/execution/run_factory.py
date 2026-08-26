@@ -32,6 +32,7 @@ class RunCreationCommand:
     platform_version_id: PlatformVersionId
     suite_version: SuiteVersion | None = None
     suite_project_id: ProjectId | None = None
+    execution_group_id: str | None = None
 
 
 class RunFactory:
@@ -89,7 +90,11 @@ class RunFactory:
                 command.suite_version.id if command.suite_version else None
             ),
         )
-        return EvaluationRun.create(run_id=command.run_id, pins=pins)
+        return EvaluationRun.create(
+            run_id=command.run_id,
+            pins=pins,
+            execution_group_id=command.execution_group_id,
+        )
 
     def _assert_project_scope(self, command: RunCreationCommand) -> None:
         if command.case_project_id != command.project_id:

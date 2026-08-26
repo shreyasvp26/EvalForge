@@ -97,6 +97,10 @@ class CreateCase:
                     prompt_id=prompt_id,
                     name=name,
                     description=command.description,
+                    category=command.category,
+                    difficulty=command.difficulty,
+                    language=command.language,
+                    tags=command.tags,
                 )
             )
             uow.cases.save(case)

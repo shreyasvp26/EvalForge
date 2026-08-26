@@ -11,6 +11,7 @@ from agent_eval_application.commands.suite import (
     PublishSuiteVersionCommand,
     RetireSuiteVersionCommand,
     SuiteCompositionEntryInput,
+    UpdateSuiteCatalogCommand,
 )
 from agent_eval_application.commands.suite_execution import (
     AggregateSuiteResultsCommand,
@@ -33,6 +34,7 @@ from agent_eval_api.schemas.suite import (
     SuiteExecutionResponse,
     SuiteResponse,
     SuiteVersionResponse,
+    UpdateSuiteCatalogRequest,
 )
 
 router = APIRouter(prefix="/v1/suites", tags=["suites"])
@@ -51,6 +53,8 @@ def create_suite(
             project_id=body.project_id,
             name=body.name,
             description=body.description,
+            catalog_key=body.catalog_key,
+            catalog_visible=body.catalog_visible,
             idempotency_key=idempotency_key,
         )
     )
@@ -155,6 +159,24 @@ def deprecate_suite(
     return SuiteResponse.from_dto(dto)
 
 
+@router.patch("/{suite_id}/catalog", response_model=SuiteResponse)
+def update_suite_catalog(
+    suite_id: str,
+    body: UpdateSuiteCatalogRequest,
+    actor: ActorDep,
+    services: ServicesDep,
+) -> SuiteResponse:
+    dto = services.update_suite_catalog.execute(
+        UpdateSuiteCatalogCommand(
+            actor=actor,
+            suite_id=suite_id,
+            catalog_key=body.catalog_key,
+            catalog_visible=body.catalog_visible,
+        )
+    )
+    return SuiteResponse.from_dto(dto)
+
+
 @router.post(
     "/{suite_id}/versions/{version_id}/execute",
     response_model=SuiteExecutionResponse,
@@ -184,6 +206,7 @@ def execute_suite_version(
             adapter_version_id=body.adapter_version_id,
             platform_version_id=body.platform_version_id,
             grader_version_refs=refs,
+            execution_group_id=body.execution_group_id,
             idempotency_key=idempotency_key,
         )
     )
@@ -200,12 +223,14 @@ def get_suite_version_results(
     version_id: str,
     actor: ActorDep,
     services: ServicesDep,
+    execution_group_id: str | None = Query(default=None),
 ) -> SuiteAggregateResponse:
     dto = services.aggregate_suite_results.execute(
         AggregateSuiteResultsCommand(
             actor=actor,
             suite_id=suite_id,
             suite_version_id=version_id,
+            execution_group_id=execution_group_id,
         )
     )
     return SuiteAggregateResponse.from_dto(dto)

@@ -78,9 +78,11 @@ from agent_eval_application.use_cases.suite import (
     CreateSuiteDraftVersion,
     DeprecateSuite,
     GetSuite,
+    ListBenchmarkCatalog,
     ListSuitesByProject,
     PublishSuiteVersion,
     RetireSuiteVersion,
+    UpdateSuiteCatalog,
 )
 from agent_eval_application.use_cases.suite_execution import (
     AggregateSuiteResults,
@@ -137,6 +139,8 @@ class ApplicationServices:
     create_suite: CreateSuite
     get_suite: GetSuite
     list_suites_by_project: ListSuitesByProject
+    list_benchmark_catalog: ListBenchmarkCatalog
+    update_suite_catalog: UpdateSuiteCatalog
     create_suite_draft_version: CreateSuiteDraftVersion
     publish_suite_version: PublishSuiteVersion
     retire_suite_version: RetireSuiteVersion
@@ -317,6 +321,8 @@ def build_application_services(
         create_suite=CreateSuite(uow, ids, auth, events, idempotency),
         get_suite=GetSuite(uow, auth),
         list_suites_by_project=ListSuitesByProject(uow, auth),
+        list_benchmark_catalog=ListBenchmarkCatalog(uow, auth),
+        update_suite_catalog=UpdateSuiteCatalog(uow, auth, events),
         create_suite_draft_version=CreateSuiteDraftVersion(uow, ids, auth, events),
         publish_suite_version=PublishSuiteVersion(uow, auth, events),
         retire_suite_version=RetireSuiteVersion(uow, auth, events),

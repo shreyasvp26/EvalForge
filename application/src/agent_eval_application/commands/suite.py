@@ -13,7 +13,17 @@ class CreateSuiteCommand:
     project_id: str
     name: str
     description: str = ""
+    catalog_key: str = ""
+    catalog_visible: bool = False
     idempotency_key: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateSuiteCatalogCommand:
+    actor: Actor
+    suite_id: str
+    catalog_key: str | None = None
+    catalog_visible: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)

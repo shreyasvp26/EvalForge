@@ -26,6 +26,7 @@ class CreateRunCommand:
     platform_version_id: str
     suite_id: str | None = None
     suite_version_id: str | None = None
+    execution_group_id: str | None = None
     idempotency_key: str | None = None
 
 

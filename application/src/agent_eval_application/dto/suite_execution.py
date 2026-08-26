@@ -22,6 +22,7 @@ class SuiteExecutionDTO:
 
     suite_id: str
     suite_version_id: str
+    execution_group_id: str
     total_cases: int
     runs: tuple[SuiteRunEntryDTO, ...]
 
@@ -42,6 +43,7 @@ class SuiteAggregateDTO:
 
     suite_id: str
     suite_version_id: str
+    execution_group_id: str | None
     total_cases: int
     run_count: int
     completed: int

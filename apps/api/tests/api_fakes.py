@@ -60,6 +60,8 @@ def sample_suite(**overrides: Any) -> SuiteDTO:
         project_id="proj-1",
         name="Suite A",
         description="",
+        catalog_key="",
+        catalog_visible=False,
         status="active",
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
         active_version_id=None,

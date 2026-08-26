@@ -39,6 +39,10 @@ def create_case(
             project_id=body.project_id,
             name=body.name,
             description=body.description,
+            category=body.category,
+            difficulty=body.difficulty,
+            language=body.language,
+            tags=tuple(body.tags),
             idempotency_key=idempotency_key,
         )
     )

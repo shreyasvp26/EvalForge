@@ -107,7 +107,7 @@ def test_suite_create_draft_and_publish(harness):
             case_id=case.id,
             description="Task description",
             repository_url="https://example.com/r.git",
-            commit_sha="abc123",
+            commit_sha="abc1234",
             expected_checks=("pytest",),
             applicable_grader_ids=(),
             prompt_version_id=prompt_v.id,

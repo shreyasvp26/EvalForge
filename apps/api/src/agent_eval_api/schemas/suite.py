@@ -24,6 +24,15 @@ class CreateSuiteRequest(BaseModel):
     project_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = ""
+    catalog_key: str = ""
+    catalog_visible: bool = False
+
+
+class UpdateSuiteCatalogRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    catalog_key: str | None = None
+    catalog_visible: bool | None = None
 
 
 class SuiteCompositionEntryRequest(BaseModel):
@@ -86,6 +95,8 @@ class SuiteResponse(BaseModel):
     project_id: str
     name: str
     description: str
+    catalog_key: str = ""
+    catalog_visible: bool = False
     status: str
     created_at: datetime
     active_version_id: str | None
@@ -98,11 +109,31 @@ class SuiteResponse(BaseModel):
             project_id=dto.project_id,
             name=dto.name,
             description=dto.description,
+            catalog_key=dto.catalog_key,
+            catalog_visible=dto.catalog_visible,
             status=dto.status,
             created_at=dto.created_at,
             active_version_id=dto.active_version_id,
             versions=[SuiteVersionResponse.from_dto(v) for v in dto.versions],
         )
+
+
+class BenchmarkCatalogEntryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    suite_id: str
+    project_id: str
+    catalog_key: str
+    name: str
+    description: str
+    status: str
+    active_version_id: str | None
+    active_version_number: int | None
+    case_count: int
+    categories: list[str]
+    difficulties: list[str]
+    created_at: datetime
+    catalog_visible: bool
 
 
 class CreateSuiteRunsRequest(BaseModel):
@@ -113,6 +144,7 @@ class CreateSuiteRunsRequest(BaseModel):
     adapter_version_id: str = Field(min_length=1)
     platform_version_id: str = Field(min_length=1)
     grader_version_refs: list[GraderVersionRef] | None = None
+    execution_group_id: str | None = None
 
 
 class SuiteRunEntryResponse(BaseModel):
@@ -129,6 +161,7 @@ class SuiteExecutionResponse(BaseModel):
 
     suite_id: str
     suite_version_id: str
+    execution_group_id: str
     total_cases: int
     runs: list[SuiteRunEntryResponse]
 
@@ -137,6 +170,7 @@ class SuiteExecutionResponse(BaseModel):
         return cls(
             suite_id=dto.suite_id,
             suite_version_id=dto.suite_version_id,
+            execution_group_id=dto.execution_group_id,
             total_cases=dto.total_cases,
             runs=[
                 SuiteRunEntryResponse(
@@ -172,6 +206,7 @@ class SuiteAggregateResponse(BaseModel):
 
     suite_id: str
     suite_version_id: str
+    execution_group_id: str | None = None
     total_cases: int
     run_count: int
     completed: int
@@ -191,6 +226,7 @@ class SuiteAggregateResponse(BaseModel):
         return cls(
             suite_id=dto.suite_id,
             suite_version_id=dto.suite_version_id,
+            execution_group_id=dto.execution_group_id,
             total_cases=dto.total_cases,
             run_count=dto.run_count,
             completed=dto.completed,

@@ -21,6 +21,8 @@ class CreateSuiteRunsCommand:
     grader_version_refs: tuple[tuple[str, str], ...] | None = None
     """Optional shared grader pins; default = each case's applicable active graders."""
     idempotency_key: str | None = None
+    execution_group_id: str | None = None
+    """Optional client-supplied group id; generated when omitted."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,3 +30,5 @@ class AggregateSuiteResultsCommand:
     actor: Actor
     suite_id: str
     suite_version_id: str
+    execution_group_id: str | None = None
+    """When set, aggregate only Runs from that suite execute fan-out."""

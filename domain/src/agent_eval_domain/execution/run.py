@@ -98,6 +98,8 @@ class EvaluationRun(AggregateRoot):
     cancellation_reason: str | None = None
     execution_mode: ExecutionMode | None = None
     execution_metadata: dict[str, str] = field(default_factory=dict)
+    execution_group_id: str | None = None
+    """Correlates Runs created by one Suite/benchmark execute fan-out."""
     sandbox: Sandbox | None = None
     _execution_events: list[ExecutionEvent] = field(default_factory=list, repr=False)
     _artifacts: list[Artifact] = field(default_factory=list, repr=False)
@@ -106,10 +108,19 @@ class EvaluationRun(AggregateRoot):
 
     def __post_init__(self) -> None:
         AggregateRoot.__init__(self)
+        if self.execution_group_id is not None:
+            cleaned = self.execution_group_id.strip()
+            self.execution_group_id = cleaned or None
 
     @classmethod
-    def create(cls, *, run_id: RunId, pins: RunPins) -> EvaluationRun:
-        run = cls(id=run_id, pins=pins)
+    def create(
+        cls,
+        *,
+        run_id: RunId,
+        pins: RunPins,
+        execution_group_id: str | None = None,
+    ) -> EvaluationRun:
+        run = cls(id=run_id, pins=pins, execution_group_id=execution_group_id)
         run._record(
             RunCreated(
                 run_id=run_id,

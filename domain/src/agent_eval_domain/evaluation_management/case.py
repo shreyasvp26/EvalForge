@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -23,6 +24,18 @@ from agent_eval_domain.versioning.status import (
     assert_version_transition,
 )
 
+_FORBIDDEN_REVISION_NAMES = frozenset(
+    {
+        "main",
+        "master",
+        "latest",
+        "head",
+        "origin/main",
+        "origin/master",
+    }
+)
+_COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
+
 
 @dataclass(frozen=True, slots=True)
 class ReferenceRepositoryState:
@@ -38,11 +51,25 @@ class ReferenceRepositoryState:
                 "Reference repository URL must be non-empty",
                 code="INVALID_REFERENCE_REPO",
             )
-        if not self.commit_sha.strip():
+        sha = self.commit_sha.strip()
+        if not sha:
             raise InvariantViolation(
                 "Reference commit SHA must be non-empty",
                 code="INVALID_REFERENCE_COMMIT",
             )
+        if sha.lower() in _FORBIDDEN_REVISION_NAMES:
+            raise InvariantViolation(
+                "Reference revision must be an exact commit SHA, not a branch tip",
+                code="BRANCH_REVISION_FORBIDDEN",
+                details={"commit_sha": sha},
+            )
+        if not _COMMIT_SHA_RE.match(sha):
+            raise InvariantViolation(
+                "Reference commit SHA must be a 7–40 character hex digest",
+                code="INVALID_REFERENCE_COMMIT",
+                details={"commit_sha": sha},
+            )
+        object.__setattr__(self, "commit_sha", sha)
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,6 +225,10 @@ class EvaluationCase(AggregateRoot):
     name: str
     prompt: Prompt
     description: str = ""
+    category: str = ""
+    difficulty: str = ""
+    language: str = ""
+    tags: tuple[str, ...] = ()
     status: EntityAdminStatus = EntityAdminStatus.ACTIVE
     created_at: datetime = field(default_factory=utc_now)
     _versions: list[CaseVersion] = field(default_factory=list, repr=False)
@@ -210,6 +241,10 @@ class EvaluationCase(AggregateRoot):
                 code="INVALID_CASE_NAME",
             )
         self.name = self.name.strip()
+        self.category = self.category.strip()
+        self.difficulty = self.difficulty.strip()
+        self.language = self.language.strip()
+        self.tags = tuple(t.strip() for t in self.tags if t and t.strip())
         if self.prompt.case_id != self.id:
             raise InvariantViolation(
                 "Prompt must belong to its owning Case",
@@ -225,12 +260,20 @@ class EvaluationCase(AggregateRoot):
         prompt_id: PromptId,
         name: str,
         description: str = "",
+        category: str = "",
+        difficulty: str = "",
+        language: str = "",
+        tags: tuple[str, ...] = (),
     ) -> EvaluationCase:
         return cls(
             id=case_id,
             project_id=project_id,
             name=name,
             description=description,
+            category=category,
+            difficulty=difficulty,
+            language=language,
+            tags=tags,
             prompt=Prompt(id=prompt_id, case_id=case_id),
         )
 

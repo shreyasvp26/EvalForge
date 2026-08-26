@@ -90,6 +90,7 @@ class RunDTO:
     telemetry: RunTelemetryDTO
     execution_mode: str | None = None
     execution_metadata: dict[str, str] = field(default_factory=dict)
+    execution_group_id: str | None = None
 
     @classmethod
     def from_domain(cls, run: EvaluationRun) -> RunDTO:
@@ -143,6 +144,7 @@ class RunDTO:
                 run.execution_mode.value if run.execution_mode is not None else None
             ),
             execution_metadata=dict(run.execution_metadata),
+            execution_group_id=run.execution_group_id,
         )
 
 

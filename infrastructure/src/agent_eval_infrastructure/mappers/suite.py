@@ -76,6 +76,8 @@ def suite_to_domain(
         project_id=ProjectId(row.project_id),
         name=row.name,
         description=row.description,
+        catalog_key=getattr(row, "catalog_key", "") or "",
+        catalog_visible=bool(getattr(row, "catalog_visible", False)),
         status=parse_admin_status(row.status),
         created_at=row.created_at,
         _versions=versions,
@@ -88,6 +90,8 @@ def suite_to_orm(suite: EvaluationSuite, row: SuiteOrm | None = None) -> SuiteOr
     target.project_id = suite.project_id.value
     target.name = suite.name
     target.description = suite.description
+    target.catalog_key = suite.catalog_key
+    target.catalog_visible = suite.catalog_visible
     target.status = suite.status.value
     target.created_at = suite.created_at
     return target

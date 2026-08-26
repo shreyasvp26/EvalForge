@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from uuid import uuid4
+
 from agent_eval_domain.common.ids import (
     CaseVersionId,
     ProjectId,
@@ -65,6 +67,17 @@ def _resolve_case_for_version(
             code="SUITE_CASE_MISSING_SHA",
             details={"case_version_id": case_version_id.value},
         )
+    prompt_version = case.prompt.get_version(case_version.prompt_version_id)
+    if not prompt_version.is_pinnable():
+        raise ApplicationValidationError(
+            "Suite case requires a published PromptVersion",
+            code="SUITE_PROMPT_NOT_PINNABLE",
+            details={
+                "case_version_id": case_version_id.value,
+                "prompt_version_id": prompt_version.id.value,
+                "status": prompt_version.status.value,
+            },
+        )
     return case, case_version
 
 
@@ -117,6 +130,11 @@ class CreateSuiteRuns:
         suite_id = SuiteId(require_non_empty(command.suite_id, field="suite_id"))
         version_id = SuiteVersionId(
             require_non_empty(command.suite_version_id, field="suite_version_id")
+        )
+        execution_group_id = (
+            command.execution_group_id.strip()
+            if command.execution_group_id and command.execution_group_id.strip()
+            else str(uuid4())
         )
 
         with self._uow_factory() as uow:
@@ -176,6 +194,7 @@ class CreateSuiteRuns:
                     platform_version_id=command.platform_version_id,
                     suite_id=suite_id.value,
                     suite_version_id=version_id.value,
+                    execution_group_id=execution_group_id,
                     idempotency_key=(
                         f"{command.idempotency_key}:{case_version.id.value}"
                         if command.idempotency_key
@@ -195,6 +214,7 @@ class CreateSuiteRuns:
         return SuiteExecutionDTO(
             suite_id=suite_id.value,
             suite_version_id=version_id.value,
+            execution_group_id=execution_group_id,
             total_cases=len(entries),
             runs=tuple(entries),
         )
@@ -216,16 +236,25 @@ class AggregateSuiteResults:
         version_id = SuiteVersionId(
             require_non_empty(command.suite_version_id, field="suite_version_id")
         )
+        group_id = (
+            command.execution_group_id.strip()
+            if command.execution_group_id and command.execution_group_id.strip()
+            else None
+        )
         with self._uow_factory() as uow:
             suite = with_domain_errors(lambda: uow.suites.get(suite_id))
             self._auth.ensure_can_access_project(command.actor, suite.project_id)
             suite_version = suite.get_version(version_id)
-            runs = [
-                run
-                for run in uow.runs.list_by_project(suite.project_id)
-                if run.pins.suite_version_id is not None
-                and run.pins.suite_version_id.value == version_id.value
-            ]
+            runs = []
+            for run in uow.runs.list_by_project(suite.project_id):
+                if (
+                    run.pins.suite_version_id is None
+                    or run.pins.suite_version_id.value != version_id.value
+                ):
+                    continue
+                if group_id is not None and run.execution_group_id != group_id:
+                    continue
+                runs.append(run)
 
             composition_ids = {
                 entry.case_version_id.value for entry in suite_version.composition
@@ -286,6 +315,7 @@ class AggregateSuiteResults:
             return SuiteAggregateDTO(
                 suite_id=suite_id.value,
                 suite_version_id=version_id.value,
+                execution_group_id=group_id,
                 total_cases=len(composition_ids),
                 run_count=len(case_results),
                 completed=completed,
