@@ -84,31 +84,28 @@ export function GitHubSettingsPage() {
   const active = (connectionsQuery.data?.items ?? []).filter((c) => c.status === "active");
 
   return (
-    <SettingsShell>
+    <SettingsShell
+      title="GitHub"
+      description="Connect a GitHub token so EvalForge can create a branch and pull request after a passed evaluation. Tokens are encrypted at rest and never shown again."
+    >
       <Section
-        title="GitHub publication"
-        description="Connect a GitHub token so EvalForge can create a branch and pull request after a passed evaluation. Tokens are encrypted at rest and never shown again."
+        title="Publication credentials"
+        description="Least privilege: use a fine-grained PAT with contents and pull-request write on selected repositories."
       >
         {connectionsQuery.isError ? (
-          <InlineError
-            title="Could not load GitHub connections"
-            message={
-              connectionsQuery.error instanceof ApiError
-                ? connectionsQuery.error.message
-                : "Unknown error"
-            }
-          />
+          <InlineError density="block" title="Could not load GitHub connections">
+            {connectionsQuery.error instanceof ApiError
+              ? connectionsQuery.error.message
+              : "Unknown error"}
+          </InlineError>
         ) : null}
 
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <Text variant="body" className="text-muted-foreground">
-            Least privilege: use a fine-grained PAT with contents and pull-request write on selected
-            repositories.
-          </Text>
+        <div className="mt-4 flex items-center justify-end gap-3">
           <Button
             type="button"
             onClick={() => {
               setConnectOpen(true);
+              setFormError(null);
             }}
           >
             Connect GitHub
@@ -134,7 +131,7 @@ export function GitHubSettingsPage() {
                     <Text as="div" variant="body" className="font-medium">
                       {connection.display_name}
                     </Text>
-                    <Badge variant="secondary">{connection.status}</Badge>
+                    <Badge status="completed">{connection.status}</Badge>
                   </div>
                   <Text variant="caption" className="text-muted-foreground">
                     {connection.github_login ? `@${connection.github_login} · ` : null}
@@ -188,7 +185,11 @@ export function GitHubSettingsPage() {
               <Label htmlFor="token">Access token</Label>
               <Input id="token" name="token" type="password" autoComplete="off" required />
             </div>
-            {formError ? <InlineError title="Could not connect" message={formError} /> : null}
+            {formError ? (
+              <InlineError density="block" title="Could not connect">
+                {formError}
+              </InlineError>
+            ) : null}
             <DialogFooter>
               <Button
                 type="button"

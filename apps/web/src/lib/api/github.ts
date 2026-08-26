@@ -29,8 +29,14 @@ export interface PublicationResult {
 export async function listGitHubConnections(
   token: string,
 ): Promise<CollectionResponse<GitHubConnection>> {
+  // API returns a bare list (not a cursor page); normalize for shared CollectionResponse.
   const items = await apiRequest<GitHubConnection[]>("/v1/github/connections", { token });
-  return { items, next_cursor: null };
+  return {
+    items,
+    count: items.length,
+    next_cursor: null,
+    has_more: false,
+  };
 }
 
 export async function createGitHubConnection(
