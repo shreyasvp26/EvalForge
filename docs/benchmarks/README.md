@@ -50,18 +50,48 @@ Suite surfaces remain authoritative (`/v1/suites/...`).
 ## Execution & aggregation
 
 1. Validate every composition entry (published case, SHA, prompt, graders, platform).
-2. Generate `execution_group_id` and create one queued Run per case via existing Redis/worker path.
-3. Aggregate with `execution_group_id` so repeated executes do not mix.
+2. Reject unsupported adapters at execute time (`ADAPTER_UNSUPPORTED` — fail closed).
+3. Generate `execution_group_id` and create one queued Run per case via existing Redis/worker path.
+4. Aggregate with `execution_group_id` so repeated executes do not mix.
 
 **Execution failure** (`status=failed`): timeout, provider, sandbox, adapter, credential, repository.  
-**Evaluation failure** (`status=completed` and `passed=false`): agent ran; graders failed.
+**Evaluation failure** (`status=completed` and `passed=false`): agent ran; graders failed.  
+**Provider-blocked**: quota / auth / rate-limit surfaced via `failure_reason` (usually `adapter_failure`).  
+These are **not** agent scores.
 
 Pass rate excludes execution failures from the denominator.
+
+### Concurrency
+
+- Fan-out enqueues all cases immediately under one `execution_group_id`.
+- In-flight provider load is limited by `WORKER_CONCURRENCY` (default `1`, max `8` per process).
+- Scale further with additional worker processes, not unlimited in-process threads.
+
+### Live Gemini
+
+```bash
+# Worker
+WORKER_ADAPTER_MODE=live
+WORKER_SANDBOX_ENGINE=docker
+WORKER_SANDBOX_NETWORK=bridge
+WORKER_CONCURRENCY=1
+GEMINI_API_KEY=…   # never commit
+EVALFORGE_INSTALL_GEMINI_CLI=1  # when building the sandbox image
+```
+
+UI notes live mode is worker-scoped; the review step does not change worker mode.
+
+### Reproducing an exact SHA
+
+Each CaseVersion stores `repository_url` + exact `commit_sha` (7–40 hex).  
+The materializer checks out that SHA inside an isolated Docker sandbox per case.  
+Do not pin `main` / `master` / `latest`.
 
 ## Adapter comparison
 
 Keep the benchmark constant. Only agent/adapter/execution_mode may vary.
 Use Phase 8/9 `benchmark_key` + `POST /v1/runs/benchmark-matrix`.
+Canonical live adapter: **`gemini_cli` only**.
 
 ## Adding a case
 
@@ -71,8 +101,16 @@ Use Phase 8/9 `benchmark_key` + `POST /v1/runs/benchmark-matrix`.
 4. Publish versions; add CaseVersion to a new SuiteVersion; publish suite.
 5. Mark suite `catalog_visible=true`.
 
-## Local seed (application tests)
+## Local seed
 
 ```bash
+# Unit/application tests (in-memory)
 uv run pytest application/tests/test_seed_coding_benchmark.py -q
+
+# Operator seed against local Postgres/Redis
+uv run python infrastructure/scripts/seed_and_run_coding_benchmark.py --allow-all-auth
 ```
+
+## Valid benchmark result
+
+A result is valid when provenance records benchmark/suite/case/repo SHA/prompt/grader/platform/agent/adapter/`execution_group_id`, sandboxes were isolated, and execution vs evaluation failures are not conflated. Provider quota failures are evidence of a blocked run — not a green score.
