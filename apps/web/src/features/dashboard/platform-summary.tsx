@@ -15,7 +15,7 @@ export function PlatformSummary({ summary }: { summary: DashboardSummary }) {
       value: formatCount(summary.projects, summary.projectsHasMore),
     },
     { label: "Suites", href: "/suites", value: String(summary.suites) },
-    { label: "Cases", href: "/cases", value: String(summary.cases) },
+    { label: "Tasks", href: "/cases", value: String(summary.cases) },
     {
       label: "Agents",
       href: "/agents",

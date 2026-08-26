@@ -125,9 +125,9 @@ export const secondaryNavItems: NavItem[] = [
   },
   {
     href: "/cases",
-    label: "Cases",
+    label: "Tasks",
     icon: FlaskConical,
-    keywords: ["case", "create case", "prompt", "specification"],
+    keywords: ["case", "task", "create case", "create task", "prompt", "specification"],
   },
   {
     href: "/design-system",
@@ -198,10 +198,10 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       crumbs.push({ label: "Project", href: `/projects/${projectId}` });
       const caseRest = rest.slice("cases".length);
       if (caseRest === "" || caseRest === "/") {
-        crumbs.push({ label: "Cases" });
+        crumbs.push({ label: "Tasks" });
       } else {
-        crumbs.push({ label: "Cases", href: `/projects/${projectId}/cases` });
-        crumbs.push({ label: "Case" });
+        crumbs.push({ label: "Tasks", href: `/projects/${projectId}/cases` });
+        crumbs.push({ label: "Task" });
       }
       return crumbs;
     }
@@ -214,7 +214,7 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
 
   if (pathname === "/suites" || pathname === "/cases" || pathname === "/benchmarks") {
     crumbs.push({
-      label: pathname === "/suites" ? "Suites" : pathname === "/cases" ? "Cases" : "Benchmarks",
+      label: pathname === "/suites" ? "Suites" : pathname === "/cases" ? "Tasks" : "Benchmarks",
     });
     return crumbs;
   }
@@ -278,6 +278,8 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       profile: "Profile",
       account: "Account",
       preferences: "Preferences",
+      providers: "Providers",
+      github: "GitHub",
       api: "API",
       about: "About",
     };

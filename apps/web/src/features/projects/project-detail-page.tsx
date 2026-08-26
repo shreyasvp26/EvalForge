@@ -260,19 +260,19 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
           <Section
             title="Workspace"
             className="lg:col-span-3"
-            description="Cases, suites, and settings for this evaluation project."
+            description="Tasks, suites, and settings for this evaluation project."
           >
             <div className="grid gap-3 sm:grid-cols-3">
               <WorkspaceNavTile
                 href={`/projects/${project.id}/cases`}
-                label="Cases"
-                description="Evaluation specs and prompts"
+                label="Tasks"
+                description="Engineering tasks and prompts"
                 {...(casesCountLabel !== undefined ? { countLabel: casesCountLabel } : {})}
               />
               <WorkspaceNavTile
                 href={`/projects/${project.id}/suites`}
                 label="Suites"
-                description="Grouped case compositions"
+                description="Grouped task compositions"
                 {...(suitesCountLabel !== undefined ? { countLabel: suitesCountLabel } : {})}
               />
               <WorkspaceNavTile

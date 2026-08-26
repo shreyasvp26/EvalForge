@@ -144,9 +144,9 @@ export function CaseListPage({
   return (
     <PageLayout width="full">
       <PageHeader
-        eyebrow="Cases"
-        title="Cases"
-        description={`Evaluation cases for ${project.name}. Each case owns prompt versions and versioned task definitions.`}
+        eyebrow="Tasks"
+        title="Tasks"
+        description={`Engineering tasks for ${project.name}. Each task owns prompt versions and a pinned repository revision.`}
         actions={
           <Button
             type="button"
@@ -155,7 +155,7 @@ export function CaseListPage({
               setCreateOpen(true);
             }}
           >
-            New case
+            New task
           </Button>
         }
       />
