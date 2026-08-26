@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { z } from "zod";
 
+import { OAuthSignInButtons } from "@/components/auth/oauth-sign-in-buttons";
 import { InlineError } from "@/components/patterns/inline-error";
 import { readUserPreferences } from "@/features/settings/preferences-store";
 import { ApiError } from "@/lib/api/client";
@@ -41,6 +42,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get("next"));
+  const oauthError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +90,7 @@ function LoginForm() {
     })();
   }
 
-  const displayError = formError ?? error;
+  const displayError = formError ?? error ?? oauthError;
 
   return (
     <div className="mx-auto w-full max-w-[420px] motion-safe:animate-[ef-fade-up_0.8s_ease-out_0.2s_both]">
@@ -109,6 +111,27 @@ function LoginForm() {
               {displayError}
             </Alert>
           ) : null}
+
+          <OAuthSignInButtons
+            nextPath={nextPath}
+            disabled={submitting}
+            onProviderError={(message) => {
+              if (message) {
+                setFormError(message);
+              }
+            }}
+          />
+
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-[var(--ef-auth-input-border)]" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-transparent px-3 text-xs uppercase tracking-wide text-muted-foreground">
+                or continue with email
+              </span>
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="email" className="text-muted-foreground">

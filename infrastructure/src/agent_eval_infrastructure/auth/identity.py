@@ -77,7 +77,7 @@ class UserOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
 
     email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +85,7 @@ class StoredUser:
     id: str
     email: str
     display_name: str
-    password_hash: str
+    password_hash: str | None
 
     def to_record(self) -> IdentityRecord:
         return IdentityRecord(
@@ -108,6 +108,8 @@ class InMemoryIdentityStore:
         if user_id is None:
             return None
         user = self._users_by_id[user_id]
+        if user.password_hash is None:
+            return None
         if not verify_password(password, user.password_hash):
             return None
         return user.to_record()
@@ -149,6 +151,8 @@ class SqlAlchemyIdentityStore:
         with self.session_factory() as session:
             row = self._get_by_email(session, normalized)
             if row is None:
+                return None
+            if row.password_hash is None:
                 return None
             if not verify_password(password, row.password_hash):
                 return None
