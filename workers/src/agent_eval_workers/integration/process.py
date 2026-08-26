@@ -416,6 +416,19 @@ def build_production_lifecycle_factory(
         bridge_factory = _fail_closed_adapter_factory
         bridge_resolver = resolve_adapter_factory
 
+    from agent_eval_workers.integration.byok_env import inject_byok_into_sandbox_env
+
+    provider_connections = globals().get("_WORKER_PROVIDER_CONNECTIONS")
+
+    def _environment_for_run(run_id: RunId) -> dict[str, str]:
+        run_dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
+        runtime_request = dict(getattr(run_dto, "runtime_request", None) or {})
+        return inject_byok_into_sandbox_env(
+            base_env=os.environ,
+            runtime_request=runtime_request,
+            provider_connections=provider_connections,
+        )
+
     adapter = SdkAdapterBridge(
         stream=pipeline,
         sandboxes=sandbox_registry,
@@ -425,6 +438,7 @@ def build_production_lifecycle_factory(
         cancellation=cancel,  # type: ignore[arg-type]
         object_storage=object_storage,
         environment=sandbox_environment_from_allowlist(),
+        environment_factory=_environment_for_run,
         run_metadata_factory=run_metadata_factory,
         model_id_factory=model_id_for_run,
         prompt_factory=prompt_resolver.resolve,
@@ -480,6 +494,43 @@ def build_production_lifecycle_factory(
     )
 
     def lifecycle_factory(run_id: RunId, phase: OrchestrationPhase) -> LifecycleDriver:
+        publisher = None
+        github_connections = globals().get("_WORKER_GITHUB_CONNECTIONS")
+        github_publisher = globals().get("_WORKER_GITHUB_PUBLISHER")
+        if github_connections is not None and github_publisher is not None:
+            from agent_eval_application.use_cases.publish_run import (
+                PublishEvaluationRun,
+            )
+
+            from agent_eval_workers.integration.evaluation_publisher import (
+                EvaluationPublisher,
+            )
+            from agent_eval_workers.integration.workspace_capture import (
+                SandboxWorkspaceCapture,
+            )
+
+            capture = SandboxWorkspaceCapture(
+                manager=manager,
+                sandboxes=sandbox_registry,
+                working_directory_factory=lambda rid: repo_preparer.workspaces.get(
+                    rid.value, "/workspace"
+                ),
+            )
+            publish_uc = PublishEvaluationRun(
+                uow_factory,
+                events,
+                github_connections,
+                github_publisher,
+                get_run=get_run,
+            )
+            publisher = EvaluationPublisher(
+                publish_run=publish_uc,
+                capture=capture,
+                get_run=lambda rid: get_run.execute(
+                    GetRunQuery(actor=system_actor, run_id=rid.value)
+                ),
+                system_actor=system_actor,
+            )
         return LifecycleOrchestrator(
             lifecycle=RunLifecycle(run_id=run_id, phase=phase),
             sandbox=sandbox,
@@ -487,6 +538,7 @@ def build_production_lifecycle_factory(
             events=pipeline,
             grading=grading,
             status=status,
+            publisher=publisher,
         )
 
     return lifecycle_factory, sandbox, adapter, grading, status, cancel
