@@ -73,3 +73,5 @@ class RunProvenanceDTO:
     canonical_evaluation: bool | None = None
     credential_ref_id: str | None = None
     fallback_used: bool | None = None
+    # Phase 14 — GitHub publication (never secrets)
+    publication: dict[str, object] = field(default_factory=dict)

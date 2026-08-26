@@ -35,6 +35,9 @@ class CreateRunCommand:
     routing_mode: str | None = None
     provider_connection_id: str | None = None
     credential_ref_id: str | None = None
+    # Phase 14 — GitHub publication options (non-secret)
+    github_connection_id: str | None = None
+    auto_publish_on_pass: bool = True
 
 
 @dataclass(frozen=True, slots=True)

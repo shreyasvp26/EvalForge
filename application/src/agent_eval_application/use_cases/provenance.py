@@ -187,6 +187,7 @@ class GetRunProvenance:
                 canonical_evaluation=canonical,
                 credential_ref_id=meta.get("credential_ref_id"),
                 fallback_used=fallback,
+                publication=dict(getattr(dto, "publication", None) or {}),
                 reproducibility=_build_reproducibility(
                     dto,
                     repository_url=repository_url,
