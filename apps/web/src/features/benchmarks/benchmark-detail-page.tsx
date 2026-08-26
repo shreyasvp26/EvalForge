@@ -308,7 +308,7 @@ export function BenchmarkDetailPage({
             <label className="grid gap-1 text-sm">
               <span>Agent</span>
               <Select
-                value={agentId || undefined}
+                {...(agentId ? { value: agentId } : {})}
                 onValueChange={(value) => {
                   setAgentId(value);
                   const agent = agentsQuery.data?.items.find((item) => item.id === value);
@@ -335,7 +335,7 @@ export function BenchmarkDetailPage({
             <label className="grid gap-1 text-sm">
               <span>Agent version</span>
               <Select
-                value={agentVersionId || undefined}
+                {...(agentVersionId ? { value: agentVersionId } : {})}
                 onValueChange={(value) => {
                   setAgentVersionId(value);
                   setFormError(null);
@@ -367,7 +367,7 @@ export function BenchmarkDetailPage({
             <label className="grid gap-1 text-sm">
               <span>Adapter version</span>
               <Select
-                value={adapterVersionId || undefined}
+                {...(adapterVersionId ? { value: adapterVersionId } : {})}
                 onValueChange={(value) => {
                   setAdapterVersionId(value);
                   setFormError(null);
@@ -390,7 +390,7 @@ export function BenchmarkDetailPage({
             <label className="grid gap-1 text-sm">
               <span>Platform</span>
               <Select
-                value={platformId || undefined}
+                {...(platformId ? { value: platformId } : {})}
                 onValueChange={(value) => {
                   setPlatformId(value);
                   const platform = platformsQuery.data?.items.find((item) => item.id === value);
@@ -417,7 +417,7 @@ export function BenchmarkDetailPage({
             <label className="grid gap-1 text-sm">
               <span>Platform version</span>
               <Select
-                value={platformVersionId || undefined}
+                {...(platformVersionId ? { value: platformVersionId } : {})}
                 onValueChange={(value) => {
                   setPlatformVersionId(value);
                   setFormError(null);
