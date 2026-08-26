@@ -198,6 +198,9 @@ def build_production_lifecycle_factory(
     cancellation: CancellationPort | None = None,
     object_storage: _ArtifactStore | None = None,
     event_fanout: object | None = None,
+    provider_connections: object | None = None,
+    github_connections: object | None = None,
+    github_publisher: object | None = None,
 ) -> tuple[
     LifecycleFactory,
     ManagedSandboxAdapter,
@@ -418,8 +421,6 @@ def build_production_lifecycle_factory(
 
     from agent_eval_workers.integration.byok_env import inject_byok_into_sandbox_env
 
-    provider_connections = globals().get("_WORKER_PROVIDER_CONNECTIONS")
-
     def _environment_for_run(run_id: RunId) -> dict[str, str]:
         run_dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
         runtime_request = dict(getattr(run_dto, "runtime_request", None) or {})
@@ -495,8 +496,6 @@ def build_production_lifecycle_factory(
 
     def lifecycle_factory(run_id: RunId, phase: OrchestrationPhase) -> LifecycleDriver:
         publisher = None
-        github_connections = globals().get("_WORKER_GITHUB_CONNECTIONS")
-        github_publisher = globals().get("_WORKER_GITHUB_PUBLISHER")
         if github_connections is not None and github_publisher is not None:
             from agent_eval_application.use_cases.publish_run import (
                 PublishEvaluationRun,
@@ -562,6 +561,9 @@ def build_production_worker(
     cancellation: CancellationPort | None = None,
     object_storage: _ArtifactStore | None = None,
     event_fanout: object | None = None,
+    provider_connections: object | None = None,
+    github_connections: object | None = None,
+    github_publisher: object | None = None,
 ) -> ProductionWorkerBundle:
     """Wire a production WorkerRuntime against an injected WorkerQueuePort."""
     system_actor = actor or Actor(id=os.environ.get("WORKER_ACTOR_ID", "system-worker"))
@@ -597,6 +599,9 @@ def build_production_worker(
         cancellation=cancellation,
         object_storage=object_storage,
         event_fanout=event_fanout,
+        provider_connections=provider_connections,
+        github_connections=github_connections,
+        github_publisher=github_publisher,
     )
 
     worker = WorkerRuntime(
