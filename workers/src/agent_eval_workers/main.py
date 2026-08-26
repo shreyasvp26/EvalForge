@@ -14,6 +14,13 @@ import time
 from typing import cast
 
 from agent_eval_infrastructure import RuntimeProfile, build_infrastructure
+from agent_eval_infrastructure.auth.github_connection import (
+    SqlAlchemyGitHubConnectionStore,
+)
+from agent_eval_infrastructure.auth.provider_connection import (
+    SqlAlchemyProviderConnectionStore,
+)
+from agent_eval_infrastructure.github.publisher import HttpGitHubPullRequestPublisher
 from agent_eval_infrastructure.queue.redis_cancellation import RedisRunCancellationStore
 from agent_eval_infrastructure.queue.redis_run_events import RedisRunEventFanout
 from agent_eval_infrastructure.queue.redis_run_queue import RedisRunQueue
@@ -127,6 +134,13 @@ def run() -> None:
                 cancellation=cancellation,
                 object_storage=infra.object_storage,
                 event_fanout=event_fanout,
+                provider_connections=SqlAlchemyProviderConnectionStore(
+                    infra.session_factory
+                ),
+                github_connections=SqlAlchemyGitHubConnectionStore(
+                    infra.session_factory
+                ),
+                github_publisher=HttpGitHubPullRequestPublisher(),
             )
             bundles.append(bundle)
             if concurrency == 1:

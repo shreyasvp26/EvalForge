@@ -98,6 +98,11 @@ class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
         default=dict,
     )
+    publication: Mapped[dict[str, Any]] = mapped_column(
+        _JsonType,
+        nullable=False,
+        default=dict,
+    )
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     wall_clock_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)

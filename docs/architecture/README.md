@@ -15,6 +15,8 @@ Architecture documents are the **source of truth** for EvalForge system design.
 | [how-evalforge-evaluates-coding-agents.md](./how-evalforge-evaluates-coding-agents.md) | Operator recipe: Case → sandbox → grade |
 | [phase-7-evaluation-operations.md](./phase-7-evaluation-operations.md) | SSE, diagnosis, compare, failure categories |
 | [phase-8-benchmark-integrity.md](./phase-8-benchmark-integrity.md) | Benchmark identity, platform catalog, adapter matrix |
-| [phase-8-benchmark-integrity-audit.md](./phase-8-benchmark-integrity-audit.md) | Phase 8 pre-implementation audit |
+| [byok-provider-connections.md](./byok-provider-connections.md) | Phase 13 BYOK + exact model pinning |
+| [phase-14-real-product-loop-audit.md](./phase-14-real-product-loop-audit.md) | Phase 14 product-loop audit |
+| [phase-14-verification.md](./phase-14-verification.md) | Phase 14 Docker / provider / GitHub honesty |
 
 Engineering conventions for implementing against these docs live in [../development.md](../development.md).

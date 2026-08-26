@@ -233,6 +233,11 @@ def _runtime_request_from_command(
         "routing_mode": command.routing_mode or "",
         "provider_connection_id": command.provider_connection_id or "",
         "credential_ref_id": credential_ref_id or command.credential_ref_id or "",
+        "requested_by_actor_id": command.actor.id,
+        "github_connection_id": command.github_connection_id or "",
+        "auto_publish_on_pass": (
+            "1" if getattr(command, "auto_publish_on_pass", True) else "0"
+        ),
     }
     return sanitize_runtime_request(raw)
 

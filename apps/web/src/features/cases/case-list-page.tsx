@@ -192,11 +192,11 @@ export function CaseListPage({
             }}
             pagination={pagination}
             onPaginationChange={setPagination}
-            emptyTitle={globalFilter.trim() ? "No matching cases" : "Add your first case"}
+            emptyTitle={globalFilter.trim() ? "No matching tasks" : "Add your first task"}
             emptyDescription={
               globalFilter.trim()
-                ? "Try a different search, or clear the filter to see all cases."
-                : "Define a task and prompt, then publish a case version to use in suites and runs."
+                ? "Try a different search, or clear the filter to see all tasks."
+                : "Define an engineering task and prompt, then publish a version to run against a repository revision."
             }
             emptyAction={
               globalFilter.trim() ? undefined : (
@@ -207,14 +207,14 @@ export function CaseListPage({
                     setCreateOpen(true);
                   }}
                 >
-                  Create case
+                  New task
                 </Button>
               )
             }
             onRowActivate={(row) => {
               router.push(`/projects/${projectId}/cases/${row.original.id}`);
             }}
-            aria-label="Cases"
+            aria-label="Tasks"
             toolbar={
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <DataGridSearch
@@ -223,7 +223,7 @@ export function CaseListPage({
                     setGlobalFilter(value);
                     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   }}
-                  placeholder="Search cases…"
+                  placeholder="Search tasks…"
                   className="max-w-sm"
                 />
                 <Button

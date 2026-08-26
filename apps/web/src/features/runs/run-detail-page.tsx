@@ -271,7 +271,7 @@ export function RunDetailPage({ runId }: { runId: string }) {
                 className="font-mono uppercase tracking-[0.12em] text-danger"
               >
                 {run.failure_reason
-                  ? "Failure"
+                  ? "Execution failure"
                   : run.cancellation_reason
                     ? "Cancellation"
                     : "Failure category"}
@@ -293,6 +293,55 @@ export function RunDetailPage({ runId }: { runId: string }) {
               ) : null}
             </section>
           )}
+
+          {run.publication?.status && run.publication.status !== "not_attempted" ? (
+            <section
+              aria-label="GitHub publication"
+              className="rounded-[var(--ef-radius-panel)] border border-border px-4 py-3"
+            >
+              <Text
+                as="div"
+                variant="caption"
+                className="font-mono uppercase tracking-[0.12em] text-muted-foreground"
+              >
+                GitHub publication
+              </Text>
+              <Text variant="secondary" className="mt-2 font-medium text-foreground">
+                Status: {run.publication.status}
+              </Text>
+              {run.publication.pull_request_url ? (
+                <Text variant="secondary" className="mt-2">
+                  <a
+                    href={run.publication.pull_request_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-foreground underline underline-offset-2"
+                  >
+                    Open pull request
+                    {run.publication.pull_request_number
+                      ? ` #${String(run.publication.pull_request_number)}`
+                      : ""}
+                  </a>
+                </Text>
+              ) : null}
+              {run.publication.branch_name ? (
+                <Text variant="caption" className="mt-2 font-mono text-muted-foreground">
+                  Branch: {run.publication.branch_name}
+                </Text>
+              ) : null}
+              {run.publication.error_message ? (
+                <Text variant="secondary" className="mt-2 text-danger">
+                  Publication error: {run.publication.error_message}
+                </Text>
+              ) : null}
+              {run.publication.status === "failed" ? (
+                <Text variant="caption" className="mt-2 text-muted-foreground">
+                  Evaluation result is unchanged. Retry publication from Settings → GitHub after
+                  fixing authorization.
+                </Text>
+              ) : null}
+            </section>
+          ) : null}
 
           {diagnosisQuery.data ? (
             <section

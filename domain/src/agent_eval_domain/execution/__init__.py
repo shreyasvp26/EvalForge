@@ -41,6 +41,11 @@ from agent_eval_domain.execution.provider_runtime import (
     RoutingMode,
     provider_runtime_from_metadata,
 )
+from agent_eval_domain.execution.publication import (
+    PublicationStatus,
+    RunPublication,
+    publication_branch_name,
+)
 from agent_eval_domain.execution.run import EvaluationRun, RunPins
 from agent_eval_domain.execution.run_factory import RunCreationCommand, RunFactory
 from agent_eval_domain.execution.run_status import RunStatus, is_terminal
@@ -68,10 +73,12 @@ __all__ = [
     "OutputAction",
     "ProviderKey",
     "ProviderRuntimeIdentity",
+    "PublicationStatus",
     "RoutingMode",
     "RunCreationCommand",
     "RunFactory",
     "RunPins",
+    "RunPublication",
     "RunStatus",
     "Sandbox",
     "SandboxStatus",
@@ -82,5 +89,6 @@ __all__ = [
     "action_kind_of",
     "is_terminal",
     "provider_runtime_from_metadata",
+    "publication_branch_name",
     "sanitize_execution_metadata",
 ]

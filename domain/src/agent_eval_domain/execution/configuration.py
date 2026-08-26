@@ -39,6 +39,10 @@ ALLOWED_RUNTIME_REQUEST_KEYS = frozenset(
         "routing_mode",
         "credential_ref_id",
         "provider_connection_id",
+        # Phase 14 — who requested the run (for BYOK + GitHub publication)
+        "requested_by_actor_id",
+        "github_connection_id",
+        "auto_publish_on_pass",
     }
 )
 

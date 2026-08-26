@@ -96,6 +96,7 @@ def sample_run(**overrides: Any) -> RunDTO:
         is_partially_graded=False,
         scores=(),
         telemetry=RunTelemetryDTO.from_cost(None),
+        publication={"status": "not_attempted"},
     )
     base.update(overrides)
     return RunDTO(**base)
@@ -410,6 +411,52 @@ def mock_services() -> MagicMock:
         )
     ]
 
+    from agent_eval_application.ports.github_publication import GitHubConnection
+    from agent_eval_application.publication.eligibility import PublicationEligibility
+    from agent_eval_application.use_cases.github_publication import (
+        CreateEvaluationPullRequestResult,
+    )
+
+    gh = GitHubConnection(
+        id="gh-1",
+        user_id="actor-1",
+        display_name="GitHub",
+        status="active",
+        scopes=("repo",),
+        github_login="octocat",
+        key_fingerprint="abcd1234efgh",
+        created_at="2026-01-01T00:00:00+00:00",
+    )
+    services.create_github_connection.execute.return_value = gh
+    services.list_github_connections.execute.return_value = [gh]
+    services.revoke_github_connection.execute.return_value = GitHubConnection(
+        id=gh.id,
+        user_id=gh.user_id,
+        display_name=gh.display_name,
+        status="revoked",
+        scopes=gh.scopes,
+        github_login=gh.github_login,
+        key_fingerprint=gh.key_fingerprint,
+        created_at=gh.created_at,
+    )
+    services.publish_evaluation_run.execute.return_value = (
+        CreateEvaluationPullRequestResult(
+            run=sample_run(status="completed", publication={"status": "published"}),
+            eligibility=PublicationEligibility(
+                eligible=True,
+                reason="ok",
+                evaluation_passed=True,
+                run_status="completed",
+                score_count=1,
+            ),
+            publication={
+                "status": "published",
+                "pull_request_url": "https://github.com/acme/demo/pull/1",
+                "branch_name": "evalforge/task-case-run-1",
+            },
+        )
+    )
+
     # Remaining use cases return Magics; individual tests override as needed.
     return services
 
@@ -426,6 +473,7 @@ class FakeContainer:
         self.oauth_identities = MagicMock()
         self.oauth = MagicMock()
         self.provider_connections = MagicMock()
+        self.github_connections = MagicMock()
         self.infrastructure = MagicMock()
         self.infrastructure.redis = None
         self.infrastructure.run_queue = MagicMock()

@@ -92,6 +92,7 @@ class RunDTO:
     execution_metadata: dict[str, str] = field(default_factory=dict)
     runtime_request: dict[str, str] = field(default_factory=dict)
     execution_group_id: str | None = None
+    publication: dict[str, object] = field(default_factory=dict)
 
     @classmethod
     def from_domain(cls, run: EvaluationRun) -> RunDTO:
@@ -147,6 +148,7 @@ class RunDTO:
             execution_metadata=dict(run.execution_metadata),
             runtime_request=dict(run.runtime_request),
             execution_group_id=run.execution_group_id,
+            publication=dict(run.publication.to_public_dict()),
         )
 
 

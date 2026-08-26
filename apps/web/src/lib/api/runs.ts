@@ -47,6 +47,18 @@ export interface Run {
   execution_mode?: string | null;
   execution_metadata?: Record<string, string>;
   runtime_request?: Record<string, string>;
+  execution_group_id?: string | null;
+  publication?: {
+    status?: string;
+    branch_name?: string;
+    base_commit_sha?: string;
+    result_commit_sha?: string;
+    pull_request_url?: string;
+    pull_request_number?: number;
+    repository_url?: string;
+    error_code?: string;
+    error_message?: string;
+  };
 }
 
 export interface RunTelemetry {

@@ -57,6 +57,7 @@ from agent_eval_domain.execution.normalized_model import (
     NormalizedAction,
     action_kind_of,
 )
+from agent_eval_domain.execution.publication import RunPublication
 from agent_eval_domain.execution.run_status import (
     RunStatus,
     assert_run_transition,
@@ -103,6 +104,8 @@ class EvaluationRun(AggregateRoot):
     """Create-time provider/model/credential request (non-secret, Phase 13)."""
     execution_group_id: str | None = None
     """Correlates Runs created by one Suite/benchmark execute fan-out."""
+    publication: RunPublication = field(default_factory=RunPublication)
+    """GitHub publication state — separate from evaluation RunStatus."""
     sandbox: Sandbox | None = None
     _execution_events: list[ExecutionEvent] = field(default_factory=list, repr=False)
     _artifacts: list[Artifact] = field(default_factory=list, repr=False)
@@ -447,6 +450,33 @@ class EvaluationRun(AggregateRoot):
         self.execution_metadata = sanitize_execution_metadata(
             dict(configuration.metadata)
         )
+
+    def record_publication(self, publication: RunPublication) -> None:
+        """Update GitHub publication state without changing evaluation outcome.
+
+        Allowed on COMPLETED runs (and during GRADING for in-progress markers).
+        Never mutates scores, failure_category, or RunStatus.
+        """
+        if not isinstance(publication, RunPublication):
+            raise InvariantViolation(
+                "publication must be a RunPublication",
+                code="INVALID_PUBLICATION",
+            )
+        if self.status not in {RunStatus.GRADING, RunStatus.COMPLETED}:
+            raise InvariantViolation(
+                "Publication may only be recorded while Grading or Completed",
+                code="PUBLICATION_WRONG_PHASE",
+                details={"status": self.status.value},
+            )
+        # Idempotent: identical published state is a no-op.
+        if (
+            self.publication.is_published
+            and publication.is_published
+            and self.publication.pull_request_url == publication.pull_request_url
+            and self.publication.result_commit_sha == publication.result_commit_sha
+        ):
+            return
+        self.publication = publication
 
     # --- internals ------------------------------------------------------
 

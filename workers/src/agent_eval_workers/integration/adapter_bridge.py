@@ -69,6 +69,7 @@ PromptFactory = Callable[[RunId], str]
 AdapterFactoryResolver = Callable[[RunId], AdapterFactory]
 WorkingDirectoryFactory = Callable[[RunId], str]
 ModelIdFactory = Callable[[RunId], str | None]
+EnvironmentFactory = Callable[[RunId], dict[str, str]]
 
 
 class _ArtifactStore(Protocol):
@@ -143,6 +144,7 @@ class SdkAdapterBridge:
     working_directory: str = "/workspace"
     working_directory_factory: WorkingDirectoryFactory | None = None
     environment: dict[str, str] = field(default_factory=dict)
+    environment_factory: EnvironmentFactory | None = None
     fail_on_run: bool = False
     after_start: AdapterHook | None = None
     before_run: AdapterHook | None = None
@@ -167,6 +169,11 @@ class SdkAdapterBridge:
             return self.model_id_factory(run_id)
         return None
 
+    def _resolve_environment(self, run_id: RunId) -> dict[str, str]:
+        if self.environment_factory is not None:
+            return dict(self.environment_factory(run_id))
+        return dict(self.environment)
+
     def _resolve_adapter(self, run_id: RunId) -> Adapter:
         if self.adapter_factory_resolver is not None:
             return self.adapter_factory_resolver(run_id)()
@@ -188,7 +195,7 @@ class SdkAdapterBridge:
                 working_directory=self._resolve_working_directory(run_id),
                 sandbox=handle,
                 sandbox_exec=ManagerSandboxExec(manager=self.manager),
-                environment=dict(self.environment),
+                environment=self._resolve_environment(run_id),
                 run=self.run_metadata_factory(run_id),
                 correlation_id=f"corr-{run_id.value}",
                 config=ExecutionConfig(),
