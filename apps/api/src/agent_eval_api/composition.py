@@ -28,6 +28,7 @@ from agent_eval_application.use_cases.agent import (
     PublishAgentVersion,
 )
 from agent_eval_application.use_cases.auth import GetCurrentUser, Login
+from agent_eval_application.use_cases.benchmark_matrix import BuildBenchmarkMatrix
 from agent_eval_application.use_cases.case import (
     CreateCase,
     CreateCaseDraftVersion,
@@ -188,6 +189,7 @@ class ApplicationServices:
     get_run_scores: GetRunScores
     get_run_provenance: GetRunProvenance
     compare_runs: CompareRuns
+    build_benchmark_matrix: BuildBenchmarkMatrix
     diagnose_run_failure: DiagnoseRunFailure
     cancel_run: CancelRun
 
@@ -359,6 +361,7 @@ def build_application_services(
         get_run_scores=GetRunScores(uow, auth),
         get_run_provenance=GetRunProvenance(uow, auth),
         compare_runs=CompareRuns(uow, auth),
+        build_benchmark_matrix=BuildBenchmarkMatrix(uow, auth),
         diagnose_run_failure=DiagnoseRunFailure(uow, auth),
         cancel_run=CancelRun(uow, auth, events),
     )

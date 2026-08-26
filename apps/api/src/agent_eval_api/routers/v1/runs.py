@@ -41,6 +41,8 @@ from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.run import (
     ArtifactPreviewResponse,
     ArtifactResponse,
+    BenchmarkMatrixCellResponse,
+    BenchmarkMatrixResponse,
     CancelRunRequest,
     CompareRunsRequest,
     CreateRunRequest,
@@ -187,6 +189,45 @@ def compare_runs(
             benchmark_key=result.comparability.benchmark_key,
             notes=result.comparability.notes,
         ),
+    )
+
+
+@router.post(
+    "/benchmark-matrix",
+    response_model=BenchmarkMatrixResponse,
+    summary="Benchmark evaluation matrix",
+    description=(
+        "Build an adapter × score matrix for runs that share the same "
+        "immutable benchmark definition. Incomparable runs return comparable=false."
+    ),
+)
+def benchmark_matrix(
+    body: CompareRunsRequest,
+    actor: ActorDep,
+    services: ServicesDep,
+) -> BenchmarkMatrixResponse:
+    result = services.build_benchmark_matrix.execute(
+        CompareRunsCommand(actor=actor, run_ids=tuple(body.run_ids))
+    )
+    return BenchmarkMatrixResponse(
+        benchmark_key=result.benchmark_key,
+        comparable=result.comparable,
+        notes=result.notes,
+        cells=[
+            BenchmarkMatrixCellResponse(
+                adapter_key=cell.adapter_key,
+                adapter_name=cell.adapter_name,
+                execution_mode=cell.execution_mode,
+                run_id=cell.run_id,
+                status=cell.status,
+                overall_score=cell.overall_score,
+                passed=cell.passed,
+                duration_ms=cell.duration_ms,
+                failure_category=cell.failure_category,
+            )
+            for cell in result.cells
+        ],
+        mismatches=list(result.mismatches),
     )
 
 

@@ -207,11 +207,11 @@ def test_process_worker_continues_after_failure(world) -> None:
     assert dto.status == "completed"
 
 
-def test_select_adapter_factory_claude() -> None:
+def test_select_adapter_factory_live_returns_verified_gemini() -> None:
     factory, mode = select_adapter_factory(mode="claude")
     assert mode == "live"
     adapter = factory()
-    assert adapter.stream_source is None
+    assert adapter.name == "gemini"
 
 
 def test_sandbox_env_allowlist_never_dumps_full_environ(monkeypatch) -> None:

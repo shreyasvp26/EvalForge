@@ -41,6 +41,22 @@ class CreateAdapterDraftVersionRequest(BaseModel):
     notes: str = ""
 
 
+class AdapterCapabilityResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    adapter_key: str
+    provider: str
+    display_name: str
+    status: str
+    execution_modes: list[str]
+    required_credentials: list[str]
+    optional_credentials: list[str]
+    cli_package: str | None
+    sandbox_install_flag: str | None
+    network_required: bool
+    notes: str
+
+
 class AgentVersionResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

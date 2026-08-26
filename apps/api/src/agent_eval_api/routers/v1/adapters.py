@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from agent_eval_application.adapter_capabilities import list_adapter_capabilities
 from agent_eval_application.commands.agent import (
     CreateAdapterCommand,
     CreateAdapterDraftVersionCommand,
@@ -15,6 +16,7 @@ from fastapi import APIRouter, Depends, Header, status
 from agent_eval_api.dependencies import ActorDep, ServicesDep
 from agent_eval_api.pagination import ListParams
 from agent_eval_api.schemas.agent import (
+    AdapterCapabilityResponse,
     AdapterResponse,
     AdapterVersionResponse,
     CreateAdapterDraftVersionRequest,
@@ -23,6 +25,42 @@ from agent_eval_api.schemas.agent import (
 from agent_eval_api.schemas.common import CollectionResponse
 
 router = APIRouter(prefix="/v1/adapters", tags=["adapters"])
+
+
+@router.get(
+    "/capabilities",
+    response_model=CollectionResponse[AdapterCapabilityResponse],
+    summary="Adapter support matrix",
+    description=(
+        "Authoritative adapter capability catalog. Recognition of a key does not "
+        "imply production support — only verified_live / synthetic_only modes execute."
+    ),
+)
+def adapter_capabilities(
+    _actor: ActorDep,
+) -> CollectionResponse[AdapterCapabilityResponse]:
+    items = [
+        AdapterCapabilityResponse(
+            adapter_key=cap.adapter_key,
+            provider=cap.provider,
+            display_name=cap.display_name,
+            status=cap.status.value,
+            execution_modes=sorted(cap.execution_modes),
+            required_credentials=list(cap.required_credentials),
+            optional_credentials=list(cap.optional_credentials),
+            cli_package=cap.cli_package,
+            sandbox_install_flag=cap.sandbox_install_flag,
+            network_required=cap.network_required,
+            notes=cap.notes,
+        )
+        for cap in list_adapter_capabilities()
+    ]
+    return CollectionResponse(
+        items=items,
+        count=len(items),
+        next_cursor=None,
+        has_more=False,
+    )
 
 
 @router.post(

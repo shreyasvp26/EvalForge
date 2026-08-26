@@ -15,7 +15,6 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
 
-from agent_eval_adapters.claude_code import ClaudeCodeAdapter
 from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.models import RunMetadata
 from agent_eval_application.commands.run import RecordExecutionConfigurationCommand
@@ -151,23 +150,24 @@ def select_docker_engine(*, mode: str | None = None) -> tuple[DockerEngine, str]
 
 
 def select_adapter_factory(*, mode: str | None = None) -> tuple[AdapterFactory, str]:
-    """Legacy composition helper — prefers pin resolution in production.
+    """Legacy composition helper — production workers use pin resolution.
 
-    Kept for tests that call ``select_adapter_factory`` directly. Production
-    workers resolve adapters from Run pins via ``PinnedAdapterResolver``.
-    ``deterministic`` is synthetic development/test execution only.
+    Live mode returns the canonical verified live adapter (Gemini). Deterministic
+    mode returns synthetic Claude. Callers that need pin-aware resolution must
+    use ``PinnedAdapterResolver``.
     """
+    from agent_eval_adapters.gemini import GeminiAdapter
+
     resolved = resolve_adapter_mode(mode)
     if resolved == "live":
         logger.info(
             "worker_adapter_mode_live",
-            detail="Live mode selected; pin resolution still required at run time",
+            detail=(
+                "Live mode selected; pin resolution still required at run time. "
+                "Legacy helper returns verified gemini_cli factory only."
+            ),
         )
-
-        def live_factory() -> Adapter:
-            return ClaudeCodeAdapter()
-
-        return live_factory, "live"
+        return GeminiAdapter, "live"
     logger.info(
         "worker_adapter_mode_deterministic",
         detail=(
@@ -323,15 +323,27 @@ def build_production_lifecycle_factory(
 
     # Injected factory overrides pin resolution (tests / explicit composition).
     # When absent, resolve from the Run's pinned Adapter Version at start time.
-    fallback_factory = adapter_factory or default_claude_factory()
+    # Never silently fall back to Claude when the pin resolver is active.
+    def _fail_closed_adapter_factory() -> Adapter:
+        raise RecoverableExecutionError(
+            "Adapter factory missing and pin resolver inactive "
+            "(adapter_unsupported); production workers require pin resolution",
+            cause=FailureCause.ADAPTER_UNSUPPORTED,
+        )
+
+    if adapter_factory is not None:
+        bridge_factory: AdapterFactory = adapter_factory
+        bridge_resolver = None
+    else:
+        bridge_factory = _fail_closed_adapter_factory
+        bridge_resolver = resolve_adapter_factory
+
     adapter = SdkAdapterBridge(
         stream=pipeline,
         sandboxes=sandbox_registry,
         manager=manager,
-        adapter_factory=fallback_factory,
-        adapter_factory_resolver=(
-            None if adapter_factory is not None else resolve_adapter_factory
-        ),
+        adapter_factory=bridge_factory,
+        adapter_factory_resolver=bridge_resolver,
         cancellation=cancel,  # type: ignore[arg-type]
         object_storage=object_storage,
         environment=sandbox_environment_from_allowlist(),

@@ -334,6 +334,30 @@ class RunComparisonResponse(BaseModel):
     comparability: RunComparabilityResponse
 
 
+class BenchmarkMatrixCellResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    adapter_key: str | None
+    adapter_name: str | None
+    execution_mode: str | None
+    run_id: str
+    status: str
+    overall_score: float | None
+    passed: bool | None
+    duration_ms: int | None
+    failure_category: str | None
+
+
+class BenchmarkMatrixResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    benchmark_key: str | None
+    comparable: bool
+    notes: str
+    cells: list[BenchmarkMatrixCellResponse]
+    mismatches: list[str]
+
+
 class FailingGraderReasonResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

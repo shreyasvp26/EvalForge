@@ -35,6 +35,10 @@ from agent_eval_application.errors import (
     NotFoundApplicationError,
 )
 from agent_eval_application.scoring.aggregation import ScoreAggregate
+from agent_eval_application.use_cases.benchmark_matrix import (
+    BenchmarkMatrixCellDTO,
+    BenchmarkMatrixDTO,
+)
 
 
 def sample_project(**overrides: Any) -> ProjectDTO:
@@ -260,6 +264,30 @@ def sample_comparison(**overrides: Any) -> RunComparisonResultDTO:
     return RunComparisonResultDTO(**base)
 
 
+def sample_benchmark_matrix(**overrides: Any) -> BenchmarkMatrixDTO:
+    base = dict(
+        benchmark_key="|cv|pv|plat|gv|url|sha",
+        comparable=True,
+        notes="Runs share benchmark dimensions.",
+        cells=(
+            BenchmarkMatrixCellDTO(
+                adapter_key="gemini_cli",
+                adapter_name="gemini_cli",
+                execution_mode="live",
+                run_id="run-1",
+                status="completed",
+                overall_score=0.82,
+                passed=True,
+                duration_ms=12000,
+                failure_category=None,
+            ),
+        ),
+        mismatches=(),
+    )
+    base.update(overrides)
+    return BenchmarkMatrixDTO(**base)
+
+
 def sample_diagnosis(**overrides: Any) -> RunDiagnosisDTO:
     base = dict(
         run_id="run-1",
@@ -323,6 +351,7 @@ def mock_services() -> MagicMock:
     services.get_run_scores.execute.return_value = [sample_score()]
     services.get_run_provenance.execute.return_value = sample_provenance()
     services.compare_runs.execute.return_value = sample_comparison()
+    services.build_benchmark_matrix.execute.return_value = sample_benchmark_matrix()
     services.diagnose_run_failure.execute.return_value = sample_diagnosis()
 
     # Remaining use cases return Magics; individual tests override as needed.
