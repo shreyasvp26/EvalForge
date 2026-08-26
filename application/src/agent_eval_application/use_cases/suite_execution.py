@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from agent_eval_domain.common.ids import (
+    AgentId,
     CaseVersionId,
     ProjectId,
     SuiteId,
@@ -12,6 +13,10 @@ from agent_eval_domain.common.ids import (
 )
 from agent_eval_domain.versioning.status import VersionStatus
 
+from agent_eval_application.adapter_capabilities import (
+    AdapterSupportStatus,
+    get_adapter_capability,
+)
 from agent_eval_application.commands.run import CreateRunCommand
 from agent_eval_application.commands.suite_execution import (
     AggregateSuiteResultsCommand,
@@ -28,6 +33,7 @@ from agent_eval_application.dto.suite_execution import (
 from agent_eval_application.errors import ApplicationValidationError
 from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.unit_of_work import UnitOfWork, UnitOfWorkFactory
+from agent_eval_application.run_identity import normalize_adapter_key
 from agent_eval_application.scoring.aggregation import aggregate_scores
 from agent_eval_application.use_cases.base import with_domain_errors
 from agent_eval_application.use_cases.run import CreateRun
@@ -113,6 +119,48 @@ def _resolve_grader_refs(
     return tuple(refs)
 
 
+def _assert_adapter_executable(uow: UnitOfWork, *, agent_id: str) -> str:
+    """Reject adapters that are not production-executable (fail closed).
+
+    Returns the normalized adapter key for logging/details.
+    """
+    agent = with_domain_errors(
+        lambda: uow.agents.get(AgentId(require_non_empty(agent_id, field="agent_id")))
+    )
+    if agent.adapter_id is None:
+        raise ApplicationValidationError(
+            "Agent has no connected Adapter",
+            code="AGENT_MISSING_ADAPTER",
+            details={"agent_id": agent.id.value},
+        )
+    adapter = with_domain_errors(lambda: uow.adapters.get(agent.adapter_id))
+    key = normalize_adapter_key(adapter.name)
+    if key is None:
+        raise ApplicationValidationError(
+            f"Adapter {adapter.name!r} is not a recognized coding-agent adapter",
+            code="ADAPTER_UNKNOWN",
+            details={"adapter_id": adapter.id.value, "adapter_name": adapter.name},
+        )
+    capability = get_adapter_capability(key)
+    if capability is None or capability.status in {
+        AdapterSupportStatus.UNSUPPORTED,
+        AdapterSupportStatus.IMPLEMENTED_UNVERIFIED,
+    }:
+        raise ApplicationValidationError(
+            f"Adapter {key!r} is not executable on EvalForge "
+            f"(status={getattr(capability, 'status', None)})",
+            code="ADAPTER_UNSUPPORTED",
+            details={
+                "adapter_key": key,
+                "adapter_id": adapter.id.value,
+                "status": (
+                    capability.status.value if capability is not None else "unknown"
+                ),
+            },
+        )
+    return key
+
+
 class CreateSuiteRuns:
     """Validate suite composition, then create+enqueue one Run per case."""
 
@@ -159,6 +207,8 @@ class CreateSuiteRuns:
                     code="SUITE_COMPOSITION_EMPTY",
                     details={"suite_version_id": version_id.value},
                 )
+
+            _assert_adapter_executable(uow, agent_id=command.agent_id)
 
             # Validate every case before creating any runs.
             planned: list[tuple[int, object, object, tuple[tuple[str, str], ...]]] = []
@@ -284,6 +334,23 @@ class AggregateSuiteResults:
                     objective_failed_count += 1
                 if agg.overall_score is not None:
                     score_values.append(agg.overall_score)
+
+                case_name: str | None = None
+                case_id: str | None = None
+                category: str | None = None
+                difficulty: str | None = None
+                try:
+                    case_version = uow.cases.get_version(
+                        CaseVersionId(dto.pins.case_version_id)
+                    )
+                    case = uow.cases.get(case_version.case_id)
+                    case_id = case.id.value
+                    case_name = case.name
+                    category = case.category or None
+                    difficulty = case.difficulty or None
+                except Exception:  # noqa: BLE001 — best-effort labels
+                    pass
+
                 case_results.append(
                     SuiteCaseResultDTO(
                         case_version_id=dto.pins.case_version_id,
@@ -292,6 +359,10 @@ class AggregateSuiteResults:
                         aggregate=agg,
                         failure_reason=dto.failure_reason,
                         failure_category=dto.failure_category,
+                        case_id=case_id,
+                        case_name=case_name,
+                        category=category,
+                        difficulty=difficulty,
                     )
                 )
 

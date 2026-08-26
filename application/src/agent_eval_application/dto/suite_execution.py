@@ -35,6 +35,10 @@ class SuiteCaseResultDTO:
     aggregate: ScoreAggregate
     failure_reason: str | None
     failure_category: str | None
+    case_id: str | None = None
+    case_name: str | None = None
+    category: str | None = None
+    difficulty: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
