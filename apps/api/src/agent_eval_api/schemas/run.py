@@ -42,6 +42,9 @@ class CreateRunRequest(BaseModel):
     routing_mode: str | None = None
     provider_connection_id: str | None = None
     credential_ref_id: str | None = None
+    # Phase 14 — optional GitHub publication controls (non-secret)
+    github_connection_id: str | None = None
+    auto_publish_on_pass: bool = True
 
 
 class CancelRunRequest(BaseModel):
@@ -183,6 +186,7 @@ class RunResponse(BaseModel):
     execution_metadata: dict[str, str] = Field(default_factory=dict)
     runtime_request: dict[str, str] = Field(default_factory=dict)
     execution_group_id: str | None = None
+    publication: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def from_dto(cls, dto: RunDTO) -> RunResponse:
@@ -222,6 +226,7 @@ class RunResponse(BaseModel):
             execution_metadata=dict(dto.execution_metadata),
             runtime_request=dict(dto.runtime_request),
             execution_group_id=dto.execution_group_id,
+            publication=dict(getattr(dto, "publication", None) or {}),
         )
 
 

@@ -107,6 +107,8 @@ def create_run(
             routing_mode=body.routing_mode,
             provider_connection_id=body.provider_connection_id,
             credential_ref_id=body.credential_ref_id,
+            github_connection_id=body.github_connection_id,
+            auto_publish_on_pass=body.auto_publish_on_pass,
         )
     )
     return RunResponse.from_dto(dto)

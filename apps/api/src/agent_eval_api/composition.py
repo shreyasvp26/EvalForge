@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agent_eval_application.ports.authorization import AuthorizationPort
+from agent_eval_application.ports.github_publication import GitHubConnectionPort
 from agent_eval_application.ports.identity import IdentityPort
 from agent_eval_application.ports.oauth_identity import OAuthIdentityPort
 from agent_eval_application.ports.provider_connections import ProviderConnectionPort
@@ -39,6 +40,11 @@ from agent_eval_application.use_cases.case import (
     ListCasesByProject,
     PublishCaseVersion,
     PublishPromptVersion,
+)
+from agent_eval_application.use_cases.github_publication import (
+    CreateGitHubConnection,
+    ListGitHubConnections,
+    RevokeGitHubConnection,
 )
 from agent_eval_application.use_cases.grader import (
     CreateGrader,
@@ -69,6 +75,7 @@ from agent_eval_application.use_cases.provider_connections import (
     ListProviders,
     RevokeProviderConnection,
 )
+from agent_eval_application.use_cases.publish_run import PublishEvaluationRun
 from agent_eval_application.use_cases.run import (
     CancelRun,
     CreateRun,
@@ -112,6 +119,11 @@ from agent_eval_infrastructure.auth import (
     SqlAlchemyProviderConnectionStore,
     ensure_bootstrap_user,
 )
+from agent_eval_infrastructure.auth.github_connection import (
+    InMemoryGitHubConnectionStore,
+    SqlAlchemyGitHubConnectionStore,
+)
+from agent_eval_infrastructure.github.publisher import HttpGitHubPullRequestPublisher
 
 from agent_eval_api.auth.oauth.providers.github import GitHubOAuthProvider
 from agent_eval_api.auth.oauth.providers.google import GoogleOAuthProvider
@@ -212,6 +224,12 @@ class ApplicationServices:
     list_provider_connections: ListProviderConnections
     revoke_provider_connection: RevokeProviderConnection
 
+    # Phase 14 — GitHub publication
+    create_github_connection: CreateGitHubConnection
+    list_github_connections: ListGitHubConnections
+    revoke_github_connection: RevokeGitHubConnection
+    publish_evaluation_run: PublishEvaluationRun
+
 
 @dataclass(slots=True)
 class ApiContainer:
@@ -226,6 +244,7 @@ class ApiContainer:
     oauth_identities: OAuthIdentityPort
     oauth: OAuthService
     provider_connections: ProviderConnectionPort
+    github_connections: GitHubConnectionPort
 
     def dispose(self) -> None:
         self.infrastructure.dispose()
@@ -312,6 +331,14 @@ def build_identity_store(
     return SqlAlchemyIdentityStore(infrastructure.session_factory)
 
 
+def build_github_connection_store(
+    infrastructure: InfrastructureContainer,
+) -> GitHubConnectionPort:
+    if infrastructure.profile is RuntimeProfile.MEMORY:
+        return InMemoryGitHubConnectionStore()
+    return SqlAlchemyGitHubConnectionStore(infrastructure.session_factory)
+
+
 def build_provider_connection_store(
     infrastructure: InfrastructureContainer,
 ) -> ProviderConnectionPort:
@@ -325,6 +352,7 @@ def build_application_services(
     auth: AuthorizationPort,
     identity: IdentityPort,
     provider_connections: ProviderConnectionPort | None = None,
+    github_connections: GitHubConnectionPort | None = None,
 ) -> ApplicationServices:
     """Construct Application use cases from Infrastructure ports."""
     uow = infrastructure.uow_factory
@@ -335,6 +363,8 @@ def build_application_services(
     connections = provider_connections or build_provider_connection_store(
         infrastructure
     )
+    github = github_connections or build_github_connection_store(infrastructure)
+    github_publisher = HttpGitHubPullRequestPublisher()
     create_run = CreateRun(
         uow,
         ids,
@@ -344,6 +374,7 @@ def build_application_services(
         idempotency,
         provider_connections=connections,
     )
+    get_run = GetRun(uow, auth)
 
     return ApplicationServices(
         login=Login(identity),
@@ -396,7 +427,7 @@ def build_application_services(
         ),
         publish_platform_version=PublishPlatformVersion(uow, auth, events),
         create_run=create_run,
-        get_run=GetRun(uow, auth),
+        get_run=get_run,
         list_runs_by_project=ListRunsByProject(uow, auth),
         get_run_events=GetRunEvents(uow, auth),
         get_run_artifacts=GetRunArtifacts(uow, auth),
@@ -410,6 +441,16 @@ def build_application_services(
         create_provider_connection=CreateProviderConnection(connections),
         list_provider_connections=ListProviderConnections(connections),
         revoke_provider_connection=RevokeProviderConnection(connections),
+        create_github_connection=CreateGitHubConnection(github),
+        list_github_connections=ListGitHubConnections(github),
+        revoke_github_connection=RevokeGitHubConnection(github),
+        publish_evaluation_run=PublishEvaluationRun(
+            uow,
+            events,
+            github,
+            github_publisher,
+            get_run=get_run,
+        ),
     )
 
 
@@ -423,6 +464,7 @@ def build_api_container(
     oauth_identities: OAuthIdentityPort | None = None,
     oauth: OAuthService | None = None,
     provider_connections: ProviderConnectionPort | None = None,
+    github_connections: GitHubConnectionPort | None = None,
     profile: RuntimeProfile | None = None,
 ) -> ApiContainer:
     """Assemble the Control Plane composition root."""
@@ -432,6 +474,7 @@ def build_api_container(
     identity_store = identity or build_identity_store(infra)
     oauth_store = oauth_identities or build_oauth_identity_store(infra)
     connection_store = provider_connections or build_provider_connection_store(infra)
+    github_store = github_connections or build_github_connection_store(infra)
     if api_settings.auth_bootstrap_email and api_settings.auth_bootstrap_password:
         ensure_bootstrap_user(
             identity_store,
@@ -445,6 +488,7 @@ def build_api_container(
         authorization,
         identity_store,
         provider_connections=connection_store,
+        github_connections=github_store,
     )
     oauth_service = oauth or build_oauth_service(
         settings=api_settings,
@@ -462,4 +506,5 @@ def build_api_container(
         oauth_identities=oauth_store,
         oauth=oauth_service,
         provider_connections=connection_store,
+        github_connections=github_store,
     )
