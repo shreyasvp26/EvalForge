@@ -13,6 +13,10 @@ class CreateCaseCommand:
     project_id: str
     name: str
     description: str = ""
+    category: str = ""
+    difficulty: str = ""
+    language: str = ""
+    tags: tuple[str, ...] = ()
     idempotency_key: str | None = None
 
 

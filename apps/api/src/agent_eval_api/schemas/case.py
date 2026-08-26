@@ -14,6 +14,10 @@ class CreateCaseRequest(BaseModel):
     project_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = ""
+    category: str = ""
+    difficulty: str = ""
+    language: str = ""
+    tags: list[str] = Field(default_factory=list)
 
 
 class CreatePromptDraftVersionRequest(BaseModel):
@@ -102,6 +106,10 @@ class CaseResponse(BaseModel):
     prompt_id: str
     name: str
     description: str
+    category: str = ""
+    difficulty: str = ""
+    language: str = ""
+    tags: list[str] = Field(default_factory=list)
     status: str
     created_at: datetime
     active_version_id: str | None
@@ -117,6 +125,10 @@ class CaseResponse(BaseModel):
             prompt_id=dto.prompt_id,
             name=dto.name,
             description=dto.description,
+            category=dto.category,
+            difficulty=dto.difficulty,
+            language=dto.language,
+            tags=list(dto.tags),
             status=dto.status,
             created_at=dto.created_at,
             active_version_id=dto.active_version_id,

@@ -74,6 +74,11 @@ class RunOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
         nullable=True,
         index=True,
     )
+    execution_group_id: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+    )
     grader_version_ids: Mapped[list[Any]] = mapped_column(
         _JsonType,
         nullable=False,

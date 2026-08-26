@@ -162,6 +162,7 @@ def run_to_domain(
         execution_metadata=sanitize_execution_metadata(
             {str(k): str(v) for k, v in dict(row.execution_metadata or {}).items()}
         ),
+        execution_group_id=getattr(row, "execution_group_id", None),
         sandbox=None,
         _execution_events=mapped_events,
         _artifacts=mapped_artifacts,
@@ -206,6 +207,7 @@ def new_run_orm(run: EvaluationRun) -> RunOrm:
             run.pins.suite_version_id.value if run.pins.suite_version_id else None
         ),
         grader_version_ids=[g.value for g in run.pins.grader_version_ids],
+        execution_group_id=run.execution_group_id,
         created_at=run.created_at,
     )
     apply_run_to_orm(run, row)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent_eval_infrastructure.database.base import Base
@@ -29,6 +29,13 @@ class SuiteOrm(UuidPrimaryKeyMixin, TimestampMixin, Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    catalog_key: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    catalog_visible: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="0",
+    )
     status: Mapped[str] = mapped_column(String(64), nullable=False, default="active")
 
 

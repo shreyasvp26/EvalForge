@@ -35,6 +35,7 @@ from agent_eval_api.routers.v1 import (
     adapters,
     agents,
     auth,
+    benchmarks,
     cases,
     graders,
     platforms,
@@ -139,6 +140,7 @@ def create_app(
     app.include_router(auth.router)
     app.include_router(projects.router)
     app.include_router(suites.router)
+    app.include_router(benchmarks.router)
     app.include_router(cases.router)
     app.include_router(prompts.router)
     app.include_router(agents.router)

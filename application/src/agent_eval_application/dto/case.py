@@ -85,6 +85,10 @@ class CaseDTO:
     prompt_id: str
     name: str
     description: str
+    category: str
+    difficulty: str
+    language: str
+    tags: tuple[str, ...]
     status: str
     created_at: datetime
     active_version_id: str | None
@@ -102,6 +106,10 @@ class CaseDTO:
             prompt_id=case.prompt.id.value,
             name=case.name,
             description=case.description,
+            category=case.category,
+            difficulty=case.difficulty,
+            language=case.language,
+            tags=tuple(case.tags),
             status=case.status.value,
             created_at=case.created_at,
             active_version_id=active.id.value if active else None,

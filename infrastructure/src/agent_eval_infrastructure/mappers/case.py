@@ -118,6 +118,10 @@ def case_to_domain(
         name=case_row.name,
         prompt=prompt,
         description=case_row.description,
+        category=getattr(case_row, "category", "") or "",
+        difficulty=getattr(case_row, "difficulty", "") or "",
+        language=getattr(case_row, "language", "") or "",
+        tags=tuple(str(t) for t in list(getattr(case_row, "tags", None) or [])),
         status=parse_admin_status(case_row.status),
         created_at=case_row.created_at,
         _versions=versions,
@@ -130,6 +134,10 @@ def case_to_orm(case: EvaluationCase, row: CaseOrm | None = None) -> CaseOrm:
     target.project_id = case.project_id.value
     target.name = case.name
     target.description = case.description
+    target.category = case.category
+    target.difficulty = case.difficulty
+    target.language = case.language
+    target.tags = list(case.tags)
     target.status = case.status.value
     target.created_at = case.created_at
     return target

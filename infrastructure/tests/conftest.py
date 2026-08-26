@@ -193,7 +193,7 @@ def seed_case(
         description="fix auth",
         reference_repository=ReferenceRepositoryState(
             repository_url="https://example.com/repo.git",
-            commit_sha="abc123",
+            commit_sha="abc1234",
         ),
         expected_checks=("pytest",),
         applicable_grader_ids=(grader_id,),

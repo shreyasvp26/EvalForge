@@ -21,10 +21,12 @@ from agent_eval_application.commands.suite import (
     DeprecateSuiteCommand,
     PublishSuiteVersionCommand,
     RetireSuiteVersionCommand,
+    UpdateSuiteCatalogCommand,
 )
 from agent_eval_application.common.id_generator import IdGenerator
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.suite import (
+    BenchmarkCatalogEntryDTO,
     SuiteCompositionEntryDTO,
     SuiteDTO,
     SuiteVersionDTO,
@@ -73,6 +75,8 @@ def _rebuild_suite(payload: dict) -> SuiteDTO:
         project_id=payload["project_id"],
         name=payload["name"],
         description=payload["description"],
+        catalog_key=payload.get("catalog_key", ""),
+        catalog_visible=bool(payload.get("catalog_visible", False)),
         status=payload["status"],
         created_at=_parse_dt(payload["created_at"]),
         active_version_id=payload["active_version_id"],
@@ -128,6 +132,8 @@ class CreateSuite:
                     project_id=project_id,
                     name=name,
                     description=command.description,
+                    catalog_key=command.catalog_key,
+                    catalog_visible=command.catalog_visible,
                 )
             )
             uow.suites.save(suite)
@@ -301,3 +307,96 @@ class ListSuitesByProject:
         with self._uow_factory() as uow:
             suites = with_domain_errors(lambda: uow.suites.list_by_project(project_id))
             return [SuiteDTO.from_domain(s) for s in suites]
+
+
+class UpdateSuiteCatalog:
+    """Toggle catalog visibility / key on a Suite identity."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+        events: DomainEventDispatcher,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+        self._events = events
+
+    def execute(self, command: UpdateSuiteCatalogCommand) -> SuiteDTO:
+        suite_id = SuiteId(require_non_empty(command.suite_id, field="suite_id"))
+
+        def work(uow):
+            suite = uow.suites.get(suite_id)
+            self._auth.ensure_can_manage_project(command.actor, suite.project_id)
+            with_domain_errors(
+                lambda: suite.set_catalog(
+                    catalog_key=command.catalog_key,
+                    catalog_visible=command.catalog_visible,
+                )
+            )
+            uow.suites.save(suite)
+            return SuiteDTO.from_domain(suite), collect_events(suite)
+
+        return run_in_uow(self._uow_factory, self._events, work)
+
+
+class ListBenchmarkCatalog:
+    """List catalog-visible suites with composition summary for discovery."""
+
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        auth: AuthorizationPort,
+    ) -> None:
+        self._uow_factory = uow_factory
+        self._auth = auth
+
+    def execute(
+        self, query: ListSuitesByProjectQuery
+    ) -> list[BenchmarkCatalogEntryDTO]:
+        project_id = ProjectId(require_non_empty(query.project_id, field="project_id"))
+        self._auth.ensure_can_access_project(query.actor, project_id)
+        with self._uow_factory() as uow:
+            suites = with_domain_errors(lambda: uow.suites.list_by_project(project_id))
+            entries: list[BenchmarkCatalogEntryDTO] = []
+            for suite in suites:
+                if not suite.catalog_visible:
+                    continue
+                active = suite.active_version()
+                categories: set[str] = set()
+                difficulties: set[str] = set()
+                case_count = 0
+                if active is not None:
+                    case_count = len(active.composition)
+                    for entry in active.composition:
+                        case_version = with_domain_errors(
+                            lambda eid=entry.case_version_id: uow.cases.get_version(eid)
+                        )
+                        case = with_domain_errors(
+                            lambda cid=case_version.case_id: uow.cases.get(cid)
+                        )
+                        if case.category:
+                            categories.add(case.category)
+                        if case.difficulty:
+                            difficulties.add(case.difficulty)
+                entries.append(
+                    BenchmarkCatalogEntryDTO(
+                        suite_id=suite.id.value,
+                        project_id=suite.project_id.value,
+                        catalog_key=suite.catalog_key or suite.name,
+                        name=suite.name,
+                        description=suite.description,
+                        status=suite.status.value,
+                        active_version_id=active.id.value if active else None,
+                        active_version_number=(
+                            active.version_number.value if active else None
+                        ),
+                        case_count=case_count,
+                        categories=tuple(sorted(categories)),
+                        difficulties=tuple(sorted(difficulties)),
+                        created_at=suite.created_at,
+                        catalog_visible=suite.catalog_visible,
+                    )
+                )
+            entries.sort(key=lambda e: (e.catalog_key, e.name))
+            return entries

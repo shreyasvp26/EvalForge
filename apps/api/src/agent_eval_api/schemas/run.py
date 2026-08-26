@@ -174,6 +174,7 @@ class RunResponse(BaseModel):
     telemetry: RunTelemetryResponse | None = None
     execution_mode: str | None = None
     execution_metadata: dict[str, str] = Field(default_factory=dict)
+    execution_group_id: str | None = None
 
     @classmethod
     def from_dto(cls, dto: RunDTO) -> RunResponse:
@@ -211,6 +212,7 @@ class RunResponse(BaseModel):
             ),
             execution_mode=dto.execution_mode,
             execution_metadata=dict(dto.execution_metadata),
+            execution_group_id=dto.execution_group_id,
         )
 
 
