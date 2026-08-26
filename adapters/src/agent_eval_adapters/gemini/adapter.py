@@ -57,6 +57,10 @@ class GeminiAdapter(BaseAdapter):
         "-p",
     )
     stream_source: StreamSource | None = None
+    model_id: str | None = None
+    """Exact model pin. When set, passed as ``--model`` to the Gemini CLI."""
+    require_exact_model: bool = False
+    """When True, refuse to start without an explicit model pin."""
     _started_at: float | None = field(default=None, init=False, repr=False)
     _saw_completion: bool = field(default=False, init=False, repr=False)
     _saw_agent_error: bool = field(default=False, init=False, repr=False)
@@ -74,6 +78,20 @@ class GeminiAdapter(BaseAdapter):
                 "Prompt content is required for Gemini",
                 details={"run_id": context.run.run_id},
             )
+        effective_model = (context.model_id or self.model_id or "").strip()
+        if self.require_exact_model and not effective_model:
+            raise AdapterInitializationError(
+                "Exact model pin required for Gemini execution; "
+                "refusing to use an implicit CLI default",
+                details={"run_id": context.run.run_id},
+            )
+        if effective_model.lower() == "auto":
+            raise AdapterInitializationError(
+                "Gemini fixed routing cannot use model 'auto'",
+                details={"run_id": context.run.run_id, "model_id": effective_model},
+            )
+        if effective_model:
+            self.model_id = effective_model
 
     def start(self, context: ExecutionContext) -> None:
         self._started_at = time.monotonic()
@@ -85,6 +103,7 @@ class GeminiAdapter(BaseAdapter):
                 "gemini_adapter_start",
                 run_id=context.run.run_id,
                 correlation_id=context.correlation_id,
+                model_id=context.model_id or self.model_id,
             )
 
     def stream(self, context: ExecutionContext) -> Iterator[NativeObservation]:
@@ -146,12 +165,30 @@ class GeminiAdapter(BaseAdapter):
         """Last actionable provider/CLI failure message, if any."""
         return self._failure_detail
 
+    def _cli_command(self, context: ExecutionContext) -> tuple[str, ...]:
+        model = (context.model_id or self.model_id or "").strip()
+        if model:
+            args = list(self.extra_args)
+            try:
+                p_index = args.index("-p")
+            except ValueError:
+                return (self.cli_binary, *args, "--model", model, context.prompt)
+            return (
+                self.cli_binary,
+                *args[:p_index],
+                "--model",
+                model,
+                *args[p_index:],
+                context.prompt,
+            )
+        return (self.cli_binary, *self.extra_args, context.prompt)
+
     def _iter_lines(self, context: ExecutionContext) -> Iterator[str]:
         if self.stream_source is not None:
             yield from self.stream_source(context)
             return
 
-        command = (self.cli_binary, *self.extra_args, context.prompt)
+        command = self._cli_command(context)
         result = context.sandbox_exec.execute(
             context.sandbox,
             ExecutionRequest(

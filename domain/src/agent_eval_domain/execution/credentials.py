@@ -20,7 +20,8 @@ class CredentialBackend(StrEnum):
     ENVIRONMENT = "environment"
     """Operator-managed process environment (current production path)."""
 
-    # Future: VAULT = "vault", USER_SECRET_STORE = "user_secret_store"
+    USER_SECRET_STORE = "user_secret_store"
+    """User BYOK secrets encrypted at rest (Phase 13)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +88,14 @@ class CredentialReference:
             raise InvariantViolation(
                 "environment credential references require env_var_name",
                 code="CREDENTIAL_ENV_VAR_REQUIRED",
+            )
+        if (
+            self.backend is CredentialBackend.USER_SECRET_STORE
+            and self.env_var_name is not None
+        ):
+            raise InvariantViolation(
+                "user_secret_store credential references must not set env_var_name",
+                code="USER_SECRET_STORE_NO_ENV_VAR",
             )
 
     def to_public_dict(self) -> dict[str, str]:

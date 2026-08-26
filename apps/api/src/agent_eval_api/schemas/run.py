@@ -35,6 +35,13 @@ class CreateRunRequest(BaseModel):
     platform_version_id: str = Field(min_length=1)
     suite_id: str | None = None
     suite_version_id: str | None = None
+    # Phase 13 — optional provider / model / credential request (non-secret)
+    provider_key: str | None = None
+    gateway_key: str | None = None
+    model_id: str | None = None
+    routing_mode: str | None = None
+    provider_connection_id: str | None = None
+    credential_ref_id: str | None = None
 
 
 class CancelRunRequest(BaseModel):
@@ -174,6 +181,7 @@ class RunResponse(BaseModel):
     telemetry: RunTelemetryResponse | None = None
     execution_mode: str | None = None
     execution_metadata: dict[str, str] = Field(default_factory=dict)
+    runtime_request: dict[str, str] = Field(default_factory=dict)
     execution_group_id: str | None = None
 
     @classmethod
@@ -212,6 +220,7 @@ class RunResponse(BaseModel):
             ),
             execution_mode=dto.execution_mode,
             execution_metadata=dict(dto.execution_metadata),
+            runtime_request=dict(dto.runtime_request),
             execution_group_id=dto.execution_group_id,
         )
 

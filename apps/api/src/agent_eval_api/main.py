@@ -41,6 +41,7 @@ from agent_eval_api.routers.v1 import (
     platforms,
     projects,
     prompts,
+    providers,
     runs,
     suites,
 )
@@ -148,6 +149,7 @@ def create_app(
     app.include_router(graders.router)
     app.include_router(platforms.router)
     app.include_router(runs.router)
+    app.include_router(providers.router)
 
     return app
 

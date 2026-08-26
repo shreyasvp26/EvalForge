@@ -84,7 +84,11 @@ def _refetch_run(uow_factory: UnitOfWorkFactory, run_id: str) -> RunDTO:
 
 
 def _resolve_pins(
-    uow: UnitOfWork, command: CreateRunCommand, *, run_id: RunId
+    uow: UnitOfWork,
+    command: CreateRunCommand,
+    *,
+    run_id: RunId,
+    runtime_request: dict[str, str] | None = None,
 ) -> RunCreationCommand:
     """Load and assemble pinned versions for RunFactory."""
     project_id = ProjectId(require_non_empty(command.project_id, field="project_id"))
@@ -206,7 +210,103 @@ def _resolve_pins(
         execution_group_id=(
             command.execution_group_id.strip() if command.execution_group_id else None
         ),
+        runtime_request=(
+            runtime_request
+            if runtime_request is not None
+            else _runtime_request_from_command(command)
+        ),
     )
+
+
+def _runtime_request_from_command(
+    command: CreateRunCommand,
+    *,
+    credential_ref_id: str | None = None,
+    provider_key: str | None = None,
+) -> dict[str, str]:
+    from agent_eval_domain.execution.configuration import sanitize_runtime_request
+
+    raw = {
+        "provider_key": provider_key or command.provider_key or "",
+        "gateway_key": command.gateway_key or "",
+        "requested_model": command.model_id or "",
+        "routing_mode": command.routing_mode or "",
+        "provider_connection_id": command.provider_connection_id or "",
+        "credential_ref_id": credential_ref_id or command.credential_ref_id or "",
+    }
+    return sanitize_runtime_request(raw)
+
+
+def _validate_create_run_runtime(
+    command: CreateRunCommand,
+    provider_connections: object | None,
+) -> tuple[str | None, str | None]:
+    """Validate BYOK/model request. Returns (provider_key, credential_ref_id)."""
+    from agent_eval_application.model_catalog import (
+        find_model,
+        validate_model_for_adapter,
+    )
+
+    model_id = (command.model_id or "").strip()
+    provider_key = (command.provider_key or "").strip() or None
+    gateway_key = (command.gateway_key or "direct").strip() or "direct"
+    routing_mode = (command.routing_mode or "").strip()
+    connection_id = (command.provider_connection_id or "").strip()
+    credential_ref_id = (command.credential_ref_id or "").strip() or None
+
+    if connection_id:
+        if provider_connections is None:
+            raise ApplicationValidationError(
+                "Provider connections are not configured on this API",
+                code="PROVIDER_CONNECTIONS_UNAVAILABLE",
+            )
+        connection = provider_connections.get_for_user(  # type: ignore[attr-defined]
+            user_id=command.actor.id, connection_id=connection_id
+        )
+        if not connection.is_usable:
+            raise ApplicationValidationError(
+                "Provider connection is revoked",
+                code="PROVIDER_CONNECTION_REVOKED",
+            )
+        if provider_key and provider_key != connection.provider_key.value:
+            raise ApplicationValidationError(
+                "provider_key does not match the selected connection",
+                code="PROVIDER_CONNECTION_MISMATCH",
+            )
+        provider_key = connection.provider_key.value
+        credential_ref_id = connection.credential_ref_id
+
+    if model_id:
+        if routing_mode and routing_mode.lower() == "auto":
+            raise ApplicationValidationError(
+                "Exact model selection requires routing_mode=fixed",
+                code="MODEL_REQUIRES_FIXED_ROUTING",
+            )
+        if not provider_key:
+            raise ApplicationValidationError(
+                "provider_key is required when model_id is set",
+                code="PROVIDER_REQUIRED_FOR_MODEL",
+            )
+        if find_model(model_id) is None:
+            raise ApplicationValidationError(
+                f"Unknown or unsupported model {model_id!r}",
+                code="UNKNOWN_MODEL",
+            )
+        if provider_key == "google":
+            try:
+                validate_model_for_adapter(
+                    model_id=model_id,
+                    adapter_key="gemini_cli",
+                    provider_key=provider_key,
+                    gateway_key=gateway_key,
+                )
+            except Exception as exc:
+                raise ApplicationValidationError(
+                    str(exc),
+                    code="UNSUPPORTED_PROVIDER_MODEL",
+                ) from exc
+
+    return provider_key, credential_ref_id
 
 
 class CreateRun:
@@ -224,6 +324,7 @@ class CreateRun:
         run_queue: RunQueue,
         idempotency: IdempotencyStore | None = None,
         run_factory: RunFactory | None = None,
+        provider_connections: object | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._ids = ids
@@ -232,6 +333,7 @@ class CreateRun:
         self._run_queue = run_queue
         self._idempotency = idempotency
         self._run_factory = run_factory or RunFactory()
+        self._provider_connections = provider_connections
 
     def execute(self, command: CreateRunCommand) -> RunDTO:
         project_id = ProjectId(
@@ -244,6 +346,15 @@ class CreateRun:
                 "At least one grader version must be pinned",
                 code="NO_GRADERS_PINNED",
             )
+
+        provider_key, credential_ref_id = _validate_create_run_runtime(
+            command, self._provider_connections
+        )
+        runtime_request = _runtime_request_from_command(
+            command,
+            credential_ref_id=credential_ref_id,
+            provider_key=provider_key,
+        )
 
         replayed = replay_or_begin(
             self._idempotency,
@@ -259,7 +370,12 @@ class CreateRun:
 
         def work(uow):
             creation = with_domain_errors(
-                lambda: _resolve_pins(uow, command, run_id=run_id)
+                lambda: _resolve_pins(
+                    uow,
+                    command,
+                    run_id=run_id,
+                    runtime_request=runtime_request,
+                )
             )
             run = with_domain_errors(lambda: self._run_factory.create(creation))
             with_domain_errors(run.queue)

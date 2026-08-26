@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from agent_eval_application.ports.authorization import AuthorizationPort
 from agent_eval_application.ports.identity import IdentityPort
 from agent_eval_application.ports.oauth_identity import OAuthIdentityPort
+from agent_eval_application.ports.provider_connections import ProviderConnectionPort
 from agent_eval_application.use_cases.agent import (
     CreateAdapter,
     CreateAdapterDraftVersion,
@@ -62,6 +63,12 @@ from agent_eval_application.use_cases.project import (
     UpdateProjectSettings,
 )
 from agent_eval_application.use_cases.provenance import GetRunProvenance
+from agent_eval_application.use_cases.provider_connections import (
+    CreateProviderConnection,
+    ListProviderConnections,
+    ListProviders,
+    RevokeProviderConnection,
+)
 from agent_eval_application.use_cases.run import (
     CancelRun,
     CreateRun,
@@ -97,10 +104,12 @@ from agent_eval_infrastructure.auth import (
     InMemoryIdentityStore,
     InMemoryMembershipStore,
     InMemoryOAuthIdentityStore,
+    InMemoryProviderConnectionStore,
     MembershipStore,
     SqlAlchemyIdentityStore,
     SqlAlchemyMembershipStore,
     SqlAlchemyOAuthIdentityStore,
+    SqlAlchemyProviderConnectionStore,
     ensure_bootstrap_user,
 )
 
@@ -197,6 +206,12 @@ class ApplicationServices:
     diagnose_run_failure: DiagnoseRunFailure
     cancel_run: CancelRun
 
+    # Phase 13 — provider catalog + BYOK connections
+    list_providers: ListProviders
+    create_provider_connection: CreateProviderConnection
+    list_provider_connections: ListProviderConnections
+    revoke_provider_connection: RevokeProviderConnection
+
 
 @dataclass(slots=True)
 class ApiContainer:
@@ -210,6 +225,7 @@ class ApiContainer:
     identity: IdentityPort
     oauth_identities: OAuthIdentityPort
     oauth: OAuthService
+    provider_connections: ProviderConnectionPort
 
     def dispose(self) -> None:
         self.infrastructure.dispose()
@@ -296,10 +312,19 @@ def build_identity_store(
     return SqlAlchemyIdentityStore(infrastructure.session_factory)
 
 
+def build_provider_connection_store(
+    infrastructure: InfrastructureContainer,
+) -> ProviderConnectionPort:
+    if infrastructure.profile is RuntimeProfile.MEMORY:
+        return InMemoryProviderConnectionStore()
+    return SqlAlchemyProviderConnectionStore(infrastructure.session_factory)
+
+
 def build_application_services(
     infrastructure: InfrastructureContainer,
     auth: AuthorizationPort,
     identity: IdentityPort,
+    provider_connections: ProviderConnectionPort | None = None,
 ) -> ApplicationServices:
     """Construct Application use cases from Infrastructure ports."""
     uow = infrastructure.uow_factory
@@ -307,7 +332,18 @@ def build_application_services(
     events = infrastructure.events
     idempotency = infrastructure.idempotency
     run_queue = infrastructure.run_queue
-    create_run = CreateRun(uow, ids, auth, events, run_queue, idempotency)
+    connections = provider_connections or build_provider_connection_store(
+        infrastructure
+    )
+    create_run = CreateRun(
+        uow,
+        ids,
+        auth,
+        events,
+        run_queue,
+        idempotency,
+        provider_connections=connections,
+    )
 
     return ApplicationServices(
         login=Login(identity),
@@ -370,6 +406,10 @@ def build_application_services(
         build_benchmark_matrix=BuildBenchmarkMatrix(uow, auth),
         diagnose_run_failure=DiagnoseRunFailure(uow, auth),
         cancel_run=CancelRun(uow, auth, events),
+        list_providers=ListProviders(connections),
+        create_provider_connection=CreateProviderConnection(connections),
+        list_provider_connections=ListProviderConnections(connections),
+        revoke_provider_connection=RevokeProviderConnection(connections),
     )
 
 
@@ -382,6 +422,7 @@ def build_api_container(
     identity: IdentityPort | None = None,
     oauth_identities: OAuthIdentityPort | None = None,
     oauth: OAuthService | None = None,
+    provider_connections: ProviderConnectionPort | None = None,
     profile: RuntimeProfile | None = None,
 ) -> ApiContainer:
     """Assemble the Control Plane composition root."""
@@ -390,6 +431,7 @@ def build_api_container(
     store = memberships or build_membership_store(infra)
     identity_store = identity or build_identity_store(infra)
     oauth_store = oauth_identities or build_oauth_identity_store(infra)
+    connection_store = provider_connections or build_provider_connection_store(infra)
     if api_settings.auth_bootstrap_email and api_settings.auth_bootstrap_password:
         ensure_bootstrap_user(
             identity_store,
@@ -398,7 +440,12 @@ def build_api_container(
             display_name=api_settings.auth_bootstrap_display_name,
         )
     authorization = auth or ProjectRbacAuthorization(store)
-    services = build_application_services(infra, authorization, identity_store)
+    services = build_application_services(
+        infra,
+        authorization,
+        identity_store,
+        provider_connections=connection_store,
+    )
     oauth_service = oauth or build_oauth_service(
         settings=api_settings,
         infrastructure=infra,
@@ -414,4 +461,5 @@ def build_api_container(
         identity=identity_store,
         oauth_identities=oauth_store,
         oauth=oauth_service,
+        provider_connections=connection_store,
     )

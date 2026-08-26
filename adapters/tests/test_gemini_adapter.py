@@ -44,6 +44,7 @@ def _context(
     timeout_seconds: float = 30.0,
     prompt: str = "fix the bug",
     artifact_inline_max_bytes: int = 8_192,
+    model_id: str | None = None,
 ) -> ExecutionContext:
     return ExecutionContext(
         working_directory="/workspace",
@@ -64,6 +65,7 @@ def _context(
         ),
         prompt=prompt,
         cancellation=cancellation,
+        model_id=model_id,
     )
 
 
@@ -287,6 +289,44 @@ def test_gemini_benign_stderr_does_not_fail_success() -> None:
 def test_gemini_initialize_requires_prompt() -> None:
     with pytest.raises(AdapterInitializationError):
         run_adapter(GeminiAdapter(), _context(prompt=""), RecordingSink())
+
+
+def test_gemini_model_pin_appears_in_command() -> None:
+    stdout = "\n".join(SAMPLE_STREAM)
+    exec_port = MockSandboxExec(stdout=stdout)
+    result = run_adapter(
+        GeminiAdapter(model_id="gemini-2.5-pro"),
+        _context(sandbox_exec=exec_port),
+        RecordingSink(),
+    )
+    assert result.outcome is AdapterOutcome.COMPLETED
+    command = exec_port.commands[0]
+    assert "--model" in command
+    model_index = command.index("--model")
+    assert command[model_index + 1] == "gemini-2.5-pro"
+
+
+def test_gemini_context_model_id_pins_command() -> None:
+    stdout = "\n".join(SAMPLE_STREAM)
+    exec_port = MockSandboxExec(stdout=stdout)
+    result = run_adapter(
+        GeminiAdapter(),
+        _context(sandbox_exec=exec_port, model_id="gemini-2.0-flash"),
+        RecordingSink(),
+    )
+    assert result.outcome is AdapterOutcome.COMPLETED
+    command = exec_port.commands[0]
+    assert "--model" in command
+    assert command[command.index("--model") + 1] == "gemini-2.0-flash"
+
+
+def test_gemini_require_exact_model_fails_without_model() -> None:
+    with pytest.raises(AdapterInitializationError, match="Exact model pin required"):
+        run_adapter(
+            GeminiAdapter(require_exact_model=True),
+            _context(),
+            RecordingSink(),
+        )
 
 
 def test_gemini_parser_rejects_non_object() -> None:

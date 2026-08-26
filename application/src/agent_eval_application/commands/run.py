@@ -28,6 +28,13 @@ class CreateRunCommand:
     suite_version_id: str | None = None
     execution_group_id: str | None = None
     idempotency_key: str | None = None
+    # Phase 13 — provider/model/credential request (non-secret)
+    provider_key: str | None = None
+    gateway_key: str | None = None
+    model_id: str | None = None
+    routing_mode: str | None = None
+    provider_connection_id: str | None = None
+    credential_ref_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

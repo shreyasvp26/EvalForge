@@ -101,6 +101,12 @@ def create_run(
             suite_id=body.suite_id,
             suite_version_id=body.suite_version_id,
             idempotency_key=idempotency_key,
+            provider_key=body.provider_key,
+            gateway_key=body.gateway_key,
+            model_id=body.model_id,
+            routing_mode=body.routing_mode,
+            provider_connection_id=body.provider_connection_id,
+            credential_ref_id=body.credential_ref_id,
         )
     )
     return RunResponse.from_dto(dto)

@@ -28,6 +28,7 @@ from agent_eval_domain.execution.configuration import (
     ExecutionConfiguration,
     ExecutionMode,
     sanitize_execution_metadata,
+    sanitize_runtime_request,
 )
 from agent_eval_domain.execution.entities import (
     Artifact,
@@ -98,6 +99,8 @@ class EvaluationRun(AggregateRoot):
     cancellation_reason: str | None = None
     execution_mode: ExecutionMode | None = None
     execution_metadata: dict[str, str] = field(default_factory=dict)
+    runtime_request: dict[str, str] = field(default_factory=dict)
+    """Create-time provider/model/credential request (non-secret, Phase 13)."""
     execution_group_id: str | None = None
     """Correlates Runs created by one Suite/benchmark execute fan-out."""
     sandbox: Sandbox | None = None
@@ -111,6 +114,10 @@ class EvaluationRun(AggregateRoot):
         if self.execution_group_id is not None:
             cleaned = self.execution_group_id.strip()
             self.execution_group_id = cleaned or None
+        self.runtime_request = sanitize_runtime_request(dict(self.runtime_request))
+        self.execution_metadata = sanitize_execution_metadata(
+            dict(self.execution_metadata)
+        )
 
     @classmethod
     def create(
@@ -119,8 +126,14 @@ class EvaluationRun(AggregateRoot):
         run_id: RunId,
         pins: RunPins,
         execution_group_id: str | None = None,
+        runtime_request: dict[str, str] | None = None,
     ) -> EvaluationRun:
-        run = cls(id=run_id, pins=pins, execution_group_id=execution_group_id)
+        run = cls(
+            id=run_id,
+            pins=pins,
+            execution_group_id=execution_group_id,
+            runtime_request=sanitize_runtime_request(runtime_request),
+        )
         run._record(
             RunCreated(
                 run_id=run_id,

@@ -21,6 +21,10 @@ const SETTINGS_GROUPS: readonly {
     ],
   },
   {
+    label: "Providers",
+    items: [{ href: "/settings/providers", label: "Providers" }],
+  },
+  {
     label: "Preferences",
     items: [{ href: "/settings/preferences", label: "Preferences" }],
   },

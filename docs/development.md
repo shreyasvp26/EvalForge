@@ -65,7 +65,8 @@ Baseline keys today:
 | `OBJECT_STORAGE_*`         | S3-compatible Artifact store (endpoint optional) |
 | `ANTHROPIC_API_KEY`        | Anthropic judge provider (optional)              |
 | `OPENAI_API_KEY`           | OpenAI judge provider (optional)                 |
-| `GEMINI_API_KEY`           | Gemini judge provider (optional)                 |
+| `GEMINI_API_KEY`           | Gemini judge / live CLI (optional)               |
+| `PROVIDER_CREDENTIALS_KEY` | Fernet key for user BYOK secrets (≥ 32 chars)    |
 
 Service-specific schemas should **extend** the baseline, not replace it.
 Load Python settings via `agent_eval_shared.config.load_settings` /
@@ -223,10 +224,10 @@ Python package: `adapters/` → `agent_eval_adapters`.
 - **Claude Code Adapter:** observes `--output-format stream-json`, maps tool
   calls / file edits / shell / stdout / completion / errors; supports
   cancellation and timeout between stream lines.
-- **Additional production adapters (Phase 13):** Cursor (`agent`), Codex CLI
-  (`codex exec --json`), Gemini CLI (`gemini --output-format stream-json`),
-  and Aider (`aider --message`) — same Adapter SDK lifecycle and NDM
-  translation contract; injectable `stream_source` for mocked tests.
+- **Additional adapters:** Cursor / Codex / Aider SDKs exist but are **not**
+  live-verified. Gemini CLI is the live coding-agent path; Phase 13 adds
+  exact `--model` pinning and user BYOK provider connections (see
+  `docs/architecture/byok-provider-connections.md`).
 - Depends on `domain` (NDM), `shared`, and `sandbox` only.
 - **Must not** import Application, Infrastructure, Workers, Execution Engine,
   Graders, or FastAPI.
