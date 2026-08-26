@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import signal
+import threading
 import time
 from typing import cast
 
@@ -23,10 +24,22 @@ from agent_eval_shared.tracing import configure_tracing, shutdown_tracing
 from redis import Redis
 
 from agent_eval_workers.cancellation.redis_registry import RedisCancellationRegistry
+from agent_eval_workers.concurrency import resolve_worker_concurrency
 from agent_eval_workers.integration.process import build_production_worker
 from agent_eval_workers.queue_redis import RedisWorkerQueue
 
 logger = get_logger("agent_eval_workers.main")
+
+
+def _claim_loop(*, worker, worker_id: str, stopping: threading.Event) -> None:
+    while not stopping.is_set() and worker.state.value != "stopped":
+        try:
+            result = worker.run_once(block=True)
+        except Exception:
+            logger.exception("worker_run_once_unhandled_error", worker_id=worker_id)
+            result = None
+        if result is None and not stopping.is_set():
+            time.sleep(0.05)
 
 
 def run() -> None:
@@ -34,6 +47,7 @@ def run() -> None:
     environment = cast(Environment, os.environ.get("ENVIRONMENT", "production"))
     log_level = cast(LogLevel, os.environ.get("LOG_LEVEL", "info"))
     worker_id = os.environ.get("WORKER_ID", "worker-1")
+    concurrency = resolve_worker_concurrency()
 
     configure_logging(
         level=log_level,
@@ -87,49 +101,75 @@ def run() -> None:
     timeout_raw = os.environ.get("WORKER_EXECUTION_TIMEOUT_SECONDS")
     execution_timeout = float(timeout_raw) if timeout_raw else None
 
-    bundle = build_production_worker(
-        queue=worker_queue,
-        uow_factory=infra.uow_factory,
-        ids=infra.ids,
-        events=infra.events,
-        worker_id=worker_id,
-        execution_timeout_seconds=execution_timeout,
-        cancellation=cancellation,
-        object_storage=infra.object_storage,
-        event_fanout=event_fanout,
-    )
-    worker = bundle.worker
-
-    stopping = False
+    stopping = threading.Event()
+    bundles = []
+    threads: list[threading.Thread] = []
 
     def _stop(*_args: object) -> None:
-        nonlocal stopping
-        stopping = True
-        worker.request_stop()
+        stopping.set()
+        for bundle in bundles:
+            bundle.worker.request_stop()
         logger.info("worker_stop_requested", worker_id=worker_id)
 
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
 
-    logger.info(
-        "worker_started",
-        worker_id=worker_id,
-        sandbox_mode=bundle.sandbox_mode,
-        adapter_mode=bundle.adapter_mode,
-        actor_id=bundle.actor.id,
-    )
     try:
-        while not stopping and worker.state.value != "stopped":
-            try:
-                result = worker.run_once(block=True)
-            except Exception:
-                # Never let one malformed run kill the process.
-                logger.exception("worker_run_once_unhandled_error", worker_id=worker_id)
-                result = None
-            if result is None and not stopping:
-                time.sleep(0.05)
+        for index in range(concurrency):
+            slot_id = worker_id if concurrency == 1 else f"{worker_id}-{index + 1}"
+            bundle = build_production_worker(
+                queue=worker_queue,
+                uow_factory=infra.uow_factory,
+                ids=infra.ids,
+                events=infra.events,
+                worker_id=slot_id,
+                execution_timeout_seconds=execution_timeout,
+                cancellation=cancellation,
+                object_storage=infra.object_storage,
+                event_fanout=event_fanout,
+            )
+            bundles.append(bundle)
+            if concurrency == 1:
+                logger.info(
+                    "worker_started",
+                    worker_id=slot_id,
+                    sandbox_mode=bundle.sandbox_mode,
+                    adapter_mode=bundle.adapter_mode,
+                    actor_id=bundle.actor.id,
+                    concurrency=concurrency,
+                )
+                _claim_loop(worker=bundle.worker, worker_id=slot_id, stopping=stopping)
+            else:
+                thread = threading.Thread(
+                    target=_claim_loop,
+                    kwargs={
+                        "worker": bundle.worker,
+                        "worker_id": slot_id,
+                        "stopping": stopping,
+                    },
+                    name=f"evalforge-worker-{slot_id}",
+                    daemon=True,
+                )
+                threads.append(thread)
+
+        if concurrency > 1:
+            logger.info(
+                "worker_pool_started",
+                worker_id=worker_id,
+                concurrency=concurrency,
+                sandbox_mode=bundles[0].sandbox_mode,
+                adapter_mode=bundles[0].adapter_mode,
+                actor_id=bundles[0].actor.id,
+            )
+            for thread in threads:
+                thread.start()
+            while not stopping.is_set():
+                time.sleep(0.25)
+            for thread in threads:
+                thread.join(timeout=30.0)
     finally:
-        worker.shutdown()
+        for bundle in bundles:
+            bundle.worker.shutdown()
         client.close()
         infra.dispose()
         shutdown_tracing()

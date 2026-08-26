@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+import pytest
+from agent_eval_application.commands.agent import (
+    CreateAdapterCommand,
+    CreateAdapterDraftVersionCommand,
+    CreateAgentCommand,
+    CreateAgentDraftVersionCommand,
+    PublishAdapterVersionCommand,
+    PublishAgentVersionCommand,
+)
 from agent_eval_application.commands.run import (
     CompleteRunCommand,
     CreateRunCommand,
@@ -22,6 +31,14 @@ from agent_eval_application.commands.suite_execution import (
     CreateSuiteRunsCommand,
 )
 from agent_eval_application.queries.queries import GetRunProvenanceQuery
+from agent_eval_application.use_cases.agent import (
+    CreateAdapter,
+    CreateAdapterDraftVersion,
+    CreateAgent,
+    CreateAgentDraftVersion,
+    PublishAdapterVersion,
+    PublishAgentVersion,
+)
 from agent_eval_application.use_cases.provenance import GetRunProvenance
 from agent_eval_application.use_cases.run import (
     CompleteRun,
@@ -304,3 +321,100 @@ def test_suite_aggregate_evaluation_failed_vs_execution_failed(world):
     assert aggregate.objective_failed_count == 1
     assert aggregate.pass_rate == 0.0
     assert aggregate.cases[0].failure_category == "adapter_failure"
+
+
+def test_create_suite_runs_rejects_unsupported_adapter(world):
+    from agent_eval_application.errors import ApplicationValidationError
+
+    suite = CreateSuite(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateSuiteCommand(
+            actor=world["actor"],
+            project_id=world["project_id"],
+            name="Unsupported Adapter Bench",
+        )
+    )
+    draft = CreateSuiteDraftVersion(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateSuiteDraftVersionCommand(
+            actor=world["actor"],
+            suite_id=suite.id,
+            composition=(
+                SuiteCompositionEntryInput(
+                    case_version_id=world["case_version_id"],
+                    position=0,
+                    case_project_id=world["project_id"],
+                ),
+            ),
+        )
+    )
+    published = PublishSuiteVersion(
+        world["uow"], world["auth"], world["events"]
+    ).execute(
+        PublishSuiteVersionCommand(
+            actor=world["actor"], suite_id=suite.id, version_id=draft.id
+        )
+    )
+
+    agent = CreateAgent(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(CreateAgentCommand(actor=world["actor"], name="Cursor Agent"))
+    adapter = CreateAdapter(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateAdapterCommand(actor=world["actor"], agent_id=agent.id, name="cursor")
+    )
+    agent_version = CreateAgentDraftVersion(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateAgentDraftVersionCommand(
+            actor=world["actor"], agent_id=agent.id, label="1.0"
+        )
+    )
+    agent_version = PublishAgentVersion(
+        world["uow"], world["auth"], world["events"]
+    ).execute(
+        PublishAgentVersionCommand(
+            actor=world["actor"], agent_id=agent.id, version_id=agent_version.id
+        )
+    )
+    adapter_version = CreateAdapterDraftVersion(
+        world["uow"], world["ids"], world["auth"], world["events"]
+    ).execute(
+        CreateAdapterDraftVersionCommand(
+            actor=world["actor"], adapter_id=adapter.id, label="1.0"
+        )
+    )
+    adapter_version = PublishAdapterVersion(
+        world["uow"], world["auth"], world["events"]
+    ).execute(
+        PublishAdapterVersionCommand(
+            actor=world["actor"],
+            adapter_id=adapter.id,
+            version_id=adapter_version.id,
+        )
+    )
+
+    create_run = CreateRun(
+        world["uow"],
+        world["ids"],
+        world["auth"],
+        world["events"],
+        world["queue"],
+        world["idempotency"],
+    )
+    with pytest.raises(ApplicationValidationError) as exc:
+        CreateSuiteRuns(world["uow"], world["auth"], create_run).execute(
+            CreateSuiteRunsCommand(
+                actor=world["actor"],
+                suite_id=suite.id,
+                suite_version_id=published.id,
+                agent_id=agent.id,
+                agent_version_id=agent_version.id,
+                adapter_version_id=adapter_version.id,
+                platform_version_id=world["platform_version_id"],
+            )
+        )
+    assert exc.value.code == "ADAPTER_UNSUPPORTED"
