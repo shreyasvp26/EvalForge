@@ -47,7 +47,8 @@ from docker_fakes import FakeDockerEngine
 pytest_plugins = ["test_run_use_cases"]
 
 
-def _create_run(world, *, grader_refs, platform_version_id="platform-phase6"):
+def _create_run(world, *, grader_refs, platform_version_id=None):
+    platform_version_id = platform_version_id or world["platform_version_id"]
     return CreateRun(
         world["uow"],
         world["ids"],
@@ -108,7 +109,7 @@ def test_deterministic_benchmark_produces_structured_scores(world) -> None:
     )
     assert provenance.commit_sha == "deadbeef"
     assert provenance.adapter_key == "claude_code"
-    assert provenance.platform_version_id == "platform-phase6"
+    assert provenance.platform_version_id == world["platform_version_id"]
     agg = aggregate_scores(finished.scores)
     assert agg.score_count == finished.produced_score_count
 

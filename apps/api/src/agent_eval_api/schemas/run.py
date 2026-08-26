@@ -172,6 +172,8 @@ class RunResponse(BaseModel):
     is_partially_graded: bool
     scores: list[ScoreResponse]
     telemetry: RunTelemetryResponse | None = None
+    execution_mode: str | None = None
+    execution_metadata: dict[str, str] = Field(default_factory=dict)
 
     @classmethod
     def from_dto(cls, dto: RunDTO) -> RunResponse:
@@ -207,6 +209,8 @@ class RunResponse(BaseModel):
                 estimated_cost=None,
                 provider_usage_available=telem.provider_usage_available,
             ),
+            execution_mode=dto.execution_mode,
+            execution_metadata=dict(dto.execution_metadata),
         )
 
 
@@ -253,6 +257,9 @@ class RunProvenanceResponse(BaseModel):
     adapter_name: str | None
     adapter_version_label: str | None
     adapter_key: str | None
+    platform_name: str | None = None
+    platform_version_label: str | None = None
+    platform_policy_summaries: dict[str, dict[str, str]] = Field(default_factory=dict)
     grader_summaries: list[dict[str, Any]]
     score_aggregate: ScoreAggregateResponse
     expected_grader_count: int
@@ -262,6 +269,9 @@ class RunProvenanceResponse(BaseModel):
     event_count: int
     artifact_count: int
     execution_mode: str | None = None
+    execution_metadata: dict[str, str] = Field(default_factory=dict)
+    benchmark_key: str | None = None
+    suite_version_id_as_benchmark: str | None = None
     reproducibility: ReproducibilityResponse
 
 
@@ -288,6 +298,9 @@ class RunComparisonEntryResponse(BaseModel):
     telemetry: RunTelemetryResponse
     score_aggregate: ScoreAggregateResponse
     duration_ms: int | None
+    execution_mode: str | None = None
+    benchmark_key: str | None = None
+    suite_version_id: str | None = None
 
 
 class RunComparisonDeltaResponse(BaseModel):
@@ -300,12 +313,25 @@ class RunComparisonDeltaResponse(BaseModel):
     pin_differences: list[str]
 
 
+class RunComparabilityResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    compatible: bool
+    shared_dimensions: list[str]
+    agent_difference_dimensions: list[str]
+    mismatches: list[str]
+    expected_agent_differences: list[str]
+    benchmark_key: str | None
+    notes: str
+
+
 class RunComparisonResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     baseline_run_id: str
     runs: list[RunComparisonEntryResponse]
     deltas: list[RunComparisonDeltaResponse]
+    comparability: RunComparabilityResponse
 
 
 class FailingGraderReasonResponse(BaseModel):

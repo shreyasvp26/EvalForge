@@ -29,6 +29,8 @@ EXPECTED_TABLES = {
     "adapter_versions",
     "graders",
     "grader_versions",
+    "platforms",
+    "platform_versions",
     "runs",
     "execution_events",
     "artifacts",

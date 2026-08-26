@@ -203,6 +203,8 @@ class SdkAdapterBridge:
             self.started.append(run_id)
             if self.after_start is not None:
                 self.after_start(run_id)
+        except RecoverableExecutionError:
+            raise
         except AdapterError as exc:
             raise RecoverableExecutionError(
                 f"Adapter start failed for {run_id.value}: {exc}",

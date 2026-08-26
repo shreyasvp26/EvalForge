@@ -45,6 +45,13 @@ from agent_eval_application.use_cases.grader import (
     ListGraders,
     PublishGraderVersion,
 )
+from agent_eval_application.use_cases.platform import (
+    CreatePlatform,
+    CreatePlatformDraftVersion,
+    GetPlatform,
+    ListPlatforms,
+    PublishPlatformVersion,
+)
 from agent_eval_application.use_cases.project import (
     CreateProject,
     DeprecateProject,
@@ -164,6 +171,13 @@ class ApplicationServices:
     list_graders: ListGraders
     create_grader_draft_version: CreateGraderDraftVersion
     publish_grader_version: PublishGraderVersion
+
+    # Platforms
+    create_platform: CreatePlatform
+    get_platform: GetPlatform
+    list_platforms: ListPlatforms
+    create_platform_draft_version: CreatePlatformDraftVersion
+    publish_platform_version: PublishPlatformVersion
 
     # Runs (public surface only — worker lifecycle stays off REST)
     create_run: CreateRun
@@ -330,6 +344,13 @@ def build_application_services(
         list_graders=ListGraders(uow, auth),
         create_grader_draft_version=CreateGraderDraftVersion(uow, ids, auth, events),
         publish_grader_version=PublishGraderVersion(uow, auth, events),
+        create_platform=CreatePlatform(uow, ids, auth, events, idempotency),
+        get_platform=GetPlatform(uow, auth),
+        list_platforms=ListPlatforms(uow, auth),
+        create_platform_draft_version=CreatePlatformDraftVersion(
+            uow, ids, auth, events
+        ),
+        publish_platform_version=PublishPlatformVersion(uow, auth, events),
         create_run=create_run,
         get_run=GetRun(uow, auth),
         list_runs_by_project=ListRunsByProject(uow, auth),

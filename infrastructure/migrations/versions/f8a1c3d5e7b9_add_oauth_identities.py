@@ -1,7 +1,7 @@
 """add oauth identities and nullable password hash
 
 Revision ID: f8a1c3d5e7b9
-Revises: e7b4a1c05f29
+Revises: 9a4d7c2e5b81
 Create Date: 2026-08-26 12:00:00.000000
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "f8a1c3d5e7b9"
-down_revision: str | None = "e7b4a1c05f29"
+down_revision: str | None = "9a4d7c2e5b81"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

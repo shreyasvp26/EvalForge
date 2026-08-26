@@ -48,7 +48,7 @@ def test_case_reference_resolver_loads_pinned_repo(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     resolver = CaseReferenceResolver(
@@ -129,7 +129,7 @@ def test_process_worker_fails_when_git_fails(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()
@@ -188,7 +188,7 @@ def test_process_worker_materializes_before_adapter(world) -> None:
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-v1",
+            platform_version_id=world["platform_version_id"],
         )
     )
     queue = InMemoryWorkerQueue()

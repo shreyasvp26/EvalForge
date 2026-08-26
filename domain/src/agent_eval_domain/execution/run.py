@@ -24,6 +24,11 @@ from agent_eval_domain.common.ids import (
     ScoreId,
     SuiteVersionId,
 )
+from agent_eval_domain.execution.configuration import (
+    ExecutionConfiguration,
+    ExecutionMode,
+    sanitize_execution_metadata,
+)
 from agent_eval_domain.execution.entities import (
     Artifact,
     ArtifactKind,
@@ -91,6 +96,8 @@ class EvaluationRun(AggregateRoot):
     failure_reason: str | None = None
     failure_category: FailureCategory | None = None
     cancellation_reason: str | None = None
+    execution_mode: ExecutionMode | None = None
+    execution_metadata: dict[str, str] = field(default_factory=dict)
     sandbox: Sandbox | None = None
     _execution_events: list[ExecutionEvent] = field(default_factory=list, repr=False)
     _artifacts: list[Artifact] = field(default_factory=list, repr=False)
@@ -381,6 +388,41 @@ class EvaluationRun(AggregateRoot):
                 details={"status": self.status.value},
             )
         self.cost = cost
+
+    def record_execution_configuration(
+        self,
+        configuration: ExecutionConfiguration,
+    ) -> None:
+        """Persist the effective execution configuration used for this Run.
+
+        Immutable once written — first write wins for idempotent worker retries.
+        Never accepts secrets; metadata is allowlist-sanitized.
+        """
+        if self.execution_mode is not None:
+            if (
+                self.execution_mode == configuration.mode
+                and self.execution_metadata == configuration.metadata
+            ):
+                return
+            raise InvariantViolation(
+                "Run execution configuration is immutable once written",
+                code="EXECUTION_CONFIG_ALREADY_RECORDED",
+            )
+        if self.status not in {
+            RunStatus.QUEUED,
+            RunStatus.RUNNING,
+            RunStatus.GRADING,
+        }:
+            raise InvariantViolation(
+                "Execution configuration may only be recorded while Queued, "
+                "Running, or Grading",
+                code="EXECUTION_CONFIG_WRONG_PHASE",
+                details={"status": self.status.value},
+            )
+        self.execution_mode = configuration.mode
+        self.execution_metadata = sanitize_execution_metadata(
+            dict(configuration.metadata)
+        )
 
     # --- internals ------------------------------------------------------
 

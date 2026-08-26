@@ -22,6 +22,8 @@ from agent_eval_domain.common.ids import (
     CaseId,
     CaseVersionId,
     GraderId,
+    PlatformId,
+    PlatformVersionId,
     ProjectId,
     RunId,
     SuiteId,
@@ -32,6 +34,7 @@ from agent_eval_domain.evaluation_management.project import Project
 from agent_eval_domain.evaluation_management.suite import EvaluationSuite, SuiteVersion
 from agent_eval_domain.execution.run import EvaluationRun
 from agent_eval_domain.grading.grader import Grader
+from agent_eval_domain.platform.platform import Platform, PlatformVersion
 
 
 class InMemoryIdGenerator:
@@ -122,6 +125,7 @@ class InMemoryUnitOfWork:
         self.agents = store.agents
         self.adapters = store.adapters
         self.graders = store.graders
+        self.platforms = store.platforms
         self.runs = store.runs
         self.committed = False
         self.rolled_back = False
@@ -322,6 +326,44 @@ class _GraderRepo:
         return list(self._data.values())
 
 
+class _PlatformRepo:
+    def __init__(
+        self,
+        data: dict[str, Platform],
+        versions: dict[str, PlatformVersion],
+    ) -> None:
+        self._data = data
+        self._versions = versions
+
+    def get(self, platform_id: PlatformId) -> Platform:
+        try:
+            return self._data[platform_id.value]
+        except KeyError as exc:
+            raise NotFoundError(
+                "Platform not found",
+                entity="Platform",
+                entity_id=platform_id.value,
+            ) from exc
+
+    def get_version(self, version_id: PlatformVersionId) -> PlatformVersion:
+        try:
+            return self._versions[version_id.value]
+        except KeyError as exc:
+            raise NotFoundError(
+                "Platform version not found",
+                entity="PlatformVersion",
+                entity_id=version_id.value,
+            ) from exc
+
+    def save(self, platform: Platform) -> None:
+        self._data[platform.id.value] = platform
+        for version in platform.versions:
+            self._versions[version.id.value] = version
+
+    def list_all(self) -> list[Platform]:
+        return list(self._data.values())
+
+
 class _RunRepo:
     def __init__(self, data: dict[str, EvaluationRun]) -> None:
         self._data = data
@@ -355,6 +397,8 @@ class SharedStore:
         self._agents: dict[str, Agent] = {}
         self._adapters: dict[str, Adapter] = {}
         self._graders: dict[str, Grader] = {}
+        self._platforms: dict[str, Platform] = {}
+        self._platform_versions: dict[str, PlatformVersion] = {}
         self._runs: dict[str, EvaluationRun] = {}
         self._backup: dict[str, Any] | None = None
 
@@ -364,6 +408,7 @@ class SharedStore:
         self.agents = _AgentRepo(self._agents)
         self.adapters = _AdapterRepo(self._adapters)
         self.graders = _GraderRepo(self._graders)
+        self.platforms = _PlatformRepo(self._platforms, self._platform_versions)
         self.runs = _RunRepo(self._runs)
 
     def begin(self) -> None:
@@ -376,6 +421,8 @@ class SharedStore:
             "agents": copy.deepcopy(self._agents),
             "adapters": copy.deepcopy(self._adapters),
             "graders": copy.deepcopy(self._graders),
+            "platforms": copy.deepcopy(self._platforms),
+            "platform_versions": copy.deepcopy(self._platform_versions),
             "runs": copy.deepcopy(self._runs),
         }
 
@@ -401,6 +448,32 @@ class SharedStore:
         self._adapters.update(self._backup["adapters"])
         self._graders.clear()
         self._graders.update(self._backup["graders"])
+        self._platforms.clear()
+        self._platforms.update(self._backup["platforms"])
+        self._platform_versions.clear()
+        self._platform_versions.update(self._backup["platform_versions"])
         self._runs.clear()
         self._runs.update(self._backup["runs"])
         self._backup = None
+
+
+def add_published_platform(
+    store: SharedStore, *, version_id: str = "platform-1.0.0"
+) -> PlatformVersion:
+    """Seed a real pinnable platform version for run-oriented tests."""
+    platform = Platform.create(
+        platform_id=PlatformId(f"{version_id}-catalog"),
+        name="Test Platform",
+    )
+    version = platform.create_draft_version(
+        version_id=PlatformVersionId(version_id),
+        label="Test Platform v1",
+        sandbox_policy={"network_mode": "isolated"},
+        execution_policy={"runner": "test"},
+        timeout_policy={"default_timeout_seconds": "60"},
+        environment_policy={"allowlist_ref": "test-default"},
+        grading_policy={"mode": "deterministic"},
+    )
+    platform.publish_version(version.id)
+    store.platforms.save(platform)
+    return store.platforms.get_version(version.id)
