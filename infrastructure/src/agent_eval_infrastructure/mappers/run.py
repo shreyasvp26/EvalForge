@@ -22,6 +22,7 @@ from agent_eval_domain.common.ids import (
 from agent_eval_domain.execution.configuration import (
     ExecutionMode,
     sanitize_execution_metadata,
+    sanitize_runtime_request,
 )
 from agent_eval_domain.execution.entities import (
     Artifact,
@@ -162,6 +163,12 @@ def run_to_domain(
         execution_metadata=sanitize_execution_metadata(
             {str(k): str(v) for k, v in dict(row.execution_metadata or {}).items()}
         ),
+        runtime_request=sanitize_runtime_request(
+            {
+                str(k): str(v)
+                for k, v in dict(getattr(row, "runtime_request", None) or {}).items()
+            }
+        ),
         execution_group_id=getattr(row, "execution_group_id", None),
         sandbox=None,
         _execution_events=mapped_events,
@@ -187,6 +194,7 @@ def apply_run_to_orm(run: EvaluationRun, row: RunOrm) -> None:
         run.execution_mode.value if run.execution_mode is not None else None
     )
     row.execution_metadata = sanitize_execution_metadata(dict(run.execution_metadata))
+    row.runtime_request = sanitize_runtime_request(dict(run.runtime_request))
     if run.cost is not None:
         row.input_tokens = run.cost.input_tokens
         row.output_tokens = run.cost.output_tokens

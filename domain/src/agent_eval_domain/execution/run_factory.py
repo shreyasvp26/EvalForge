@@ -33,6 +33,7 @@ class RunCreationCommand:
     suite_version: SuiteVersion | None = None
     suite_project_id: ProjectId | None = None
     execution_group_id: str | None = None
+    runtime_request: dict[str, str] | None = None
 
 
 class RunFactory:
@@ -94,6 +95,7 @@ class RunFactory:
             run_id=command.run_id,
             pins=pins,
             execution_group_id=command.execution_group_id,
+            runtime_request=command.runtime_request,
         )
 
     def _assert_project_scope(self, command: RunCreationCommand) -> None:

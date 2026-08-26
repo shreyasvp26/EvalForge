@@ -21,19 +21,27 @@ from agent_eval_infrastructure.auth.oauth_identity import (
     OAuthIdentityOrm,
     SqlAlchemyOAuthIdentityStore,
 )
+from agent_eval_infrastructure.auth.provider_connection import (
+    InMemoryProviderConnectionStore,
+    ProviderConnectionOrm,
+    SqlAlchemyProviderConnectionStore,
+)
 
 __all__ = [
     "ROLE_RANK",
     "InMemoryIdentityStore",
     "InMemoryOAuthIdentityStore",
     "InMemoryMembershipStore",
+    "InMemoryProviderConnectionStore",
     "OAuthIdentityOrm",
     "MembershipStore",
     "ProjectMembershipOrm",
     "ProjectRole",
+    "ProviderConnectionOrm",
     "SqlAlchemyIdentityStore",
     "SqlAlchemyOAuthIdentityStore",
     "SqlAlchemyMembershipStore",
+    "SqlAlchemyProviderConnectionStore",
     "UserOrm",
     "ensure_bootstrap_user",
     "hash_password",

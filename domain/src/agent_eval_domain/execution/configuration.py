@@ -25,8 +25,45 @@ ALLOWED_EXECUTION_METADATA_KEYS = frozenset(
         "canonical_evaluation",
         "credential_ref_id",
         "fallback_used",
+        # Phase 13 — user BYOK connection identity (non-secret)
+        "provider_connection_id",
     }
 )
+
+# Requested runtime configuration captured at CreateRun (non-secret).
+ALLOWED_RUNTIME_REQUEST_KEYS = frozenset(
+    {
+        "provider_key",
+        "gateway_key",
+        "requested_model",
+        "routing_mode",
+        "credential_ref_id",
+        "provider_connection_id",
+    }
+)
+
+
+def sanitize_runtime_request(
+    request: dict[str, str] | None,
+) -> dict[str, str]:
+    """Keep only allowlisted non-secret create-time runtime fields."""
+    if not request:
+        return {}
+    cleaned: dict[str, str] = {}
+    for raw_key, raw_value in request.items():
+        key = str(raw_key).strip()
+        if key not in ALLOWED_RUNTIME_REQUEST_KEYS:
+            continue
+        value = str(raw_value).strip()
+        if not value:
+            continue
+        if any(
+            marker in value.lower()
+            for marker in ("sk-", "api_key=", "bearer ", "password=")
+        ):
+            continue
+        cleaned[key] = value
+    return cleaned
 
 
 class ExecutionMode(StrEnum):
