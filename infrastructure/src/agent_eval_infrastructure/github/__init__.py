@@ -5,9 +5,15 @@ from agent_eval_infrastructure.github.publisher import (
     GitHubApiError,
     HttpGitHubPullRequestPublisher,
 )
+from agent_eval_infrastructure.github.repository_service import (
+    GitHubRepositoryApiError,
+    HttpGitHubRepositoryService,
+)
 
 __all__ = [
     "FakeGitHubPullRequestPublisher",
     "GitHubApiError",
+    "GitHubRepositoryApiError",
     "HttpGitHubPullRequestPublisher",
+    "HttpGitHubRepositoryService",
 ]

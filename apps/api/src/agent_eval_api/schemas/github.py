@@ -64,3 +64,34 @@ class PublicationResponse(BaseModel):
     eligibility: dict[str, Any] = Field(default_factory=dict)
     publication: dict[str, Any] = Field(default_factory=dict)
     run: dict[str, Any] = Field(default_factory=dict)
+
+
+class GitHubRepoSummaryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    owner: str
+    name: str
+    full_name: str
+    default_branch: str
+    private: bool
+    html_url: str
+    description: str | None = None
+
+
+class GitHubBranchResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    protected: bool = False
+
+
+class GitHubCommitResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sha: str
+    short_sha: str
+    message: str
+    committed_at: str | None = None
+    html_url: str | None = None
+    repository_url: str
+    branch: str

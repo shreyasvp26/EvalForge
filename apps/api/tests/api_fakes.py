@@ -485,6 +485,34 @@ def mock_services() -> MagicMock:
         )
     )
 
+    from agent_eval_application.ports.github_repository import (
+        GitHubBranchInfo,
+        GitHubCommitInfo,
+        GitHubRepoSummary,
+    )
+
+    sample_repo = GitHubRepoSummary(
+        owner="octocat",
+        name="Hello-World",
+        full_name="octocat/Hello-World",
+        default_branch="main",
+        private=False,
+        html_url="https://github.com/octocat/Hello-World",
+        description="demo",
+    )
+    services.list_github_repositories.execute.return_value = (sample_repo,)
+    services.list_github_branches.execute.return_value = (
+        GitHubBranchInfo(name="main", protected=True),
+        GitHubBranchInfo(name="develop", protected=False),
+    )
+    services.get_github_branch_head.execute.return_value = GitHubCommitInfo(
+        sha="abcdef0123456789abcdef0123456789abcdef01",
+        short_sha="abcdef0",
+        message="Initial commit",
+        committed_at="2026-08-26T00:00:00Z",
+        html_url="https://github.com/octocat/Hello-World/commit/abcdef0123456789abcdef0123456789abcdef01",
+    )
+
     # Remaining use cases return Magics; individual tests override as needed.
     return services
 
