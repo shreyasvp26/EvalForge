@@ -15,6 +15,7 @@ import type { LucideIcon } from "@agent-eval/ui";
 export type NavHref =
   | "/"
   | "/projects"
+  | "/benchmarks"
   | "/suites"
   | "/cases"
   | "/runs"
@@ -76,6 +77,13 @@ export const navSections: NavSection[] = [
         icon: Play,
         chord: "G R",
         keywords: ["run", "create run", "new run", "execution", "timeline"],
+      },
+      {
+        href: "/benchmarks",
+        label: "Benchmarks",
+        icon: FlaskConical,
+        chord: "G B",
+        keywords: ["benchmark", "suite", "catalog", "coding benchmark"],
       },
       {
         href: "/agents",
@@ -175,6 +183,17 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       }
       return crumbs;
     }
+    if (rest.startsWith("benchmarks")) {
+      crumbs.push({ label: "Project", href: `/projects/${projectId}` });
+      const benchRest = rest.slice("benchmarks".length);
+      if (benchRest === "" || benchRest === "/") {
+        crumbs.push({ label: "Benchmarks" });
+      } else {
+        crumbs.push({ label: "Benchmarks", href: `/projects/${projectId}/benchmarks` });
+        crumbs.push({ label: "Benchmark" });
+      }
+      return crumbs;
+    }
     if (rest.startsWith("cases")) {
       crumbs.push({ label: "Project", href: `/projects/${projectId}` });
       const caseRest = rest.slice("cases".length);
@@ -193,8 +212,10 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
     return crumbs;
   }
 
-  if (pathname === "/suites" || pathname === "/cases") {
-    crumbs.push({ label: pathname === "/suites" ? "Suites" : "Cases" });
+  if (pathname === "/suites" || pathname === "/cases" || pathname === "/benchmarks") {
+    crumbs.push({
+      label: pathname === "/suites" ? "Suites" : pathname === "/cases" ? "Cases" : "Benchmarks",
+    });
     return crumbs;
   }
 

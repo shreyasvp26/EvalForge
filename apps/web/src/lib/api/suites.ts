@@ -26,6 +26,8 @@ export interface Suite {
   project_id: string;
   name: string;
   description: string;
+  catalog_key?: string;
+  catalog_visible?: boolean;
   status: SuiteStatus;
   created_at: string;
   active_version_id: string | null;
@@ -139,4 +141,93 @@ export async function deprecateSuite(token: string, suiteId: string): Promise<Su
     method: "POST",
     token,
   });
+}
+
+export interface ExecuteSuiteInput {
+  agent_id: string;
+  agent_version_id: string;
+  adapter_version_id: string;
+  platform_version_id: string;
+  execution_group_id?: string;
+}
+
+export interface SuiteExecution {
+  suite_id: string;
+  suite_version_id: string;
+  execution_group_id: string;
+  total_cases: number;
+  runs: {
+    case_version_id: string;
+    position: number;
+    run: { id: string; status: string };
+  }[];
+}
+
+export interface SuiteAggregate {
+  suite_id: string;
+  suite_version_id: string;
+  execution_group_id: string | null;
+  total_cases: number;
+  run_count: number;
+  completed: number;
+  failed: number;
+  execution_failed: number;
+  cancelled: number;
+  queued_or_running: number;
+  passed: number;
+  evaluation_failed: number;
+  objective_failed_count: number;
+  pass_rate: number | null;
+  average_score: number | null;
+  cases: {
+    case_version_id: string;
+    run_id: string;
+    status: string;
+    aggregate: {
+      passed: boolean | null;
+      overall_score: number | null;
+      objective_failed: boolean;
+      score_count: number;
+      reason: string;
+    };
+    failure_reason: string | null;
+    failure_category: string | null;
+  }[];
+}
+
+export async function executeSuiteVersion(
+  token: string,
+  suiteId: string,
+  versionId: string,
+  input: ExecuteSuiteInput,
+  idempotencyKey?: string,
+): Promise<SuiteExecution> {
+  const headers: Record<string, string> = {};
+  if (idempotencyKey) {
+    headers["Idempotency-Key"] = idempotencyKey;
+  }
+  return apiRequest<SuiteExecution>(
+    `/v1/suites/${encodeURIComponent(suiteId)}/versions/${encodeURIComponent(versionId)}/execute`,
+    {
+      method: "POST",
+      token,
+      headers,
+      body: input,
+    },
+  );
+}
+
+export async function getSuiteVersionResults(
+  token: string,
+  suiteId: string,
+  versionId: string,
+  executionGroupId?: string,
+): Promise<SuiteAggregate> {
+  const search = new URLSearchParams();
+  if (executionGroupId) search.set("execution_group_id", executionGroupId);
+  const qs = search.toString();
+  return apiRequest<SuiteAggregate>(
+    `/v1/suites/${encodeURIComponent(suiteId)}/versions/${encodeURIComponent(versionId)}/results${qs ? `?${qs}` : ""}`,
+    { method: "GET", token },
+  );
 }

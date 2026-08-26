@@ -9,6 +9,7 @@ describe("nav-config", () => {
       "/",
       "/projects",
       "/runs",
+      "/benchmarks",
       "/agents",
       "/graders",
       "/settings",
