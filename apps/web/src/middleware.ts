@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 import { hasSessionCookie } from "@/lib/auth/session";
 
-const PUBLIC_PREFIXES = ["/login", "/_next", "/favicon.ico"];
+const PUBLIC_PREFIXES = ["/login", "/auth/callback", "/_next", "/favicon.ico"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

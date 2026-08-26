@@ -24,6 +24,12 @@ UNAUTHENTICATED_PATHS = frozenset(
         "/openapi.json",
         "/metrics",
         "/v1/auth/login",
+        "/v1/auth/providers",
+        "/v1/auth/oauth/exchange",
+        "/v1/auth/google/authorize",
+        "/v1/auth/google/callback",
+        "/v1/auth/github/authorize",
+        "/v1/auth/github/callback",
     }
 )
 

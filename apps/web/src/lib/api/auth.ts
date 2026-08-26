@@ -38,6 +38,13 @@ export async function fetchCurrentUser(
   return apiRequest<AuthUser>("/v1/auth/me", request);
 }
 
+export async function exchangeOAuthSession(code: string): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>("/v1/auth/oauth/exchange", {
+    method: "POST",
+    body: { code },
+  });
+}
+
 export async function logoutRequest(token: string): Promise<undefined> {
   return apiRequest<undefined>("/v1/auth/logout", {
     method: "POST",

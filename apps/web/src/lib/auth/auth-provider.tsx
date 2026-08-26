@@ -14,7 +14,12 @@ import type { AuthUser } from "@/lib/api/auth";
 import type { AuthStatus } from "@/lib/auth/auth-types";
 import type { ReactNode } from "react";
 
-import { fetchCurrentUser, loginRequest, logoutRequest } from "@/lib/api/auth";
+import {
+  fetchCurrentUser,
+  loginRequest,
+  logoutRequest,
+  exchangeOAuthSession,
+} from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { AUTH_RESTORE_TIMEOUT_MS } from "@/lib/auth/constants";
 import { resolveSessionRestore } from "@/lib/auth/resolve-session-restore";
@@ -35,6 +40,7 @@ interface AuthContextValue {
   error: string | null;
   restoreError: string | null;
   login: (email: string, password: string) => Promise<void>;
+  completeOAuthSession: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
   /** Clear local session and move to unauthenticated (recovery CTA). */
@@ -158,6 +164,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const completeOAuthSession = useCallback(async (code: string) => {
+    setError(null);
+    setRestoreError(null);
+    try {
+      const result = await exchangeOAuthSession(code);
+      persistAccessToken(result.access_token, result.expires_in);
+      setToken(result.access_token);
+      setUser(result.user);
+      setStatus("authenticated");
+    } catch (cause) {
+      safeClearSession();
+      setToken(null);
+      setUser(null);
+      setStatus("unauthenticated");
+      if (cause instanceof ApiError) {
+        setError(cause.message);
+      } else {
+        setError("Sign in failed. Please try again.");
+      }
+      throw cause;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     const current = token ?? readAccessToken();
     try {
@@ -213,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       restoreError,
       login,
+      completeOAuthSession,
       logout,
       clearError,
       dismissRestoreFailure,
@@ -225,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       restoreError,
       login,
+      completeOAuthSession,
       logout,
       clearError,
       dismissRestoreFailure,

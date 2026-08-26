@@ -87,4 +87,28 @@ test.describe("critical product path", () => {
     await page.getByRole("link", { name: "Launch run" }).first().click();
     await expect(page).toHaveURL(/\/runs\/new|\/projects\/[^/]+/);
   });
+
+  test("login page can render OAuth options and start provider flow", async ({ page }) => {
+    await page.route("**/v1/auth/providers", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ google: true, github: true }),
+      });
+    });
+
+    await page.goto("/login");
+    await expect(page.getByRole("button", { name: /Continue with Google/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Continue with GitHub/i })).toBeVisible();
+
+    await page.route("**/v1/auth/google/authorize**", async (route) => {
+      await route.fulfill({
+        status: 302,
+        headers: { Location: "https://accounts.google.com/o/oauth2/v2/auth?mock=1" },
+      });
+    });
+
+    await page.getByRole("button", { name: /Continue with Google/i }).click();
+    await expect(page).toHaveURL(/accounts\.google\.com/);
+  });
 });
