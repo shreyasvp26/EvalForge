@@ -4,24 +4,21 @@ from __future__ import annotations
 
 from agent_eval_domain.common.ids import CaseVersionId, ProjectId
 
+from agent_eval_application.adapter_capabilities import (
+    ADAPTER_CAPABILITIES,
+    synthetic_adapters,
+    verified_live_adapters,
+)
 from agent_eval_application.dto.run import RunDTO
 from agent_eval_application.ports.unit_of_work import UnitOfWork
 from agent_eval_application.use_cases.base import with_domain_errors
 
 # Canonical adapter keys. Recognition ≠ production support.
-KNOWN_ADAPTER_KEYS: frozenset[str] = frozenset(
-    {
-        "claude_code",
-        "cursor",
-        "codex",
-        "gemini_cli",
-        "aider",
-    }
-)
+KNOWN_ADAPTER_KEYS: frozenset[str] = frozenset(ADAPTER_CAPABILITIES)
 
-# Authoritative support matrix (must match worker AdapterRegistry).
-SUPPORTED_LIVE_ADAPTERS: frozenset[str] = frozenset({"gemini_cli"})
-SUPPORTED_DETERMINISTIC_ADAPTERS: frozenset[str] = frozenset({"claude_code"})
+# Authoritative support matrix (must match worker AdapterRegistry + capabilities).
+SUPPORTED_LIVE_ADAPTERS: frozenset[str] = verified_live_adapters()
+SUPPORTED_DETERMINISTIC_ADAPTERS: frozenset[str] = synthetic_adapters()
 
 _ADAPTER_ALIASES: dict[str, str] = {
     "claude": "claude_code",

@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 from agent_eval_adapters.gemini import GeminiAdapter
 from agent_eval_adapters.sdk.adapter import Adapter
+from agent_eval_application.adapter_capabilities import get_adapter_capability
 from agent_eval_application.common.actor import Actor
 from agent_eval_application.queries.queries import GetRunQuery, ListAdaptersQuery
 from agent_eval_application.run_identity import (
@@ -71,21 +72,44 @@ def resolve_adapter_mode(mode: str | None = None) -> str:
 
 
 def _require_live_credentials(adapter_key: str) -> None:
-    if adapter_key == GEMINI_CLI:
-        if not (
-            os.environ.get("GEMINI_API_KEY", "").strip()
-            or os.environ.get("GOOGLE_API_KEY", "").strip()
+    capability = get_adapter_capability(adapter_key)
+    if capability is None or not capability.supports_mode("live"):
+        raise AdapterResolutionError(
+            f"No live credential policy configured for adapter {adapter_key!r}",
+            unsupported=True,
+        )
+    present = any(
+        os.environ.get(name, "").strip()
+        for name in (*capability.required_credentials, *capability.optional_credentials)
+    )
+    if capability.required_credentials:
+        required_ok = any(
+            os.environ.get(name, "").strip() for name in capability.required_credentials
+        )
+        # Allow optional aliases (e.g. GOOGLE_API_KEY for Gemini) when listed.
+        if not required_ok and not (
+            capability.optional_credentials
+            and any(
+                os.environ.get(name, "").strip()
+                for name in capability.optional_credentials
+            )
         ):
+            names = " or ".join(capability.required_credentials)
+            if capability.optional_credentials:
+                names = f"{names} (or {' / '.join(capability.optional_credentials)})"
             raise AdapterResolutionError(
-                "Live Gemini CLI execution requires GEMINI_API_KEY "
-                "(or GOOGLE_API_KEY); set the credential or use "
-                "WORKER_ADAPTER_MODE=deterministic"
+                f"Live {capability.display_name} execution requires {names}; "
+                "set the credential or use WORKER_ADAPTER_MODE=deterministic"
             )
         return
-    raise AdapterResolutionError(
-        f"No live credential policy configured for adapter {adapter_key!r}",
-        unsupported=True,
-    )
+    if not present:
+        names = " or ".join(
+            (*capability.required_credentials, *capability.optional_credentials)
+        )
+        raise AdapterResolutionError(
+            f"Live {capability.display_name} execution requires {names}; "
+            "set a credential or use WORKER_ADAPTER_MODE=deterministic"
+        )
 
 
 @dataclass(slots=True)
@@ -133,8 +157,8 @@ class AdapterRegistry:
                 raise AdapterResolutionError(
                     f"Adapter {key!r} is not supported for live execution "
                     f"(adapter_unsupported); registered live adapters: {registered}. "
-                    "EvalForge currently supports live gemini_cli only. "
-                    "Cursor/Codex/Claude Code/Aider live adapters are not implemented.",
+                    "EvalForge marks adapters VERIFIED only after real Docker e2e. "
+                    "See GET /v1/adapters/capabilities for the support matrix.",
                     unsupported=True,
                 )
             _require_live_credentials(key)
