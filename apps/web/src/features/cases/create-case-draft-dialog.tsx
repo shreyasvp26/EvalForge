@@ -21,9 +21,11 @@ import {
   toast,
 } from "@agent-eval/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { z } from "zod";
 
+import { canSubmitTaskRevision, isExactCommitSha } from "./repository-revision";
+import { RepositoryRevisionSelector } from "./repository-revision-selector";
 import { caseQueryKey, casesQueryKey, pinnablePromptVersions, versionStatusLabel } from "./utils";
 
 import type { Case } from "@/lib/api/cases";
@@ -46,7 +48,14 @@ const schema = z.object({
     .trim()
     .min(1, "Repository URL is required")
     .max(2000, "URL is too long"),
-  commit_sha: z.string().trim().min(1, "Commit SHA is required").max(128, "Commit SHA is too long"),
+  commit_sha: z
+    .string()
+    .trim()
+    .min(1, "Commit SHA is required")
+    .max(128, "Commit SHA is too long")
+    .refine((value) => isExactCommitSha(value), {
+      message: "Commit must be an exact hex SHA (7–40 chars), not a branch name",
+    }),
   subdirectory: z.string().max(500, "Subdirectory is too long"),
   prompt_version_id: z.string().min(1, "Select a prompt version"),
   expected_checks: z.string().max(5000),
@@ -73,8 +82,6 @@ export function CreateCaseDraftDialog({
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const descriptionId = useId();
-  const repoId = useId();
-  const shaId = useId();
   const subdirId = useId();
   const checksId = useId();
 
@@ -133,6 +140,17 @@ export function CreateCaseDraftDialog({
       });
     }
   }
+
+  const onRevisionChange = useCallback((value: { repositoryUrl: string; commitSha: string }) => {
+    setRepositoryUrl(value.repositoryUrl);
+    setCommitSha(value.commitSha);
+    setFieldErrors((current) => {
+      if (!current.repository_url && !current.commit_sha) return current;
+      return Object.fromEntries(
+        Object.entries(current).filter(([key]) => key !== "repository_url" && key !== "commit_sha"),
+      );
+    });
+  }, []);
 
   function toggleGrader(graderId: string, checked: boolean) {
     setSelectedGraderIds((current) => {
@@ -197,7 +215,7 @@ export function CreateCaseDraftDialog({
           queryClient.invalidateQueries({ queryKey: caseQueryKey(caseItem.id) }),
           queryClient.invalidateQueries({ queryKey: casesQueryKey(caseItem.project_id) }),
         ]);
-        toast.success("Case draft created", {
+        toast.success("Task draft created", {
           description: `v${String(version.version_number)}`,
         });
         reset();
@@ -227,10 +245,10 @@ export function CreateCaseDraftDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Create case draft</DialogTitle>
+          <DialogTitle>Create task draft</DialogTitle>
           <DialogDescription>
-            Define the task checkout and pin a prompt version. Publish when the definition is ready
-            for evaluation runs.
+            Select a GitHub repository and pin an exact commit SHA. Publish when the definition is
+            ready for evaluation runs.
           </DialogDescription>
         </DialogHeader>
 
@@ -286,58 +304,31 @@ export function CreateCaseDraftDialog({
             {fieldErrors.description ? <InlineError>{fieldErrors.description}</InlineError> : null}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor={repoId}>Repository URL</Label>
-            <Input
-              id={repoId}
-              value={repositoryUrl}
-              disabled={submitting}
-              placeholder="https://github.com/org/repo"
-              onChange={(event) => {
-                setRepositoryUrl(event.target.value);
-                clearField("repository_url");
-              }}
-              aria-invalid={fieldErrors.repository_url ? true : undefined}
-            />
-            {fieldErrors.repository_url ? (
-              <InlineError>{fieldErrors.repository_url}</InlineError>
-            ) : null}
-          </div>
+          <RepositoryRevisionSelector
+            disabled={submitting}
+            repositoryUrl={repositoryUrl}
+            commitSha={commitSha}
+            onChange={onRevisionChange}
+            repositoryError={fieldErrors.repository_url ?? null}
+            commitError={fieldErrors.commit_sha ?? null}
+          />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor={shaId}>Commit SHA</Label>
-              <Input
-                id={shaId}
-                value={commitSha}
-                disabled={submitting}
-                className="font-mono"
-                placeholder="abcdef0"
-                onChange={(event) => {
-                  setCommitSha(event.target.value);
-                  clearField("commit_sha");
-                }}
-                aria-invalid={fieldErrors.commit_sha ? true : undefined}
-              />
-              {fieldErrors.commit_sha ? <InlineError>{fieldErrors.commit_sha}</InlineError> : null}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={subdirId}>Subdirectory (optional)</Label>
-              <Input
-                id={subdirId}
-                value={subdirectory}
-                disabled={submitting}
-                placeholder="packages/app"
-                onChange={(event) => {
-                  setSubdirectory(event.target.value);
-                  clearField("subdirectory");
-                }}
-                aria-invalid={fieldErrors.subdirectory ? true : undefined}
-              />
-              {fieldErrors.subdirectory ? (
-                <InlineError>{fieldErrors.subdirectory}</InlineError>
-              ) : null}
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={subdirId}>Subdirectory (optional)</Label>
+            <Input
+              id={subdirId}
+              value={subdirectory}
+              disabled={submitting}
+              placeholder="packages/app"
+              onChange={(event) => {
+                setSubdirectory(event.target.value);
+                clearField("subdirectory");
+              }}
+              aria-invalid={fieldErrors.subdirectory ? true : undefined}
+            />
+            {fieldErrors.subdirectory ? (
+              <InlineError>{fieldErrors.subdirectory}</InlineError>
+            ) : null}
           </div>
 
           <div className="space-y-1.5">
@@ -403,7 +394,13 @@ export function CreateCaseDraftDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" loading={submitting} disabled={promptOptions.length === 0}>
+            <Button
+              type="submit"
+              loading={submitting}
+              disabled={
+                promptOptions.length === 0 || !canSubmitTaskRevision({ repositoryUrl, commitSha })
+              }
+            >
               Create draft
             </Button>
           </DialogFooter>

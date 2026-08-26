@@ -96,6 +96,36 @@ def test_list_models_filter(client, auth_headers) -> None:
     assert all(item["provider_key"] == "google" for item in body["items"])
 
 
+def test_verify_connection(client, services, auth_headers) -> None:
+    response = client.post(
+        "/v1/provider-connections/conn-1/verify",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "valid"
+    assert body["connection_id"] == "conn-1"
+    assert body["models"][0]["model_id"] == "gemini-2.0-flash"
+    assert body["models"][0]["in_catalog"] is True
+    assert "api_key" not in body
+    cmd = services.verify_provider_connection.execute.call_args.args[0]
+    assert cmd.connection_id == "conn-1"
+    assert cmd.actor.id == "actor-1"
+
+
+def test_list_connection_models(client, services, auth_headers) -> None:
+    response = client.get(
+        "/v1/provider-connections/conn-1/models",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["provider_key"] == "google"
+    assert body["models"][0]["in_catalog"] is True
+    cmd = services.list_connection_models.execute.call_args.args[0]
+    assert cmd.connection_id == "conn-1"
+
+
 def test_cross_user_isolation_mock_store(provider_secret_key: bytes) -> None:
     store = InMemoryProviderConnectionStore(secret_key=provider_secret_key)
     create = CreateProviderConnection(store)

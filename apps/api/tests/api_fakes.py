@@ -390,6 +390,34 @@ def mock_services() -> MagicMock:
         key_fingerprint=sample_conn.key_fingerprint,
         metadata={},
     )
+    from agent_eval_application.use_cases.provider_connections import (
+        ConnectionModelDTO,
+        ConnectionModelsResult,
+        VerifyConnectionResult,
+    )
+
+    sample_models = (
+        ConnectionModelDTO(
+            model_id="gemini-2.0-flash",
+            display_name="Gemini 2.0 Flash",
+            in_catalog=True,
+            adapter_keys=("gemini_cli",),
+            gateway_keys=("direct",),
+        ),
+    )
+    services.verify_provider_connection.execute.return_value = VerifyConnectionResult(
+        connection_id="conn-1",
+        provider_key="google",
+        status="valid",
+        message="API key accepted",
+        checked_at="2026-08-26T00:00:00+00:00",
+        models=sample_models,
+    )
+    services.list_connection_models.execute.return_value = ConnectionModelsResult(
+        connection_id="conn-1",
+        provider_key="google",
+        models=sample_models,
+    )
     services.list_providers.execute.return_value = [
         ProviderCatalogItemDTO(
             provider_key="google",
@@ -455,6 +483,34 @@ def mock_services() -> MagicMock:
                 "branch_name": "evalforge/task-case-run-1",
             },
         )
+    )
+
+    from agent_eval_application.ports.github_repository import (
+        GitHubBranchInfo,
+        GitHubCommitInfo,
+        GitHubRepoSummary,
+    )
+
+    sample_repo = GitHubRepoSummary(
+        owner="octocat",
+        name="Hello-World",
+        full_name="octocat/Hello-World",
+        default_branch="main",
+        private=False,
+        html_url="https://github.com/octocat/Hello-World",
+        description="demo",
+    )
+    services.list_github_repositories.execute.return_value = (sample_repo,)
+    services.list_github_branches.execute.return_value = (
+        GitHubBranchInfo(name="main", protected=True),
+        GitHubBranchInfo(name="develop", protected=False),
+    )
+    services.get_github_branch_head.execute.return_value = GitHubCommitInfo(
+        sha="abcdef0123456789abcdef0123456789abcdef01",
+        short_sha="abcdef0",
+        message="Initial commit",
+        committed_at="2026-08-26T00:00:00Z",
+        html_url="https://github.com/octocat/Hello-World/commit/abcdef0123456789abcdef0123456789abcdef01",
     )
 
     # Remaining use cases return Magics; individual tests override as needed.

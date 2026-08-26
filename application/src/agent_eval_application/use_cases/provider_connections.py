@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from agent_eval_domain.execution.provider_connection import ProviderConnection
 from agent_eval_domain.execution.provider_runtime import ProviderKey
@@ -12,6 +13,7 @@ from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.errors import ApplicationValidationError
 from agent_eval_application.model_catalog import (
     ProviderCapabilityStatus,
+    find_model,
     get_provider_catalog_entry,
     list_models_for_provider,
     list_provider_catalog,
@@ -19,6 +21,12 @@ from agent_eval_application.model_catalog import (
 from agent_eval_application.ports.provider_connections import (
     CreateProviderConnectionInput,
     ProviderConnectionPort,
+)
+from agent_eval_application.ports.provider_verification import (
+    ProviderModelInfo,
+    ProviderVerificationPort,
+    VerificationResult,
+    VerificationStatus,
 )
 from agent_eval_application.use_cases.base import with_domain_errors
 
@@ -40,6 +48,44 @@ class ListProviderConnectionsQuery:
 class RevokeProviderConnectionCommand:
     actor: Actor
     connection_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class VerifyProviderConnectionCommand:
+    actor: Actor
+    connection_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListConnectionModelsQuery:
+    actor: Actor
+    connection_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ConnectionModelDTO:
+    model_id: str
+    display_name: str
+    in_catalog: bool
+    adapter_keys: tuple[str, ...]
+    gateway_keys: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ConnectionModelsResult:
+    connection_id: str
+    provider_key: str
+    models: tuple[ConnectionModelDTO, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class VerifyConnectionResult:
+    connection_id: str
+    provider_key: str
+    status: str
+    message: str
+    checked_at: str
+    models: tuple[ConnectionModelDTO, ...]
 
 
 class CreateProviderConnection:
@@ -87,6 +133,154 @@ class RevokeProviderConnection:
             lambda: self._store.revoke_for_user(
                 user_id=command.actor.id, connection_id=connection_id
             )
+        )
+
+
+def _enrich_live_models(
+    *,
+    provider_key: str,
+    live_models: tuple[ProviderModelInfo, ...],
+) -> tuple[ConnectionModelDTO, ...]:
+    """Attach catalog compatibility metadata without inventing live support."""
+    enriched: list[ConnectionModelDTO] = []
+    for model in live_models:
+        catalog = find_model(model.model_id)
+        if catalog is not None and catalog.provider_key.value == provider_key:
+            enriched.append(
+                ConnectionModelDTO(
+                    model_id=model.model_id,
+                    display_name=catalog.display_name or model.display_name,
+                    in_catalog=True,
+                    adapter_keys=tuple(sorted(catalog.adapter_keys)),
+                    gateway_keys=tuple(sorted(g.value for g in catalog.gateway_keys)),
+                )
+            )
+        else:
+            enriched.append(
+                ConnectionModelDTO(
+                    model_id=model.model_id,
+                    display_name=model.display_name or model.model_id,
+                    in_catalog=False,
+                    adapter_keys=(),
+                    gateway_keys=(),
+                )
+            )
+    return tuple(enriched)
+
+
+def _to_verify_result(
+    *,
+    connection_id: str,
+    verification: VerificationResult,
+) -> VerifyConnectionResult:
+    return VerifyConnectionResult(
+        connection_id=connection_id,
+        provider_key=verification.provider_key,
+        status=verification.status.value,
+        message=verification.message,
+        checked_at=verification.checked_at.isoformat(),
+        models=_enrich_live_models(
+            provider_key=verification.provider_key,
+            live_models=verification.models,
+        ),
+    )
+
+
+class VerifyProviderConnection:
+    """Decrypt the user's key and probe the provider API (never returns secrets)."""
+
+    def __init__(
+        self,
+        store: ProviderConnectionPort,
+        verifier: ProviderVerificationPort,
+    ) -> None:
+        self._store = store
+        self._verifier = verifier
+
+    def execute(
+        self, command: VerifyProviderConnectionCommand
+    ) -> VerifyConnectionResult:
+        connection_id = require_non_empty(command.connection_id, field="connection_id")
+        connection = with_domain_errors(
+            lambda: self._store.get_for_user(
+                user_id=command.actor.id, connection_id=connection_id
+            )
+        )
+        if not connection.is_usable:
+            return VerifyConnectionResult(
+                connection_id=connection.id,
+                provider_key=connection.provider_key.value,
+                status=VerificationStatus.INVALID.value,
+                message="Connection is not active",
+                checked_at=datetime.now(UTC).isoformat(),
+                models=(),
+            )
+
+        _, api_key = with_domain_errors(
+            lambda: self._store.resolve_secret_for_user(
+                user_id=command.actor.id,
+                credential_ref_id=connection.credential_ref_id,
+            )
+        )
+        verification = self._verifier.verify_api_key(
+            connection.provider_key.value,
+            api_key,
+        )
+        return _to_verify_result(connection_id=connection.id, verification=verification)
+
+
+class ListConnectionModels:
+    """List models the provider reports for an active connection's key."""
+
+    def __init__(
+        self,
+        store: ProviderConnectionPort,
+        verifier: ProviderVerificationPort,
+    ) -> None:
+        self._store = store
+        self._verifier = verifier
+
+    def execute(self, query: ListConnectionModelsQuery) -> ConnectionModelsResult:
+        connection_id = require_non_empty(query.connection_id, field="connection_id")
+        connection = with_domain_errors(
+            lambda: self._store.get_for_user(
+                user_id=query.actor.id, connection_id=connection_id
+            )
+        )
+        if not connection.is_usable:
+            raise ApplicationValidationError(
+                "Connection is not active",
+                code="PROVIDER_CONNECTION_INACTIVE",
+                details={"connection_id": connection_id},
+            )
+
+        _, api_key = with_domain_errors(
+            lambda: self._store.resolve_secret_for_user(
+                user_id=query.actor.id,
+                credential_ref_id=connection.credential_ref_id,
+            )
+        )
+        verification = self._verifier.verify_api_key(
+            connection.provider_key.value,
+            api_key,
+        )
+        if verification.status is not VerificationStatus.VALID:
+            raise ApplicationValidationError(
+                verification.message,
+                code="PROVIDER_VERIFICATION_FAILED",
+                details={
+                    "connection_id": connection_id,
+                    "provider_key": connection.provider_key.value,
+                    "status": verification.status.value,
+                },
+            )
+        return ConnectionModelsResult(
+            connection_id=connection.id,
+            provider_key=connection.provider_key.value,
+            models=_enrich_live_models(
+                provider_key=connection.provider_key.value,
+                live_models=verification.models,
+            ),
         )
 
 

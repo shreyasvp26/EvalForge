@@ -5,7 +5,6 @@ import {
   Checkbox,
   Cluster,
   FadeIn,
-  Input,
   Label,
   Select,
   SelectContent,
@@ -18,7 +17,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layouts/page-header";
 import { PageLayout } from "@/components/layouts/page-layout";
@@ -38,12 +37,13 @@ import { getAdapter, listAgents } from "@/lib/api/agents";
 import { getCase, listCases } from "@/lib/api/cases";
 import { ApiError } from "@/lib/api/client";
 import { listGraders } from "@/lib/api/graders";
+import { listPlatforms, pinnablePlatformVersions } from "@/lib/api/platforms";
 import { listProjects } from "@/lib/api/projects";
 import { isGeminiAdapterPath, listModels, listProviderConnections } from "@/lib/api/providers";
 import { createRun } from "@/lib/api/runs";
 import { useAuth } from "@/lib/auth/auth-provider";
 
-const STEPS = ["Project", "Case", "Prompt", "Agent", "Graders", "Review"] as const;
+const STEPS = ["Project", "Task", "Prompt", "Agent", "Graders", "Review"] as const;
 
 function preferredPinnableVersionId(
   versions: { id: string; status: string; version_number: number }[],
@@ -155,11 +155,44 @@ export function CreateRunPage() {
     },
   });
 
+  const platformsQuery = useQuery({
+    queryKey: ["platforms", "list", "create-run"],
+    enabled: Boolean(token),
+    queryFn: async () => {
+      if (!token) throw new Error("Missing auth token");
+      return listPlatforms(token, { limit: 100, sort: "-created_at" });
+    },
+  });
+
   const googleConnections = useMemo(() => {
     return (connectionsQuery.data?.items ?? []).filter(
       (connection) => connection.status === "active" && connection.provider_key === "google",
     );
   }, [connectionsQuery.data]);
+
+  const platformOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    for (const platform of platformsQuery.data?.items ?? []) {
+      for (const version of pinnablePlatformVersions(platform)) {
+        options.push({
+          value: version.id,
+          label: `${platform.name} · v${String(version.version_number)} · ${version.label}`,
+        });
+      }
+    }
+    return options;
+  }, [platformsQuery.data]);
+
+  // Prefer the active version of the first catalog platform when none is chosen yet.
+  useEffect(() => {
+    if (platformVersionId || platformOptions.length === 0) return;
+    const preferred =
+      platformsQuery.data?.items
+        .map((platform) => platform.active_version_id)
+        .find((id): id is string => Boolean(id) && platformOptions.some((o) => o.value === id)) ??
+      platformOptions[0]?.value;
+    if (preferred) setPlatformVersionId(preferred);
+  }, [platformOptions, platformVersionId, platformsQuery.data]);
 
   const caseVersions = useMemo(() => {
     if (!caseQuery.data) return [];
@@ -335,7 +368,7 @@ export function CreateRunPage() {
         <PageHeader
           eyebrow="Execution"
           title="New run"
-          description="Pin immutable versions, then launch. The worker queues immediately after create."
+          description="Select a task revision (exact commit), agent, and credentials — then launch. Failed evaluations never publish to GitHub."
           actions={
             <Button asChild variant="outline">
               <Link href="/runs">Cancel</Link>
@@ -406,10 +439,10 @@ export function CreateRunPage() {
             {step === 1 ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Case</Label>
+                  <Label>Task</Label>
                   <Select {...(caseId ? { value: caseId } : {})} onValueChange={onSelectCase}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a case" />
+                      <SelectValue placeholder="Select a task" />
                     </SelectTrigger>
                     <SelectContent>
                       {casesQuery.data?.items
@@ -423,14 +456,14 @@ export function CreateRunPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Case version</Label>
+                  <Label>Task version</Label>
                   <Select
                     {...(caseVersionId ? { value: caseVersionId } : {})}
                     onValueChange={onSelectCaseVersion}
                     disabled={!caseId || caseQuery.isLoading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select case version" />
+                      <SelectValue placeholder="Select task version" />
                     </SelectTrigger>
                     <SelectContent>
                       {caseVersions.map((version) => (
@@ -442,7 +475,7 @@ export function CreateRunPage() {
                   </Select>
                   {caseId && !caseQuery.isLoading && caseVersions.length === 0 ? (
                     <Text variant="caption">
-                      No published case versions. Publish a draft before launching a run.
+                      No published task versions. Publish a draft before launching a run.
                     </Text>
                   ) : null}
                 </div>
@@ -557,19 +590,19 @@ export function CreateRunPage() {
             {step === 4 ? (
               <div className="space-y-3">
                 <Text variant="secondary">
-                  Select graders declared on this case version. Only published versions can be
+                  Select graders declared on this task version. Only published versions can be
                   pinned.
                 </Text>
                 {!caseVersionId ? (
-                  <Text variant="secondary">Select a case version first.</Text>
+                  <Text variant="secondary">Select a task version first.</Text>
                 ) : applicableGraderIds.size === 0 ? (
                   <Text variant="secondary">
-                    This case version declares no applicable graders. Edit the case version to add
+                    This task version declares no applicable graders. Edit the task version to add
                     grader IDs, then publish it.
                   </Text>
                 ) : applicableGraders.length === 0 ? (
                   <Text variant="secondary">
-                    Declared graders were not found or have no published versions. Check case
+                    Declared graders were not found or have no published versions. Check task
                     declarations and publish grader versions.
                   </Text>
                 ) : (
@@ -635,12 +668,20 @@ export function CreateRunPage() {
                   <dl className="grid gap-3 sm:grid-cols-2">
                     <PinRow label="Project" value={projectName} />
                     <PinRow
-                      label="Case version"
+                      label="Task version"
                       value={
                         caseVersion
                           ? `${caseName} · v${String(caseVersion.version_number)}`
                           : caseVersionId
                       }
+                    />
+                    <PinRow
+                      label="Repository"
+                      value={selectedCaseVersion?.repository_url.trim() ?? "—"}
+                    />
+                    <PinRow
+                      label="Exact commit SHA"
+                      value={selectedCaseVersion?.commit_sha.trim() ?? "—"}
                     />
                     <PinRow
                       label="Prompt version"
@@ -690,18 +731,38 @@ export function CreateRunPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="platform-version">Platform version ID</Label>
-                  <Input
-                    id="platform-version"
-                    value={platformVersionId}
-                    onChange={(event) => {
-                      setPlatformVersionId(event.target.value);
-                    }}
-                    placeholder="Platform version ID"
-                    className="font-mono"
-                  />
+                  <Label>Platform</Label>
+                  {platformsQuery.isError ? (
+                    <InlineError density="block">
+                      {platformsQuery.error instanceof ApiError
+                        ? platformsQuery.error.message
+                        : "Could not load platforms."}
+                    </InlineError>
+                  ) : null}
+                  {platformsQuery.isSuccess && platformOptions.length === 0 ? (
+                    <InlineError density="block">
+                      No platform versions are published yet. Create and publish a platform in the
+                      catalog before launching a run.
+                    </InlineError>
+                  ) : null}
+                  <Select
+                    {...(platformVersionId ? { value: platformVersionId } : {})}
+                    onValueChange={setPlatformVersionId}
+                    disabled={platformOptions.length === 0}
+                  >
+                    <SelectTrigger aria-label="Platform version">
+                      <SelectValue placeholder="Select platform version" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {platformOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Text variant="caption">
-                    Required pin. Enter a Platform version ID from the catalog.
+                    Required sandbox policy pin. Failed evaluations never create a branch or PR.
                   </Text>
                 </div>
 
@@ -709,7 +770,11 @@ export function CreateRunPage() {
                   <div className="space-y-4 rounded-[var(--ef-radius-panel)] border border-border p-4">
                     <div>
                       <Text as="div" variant="caption" className="mb-1">
-                        Model & credential (optional)
+                        Model & credential
+                      </Text>
+                      <Text variant="caption" className="mt-1 block">
+                        Exact model pin for Gemini CLI. Credential stays encrypted — only a
+                        reference is stored on the run.
                       </Text>
                       <Text variant="caption">
                         Gemini path only. Exact model pinning uses fixed routing and the direct

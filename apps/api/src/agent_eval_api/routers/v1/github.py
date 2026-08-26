@@ -1,6 +1,8 @@
-"""GitHub connections and evaluation publication endpoints."""
+"""GitHub connections, repository browsing, and evaluation publication endpoints."""
 
 from __future__ import annotations
+
+from typing import Annotated
 
 from agent_eval_application.errors import ApplicationValidationError
 from agent_eval_application.use_cases.github_publication import (
@@ -8,14 +10,23 @@ from agent_eval_application.use_cases.github_publication import (
     ListGitHubConnectionsQuery,
     RevokeGitHubConnectionCommand,
 )
+from agent_eval_application.use_cases.github_repository import (
+    GetGitHubBranchHeadQuery,
+    ListGitHubBranchesQuery,
+    ListGitHubRepositoriesQuery,
+)
 from agent_eval_application.use_cases.publish_run import PublishEvaluationRunCommand
 from agent_eval_domain.common.errors import NotFoundError
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from agent_eval_api.dependencies import ActorDep, ServicesDep
+from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.github import (
     CreateGitHubConnectionRequest,
+    GitHubBranchResponse,
+    GitHubCommitResponse,
     GitHubConnectionResponse,
+    GitHubRepoSummaryResponse,
     PublicationResponse,
     PublishRunRequest,
 )
@@ -81,6 +92,119 @@ def revoke_github_connection(
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return GitHubConnectionResponse.from_port(conn)
+
+
+@router.get(
+    "/v1/github/repositories",
+    response_model=CollectionResponse[GitHubRepoSummaryResponse],
+    summary="List GitHub repositories for the connected account",
+    description=(
+        "Uses the caller's encrypted Settings → GitHub connection. "
+        "Never returns the access token. Pick a repository, then resolve an "
+        "exact commit SHA before creating a Task revision."
+    ),
+)
+def list_github_repositories(
+    actor: ActorDep,
+    services: ServicesDep,
+    connection_id: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 100,
+) -> CollectionResponse[GitHubRepoSummaryResponse]:
+    rows = services.list_github_repositories.execute(
+        ListGitHubRepositoriesQuery(
+            actor=actor,
+            connection_id=connection_id,
+            limit=limit,
+        )
+    )
+    items = [
+        GitHubRepoSummaryResponse(
+            owner=row.owner,
+            name=row.name,
+            full_name=row.full_name,
+            default_branch=row.default_branch,
+            private=row.private,
+            html_url=row.html_url,
+            description=row.description,
+        )
+        for row in rows
+    ]
+    return CollectionResponse(
+        items=items,
+        count=len(items),
+        next_cursor=None,
+        has_more=False,
+    )
+
+
+@router.get(
+    "/v1/github/repositories/{owner}/{repo}/branches",
+    response_model=CollectionResponse[GitHubBranchResponse],
+    summary="List branches for a GitHub repository",
+)
+def list_github_branches(
+    owner: str,
+    repo: str,
+    actor: ActorDep,
+    services: ServicesDep,
+    connection_id: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 100,
+) -> CollectionResponse[GitHubBranchResponse]:
+    rows = services.list_github_branches.execute(
+        ListGitHubBranchesQuery(
+            actor=actor,
+            owner=owner,
+            repo=repo,
+            connection_id=connection_id,
+            limit=limit,
+        )
+    )
+    items = [
+        GitHubBranchResponse(name=row.name, protected=row.protected) for row in rows
+    ]
+    return CollectionResponse(
+        items=items,
+        count=len(items),
+        next_cursor=None,
+        has_more=False,
+    )
+
+
+@router.get(
+    "/v1/github/repositories/{owner}/{repo}/commits/{branch}",
+    response_model=GitHubCommitResponse,
+    summary="Resolve branch HEAD to an exact commit SHA",
+    description=(
+        "Returns the immutable commit SHA at the tip of the branch. "
+        "Task/CaseVersion must store this SHA — never the branch name."
+    ),
+)
+def get_github_branch_head(
+    owner: str,
+    repo: str,
+    branch: str,
+    actor: ActorDep,
+    services: ServicesDep,
+    connection_id: Annotated[str | None, Query()] = None,
+) -> GitHubCommitResponse:
+    commit = services.get_github_branch_head.execute(
+        GetGitHubBranchHeadQuery(
+            actor=actor,
+            owner=owner,
+            repo=repo,
+            branch=branch,
+            connection_id=connection_id,
+        )
+    )
+    return GitHubCommitResponse(
+        sha=commit.sha,
+        short_sha=commit.short_sha,
+        message=commit.message,
+        committed_at=commit.committed_at,
+        html_url=commit.html_url,
+        repository_url=f"https://github.com/{owner}/{repo}",
+        branch=branch,
+    )
 
 
 @router.post(

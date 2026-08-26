@@ -50,7 +50,7 @@ export function createRunColumns(options: {
     }),
     columnHelper.accessor((row) => row.pins.case_version_id, {
       id: "case",
-      header: "Case",
+      header: "Task",
       enableSorting: false,
       cell: (info) => (
         <Text as="span" variant="secondary" className="line-clamp-1 max-w-[12rem]">

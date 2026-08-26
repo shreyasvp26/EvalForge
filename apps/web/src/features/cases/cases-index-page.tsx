@@ -32,8 +32,8 @@ export function CasesIndexPage() {
     <PageLayout>
       <PageHeader
         eyebrow="Workspace"
-        title="Cases"
-        description="Cases live inside a project. Choose a project to open its cases list."
+        title="Tasks"
+        description="Tasks live inside a project. Choose a project to open its task list."
       />
 
       <Section className="mt-8">

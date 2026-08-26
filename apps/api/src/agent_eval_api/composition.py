@@ -46,6 +46,11 @@ from agent_eval_application.use_cases.github_publication import (
     ListGitHubConnections,
     RevokeGitHubConnection,
 )
+from agent_eval_application.use_cases.github_repository import (
+    GetGitHubBranchHead,
+    ListGitHubBranches,
+    ListGitHubRepositories,
+)
 from agent_eval_application.use_cases.grader import (
     CreateGrader,
     CreateGraderDraftVersion,
@@ -71,9 +76,11 @@ from agent_eval_application.use_cases.project import (
 from agent_eval_application.use_cases.provenance import GetRunProvenance
 from agent_eval_application.use_cases.provider_connections import (
     CreateProviderConnection,
+    ListConnectionModels,
     ListProviderConnections,
     ListProviders,
     RevokeProviderConnection,
+    VerifyProviderConnection,
 )
 from agent_eval_application.use_cases.publish_run import PublishEvaluationRun
 from agent_eval_application.use_cases.run import (
@@ -124,6 +131,10 @@ from agent_eval_infrastructure.auth.github_connection import (
     SqlAlchemyGitHubConnectionStore,
 )
 from agent_eval_infrastructure.github.publisher import HttpGitHubPullRequestPublisher
+from agent_eval_infrastructure.github.repository_service import (
+    HttpGitHubRepositoryService,
+)
+from agent_eval_infrastructure.providers import HttpProviderVerifier
 
 from agent_eval_api.auth.oauth.providers.github import GitHubOAuthProvider
 from agent_eval_api.auth.oauth.providers.google import GoogleOAuthProvider
@@ -223,12 +234,18 @@ class ApplicationServices:
     create_provider_connection: CreateProviderConnection
     list_provider_connections: ListProviderConnections
     revoke_provider_connection: RevokeProviderConnection
+    verify_provider_connection: VerifyProviderConnection
+    list_connection_models: ListConnectionModels
 
     # Phase 14 — GitHub publication
     create_github_connection: CreateGitHubConnection
     list_github_connections: ListGitHubConnections
     revoke_github_connection: RevokeGitHubConnection
     publish_evaluation_run: PublishEvaluationRun
+    # GitHub repository browsing (exact SHA pinning for tasks)
+    list_github_repositories: ListGitHubRepositories
+    list_github_branches: ListGitHubBranches
+    get_github_branch_head: GetGitHubBranchHead
 
 
 @dataclass(slots=True)
@@ -365,6 +382,8 @@ def build_application_services(
     )
     github = github_connections or build_github_connection_store(infrastructure)
     github_publisher = HttpGitHubPullRequestPublisher()
+    github_repositories = HttpGitHubRepositoryService()
+    provider_verifier = HttpProviderVerifier()
     create_run = CreateRun(
         uow,
         ids,
@@ -441,6 +460,10 @@ def build_application_services(
         create_provider_connection=CreateProviderConnection(connections),
         list_provider_connections=ListProviderConnections(connections),
         revoke_provider_connection=RevokeProviderConnection(connections),
+        verify_provider_connection=VerifyProviderConnection(
+            connections, provider_verifier
+        ),
+        list_connection_models=ListConnectionModels(connections, provider_verifier),
         create_github_connection=CreateGitHubConnection(github),
         list_github_connections=ListGitHubConnections(github),
         revoke_github_connection=RevokeGitHubConnection(github),
@@ -451,6 +474,9 @@ def build_application_services(
             github_publisher,
             get_run=get_run,
         ),
+        list_github_repositories=ListGitHubRepositories(github, github_repositories),
+        list_github_branches=ListGitHubBranches(github, github_repositories),
+        get_github_branch_head=GetGitHubBranchHead(github, github_repositories),
     )
 
 

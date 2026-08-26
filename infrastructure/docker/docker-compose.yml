@@ -178,6 +178,8 @@ services:
       WORKER_SANDBOX_ENGINE: ${WORKER_SANDBOX_ENGINE:-docker}
       WORKER_ADAPTER_MODE: ${WORKER_ADAPTER_MODE:-deterministic}
       WORKER_SANDBOX_IMAGE: ${WORKER_SANDBOX_IMAGE:-evalforge/sandbox:local}
+      # bridge required for git fetch + live agent CLI egress; override to none only for offline smoke.
+      WORKER_SANDBOX_NETWORK: ${WORKER_SANDBOX_NETWORK:-bridge}
       WORKER_EXECUTION_TIMEOUT_SECONDS: ${WORKER_EXECUTION_TIMEOUT_SECONDS:-300}
       WORKER_SANDBOX_VERIFY: ${WORKER_SANDBOX_VERIFY:-0}
       RUN_CANCEL_KEY_PREFIX: ${RUN_CANCEL_KEY_PREFIX:-evalforge:cancel}

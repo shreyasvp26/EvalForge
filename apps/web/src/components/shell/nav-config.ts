@@ -42,9 +42,8 @@ export interface NavSection {
 }
 
 /**
- * Primary product navigation.
- * Suites/Cases remain reachable from project workspaces and command palette;
- * they are not top-level destinations (avoids orphaned project-scoped lists).
+ * Primary product navigation — developer-first: Projects → Tasks → Runs.
+ * Benchmarks / agents / graders remain available but secondary to the North Star loop.
  */
 export const navSections: NavSection[] = [
   {
@@ -65,12 +64,13 @@ export const navSections: NavSection[] = [
         chord: "G P",
         keywords: ["project", "create project", "workspace"],
       },
-    ],
-  },
-  {
-    id: "evaluation",
-    label: "Evaluation",
-    items: [
+      {
+        href: "/cases",
+        label: "Tasks",
+        icon: FlaskConical,
+        chord: "G T",
+        keywords: ["case", "task", "create case", "create task", "prompt", "specification"],
+      },
       {
         href: "/runs",
         label: "Runs",
@@ -78,6 +78,12 @@ export const navSections: NavSection[] = [
         chord: "G R",
         keywords: ["run", "create run", "new run", "execution", "timeline"],
       },
+    ],
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    items: [
       {
         href: "/benchmarks",
         label: "Benchmarks",
@@ -115,19 +121,13 @@ export const navSections: NavSection[] = [
   },
 ];
 
-/** Project-scoped resources — command palette / deep links only. */
+/** Secondary destinations — command palette / deep links only. */
 export const secondaryNavItems: NavItem[] = [
   {
     href: "/suites",
     label: "Suites",
     icon: Layers,
     keywords: ["suite", "create suite", "composition"],
-  },
-  {
-    href: "/cases",
-    label: "Cases",
-    icon: FlaskConical,
-    keywords: ["case", "create case", "prompt", "specification"],
   },
   {
     href: "/design-system",
@@ -198,10 +198,10 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       crumbs.push({ label: "Project", href: `/projects/${projectId}` });
       const caseRest = rest.slice("cases".length);
       if (caseRest === "" || caseRest === "/") {
-        crumbs.push({ label: "Cases" });
+        crumbs.push({ label: "Tasks" });
       } else {
-        crumbs.push({ label: "Cases", href: `/projects/${projectId}/cases` });
-        crumbs.push({ label: "Case" });
+        crumbs.push({ label: "Tasks", href: `/projects/${projectId}/cases` });
+        crumbs.push({ label: "Task" });
       }
       return crumbs;
     }
@@ -214,7 +214,7 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
 
   if (pathname === "/suites" || pathname === "/cases" || pathname === "/benchmarks") {
     crumbs.push({
-      label: pathname === "/suites" ? "Suites" : pathname === "/cases" ? "Cases" : "Benchmarks",
+      label: pathname === "/suites" ? "Suites" : pathname === "/cases" ? "Tasks" : "Benchmarks",
     });
     return crumbs;
   }
@@ -278,6 +278,8 @@ export function breadcrumbsForPath(pathname: string): { label: string; href?: st
       profile: "Profile",
       account: "Account",
       preferences: "Preferences",
+      providers: "Providers",
+      github: "GitHub",
       api: "API",
       about: "About",
     };
