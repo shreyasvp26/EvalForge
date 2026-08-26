@@ -86,3 +86,32 @@ class ProviderCatalogItemResponse(BaseModel):
             live_capable=dto.live_capable,
             models=[dict(m) for m in dto.models],
         )
+
+
+class ConnectionModelResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model_id: str
+    display_name: str
+    in_catalog: bool
+    adapter_keys: list[str]
+    gateway_keys: list[str]
+
+
+class VerifyProviderConnectionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    connection_id: str
+    provider_key: str
+    status: str
+    message: str
+    checked_at: str
+    models: list[ConnectionModelResponse]
+
+
+class ConnectionModelsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    connection_id: str
+    provider_key: str
+    models: list[ConnectionModelResponse]

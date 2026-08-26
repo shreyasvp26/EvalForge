@@ -24,7 +24,12 @@ import { useMemo, useState } from "react";
 
 import { SettingsShell } from "./settings-shell";
 
-import type { ProviderCatalogItem, ProviderConnection } from "@/lib/api/providers";
+import type {
+  ConnectionModel,
+  ProviderCatalogItem,
+  ProviderConnection,
+  VerifyProviderConnectionResult,
+} from "@/lib/api/providers";
 
 import { Section } from "@/components/layouts/section";
 import { InlineError } from "@/components/patterns/inline-error";
@@ -34,11 +39,20 @@ import {
   listProviderConnections,
   listProviders,
   revokeProviderConnection,
+  verifyProviderConnection,
 } from "@/lib/api/providers";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const providersQueryKey = ["providers", "catalog"] as const;
 const connectionsQueryKey = ["providers", "connections"] as const;
+
+function verificationBadgeStatus(
+  status: VerifyProviderConnectionResult["status"] | undefined,
+): "completed" | "danger" | "queued" {
+  if (status === "valid") return "completed";
+  if (status === "invalid" || status === "error") return "danger";
+  return "queued";
+}
 
 export function ProvidersSettingsPage() {
   const { token } = useAuth();
@@ -46,6 +60,10 @@ export function ProvidersSettingsPage() {
   const [connectOpen, setConnectOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderCatalogItem | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [verificationByConnection, setVerificationByConnection] = useState<
+    Record<string, VerifyProviderConnectionResult>
+  >({});
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const providersQuery = useQuery({
     queryKey: providersQueryKey,
@@ -99,13 +117,40 @@ export function ProvidersSettingsPage() {
       if (!token) throw new Error("Missing auth token");
       return revokeProviderConnection(token, connectionId);
     },
-    onSuccess: () => {
+    onSuccess: (_data, connectionId) => {
       toast.success("Connection revoked");
+      setVerificationByConnection((prev) =>
+        Object.fromEntries(Object.entries(prev).filter(([id]) => id !== connectionId)),
+      );
       void queryClient.invalidateQueries({ queryKey: providersQueryKey });
       void queryClient.invalidateQueries({ queryKey: connectionsQueryKey });
     },
     onError: (cause) => {
       toast.error(cause instanceof ApiError ? cause.message : "Could not revoke connection.");
+    },
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: async (connectionId: string) => {
+      if (!token) throw new Error("Missing auth token");
+      setVerifyingId(connectionId);
+      return verifyProviderConnection(token, connectionId);
+    },
+    onSuccess: (result) => {
+      setVerificationByConnection((prev) => ({ ...prev, [result.connection_id]: result }));
+      if (result.status === "valid") {
+        toast.success("Connection verified");
+      } else if (result.status === "invalid") {
+        toast.error(result.message || "API key is invalid");
+      } else {
+        toast.error(result.message || "Could not verify connection");
+      }
+    },
+    onError: (cause) => {
+      toast.error(cause instanceof ApiError ? cause.message : "Could not verify connection.");
+    },
+    onSettled: () => {
+      setVerifyingId(null);
     },
   });
 
@@ -169,32 +214,76 @@ export function ProvidersSettingsPage() {
                 </div>
                 {active.length > 0 ? (
                   <ul className="space-y-2">
-                    {active.map((connection) => (
-                      <li
-                        key={connection.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--ef-radius-control)] border border-border bg-muted/30 px-3 py-2"
-                      >
-                        <div className="min-w-0">
-                          <Text as="div" variant="body">
-                            {connection.display_name}
-                          </Text>
-                          <Text as="div" variant="caption" className="font-mono">
-                            {connection.masked_key}
-                          </Text>
-                        </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          loading={revokeMutation.isPending}
-                          onClick={() => {
-                            revokeMutation.mutate(connection.id);
-                          }}
+                    {active.map((connection) => {
+                      const verification = verificationByConnection[connection.id];
+                      const catalogModels = (verification?.models ?? []).filter(
+                        (model) => model.in_catalog,
+                      );
+                      const otherModels = (verification?.models ?? []).filter(
+                        (model) => !model.in_catalog,
+                      );
+                      return (
+                        <li
+                          key={connection.id}
+                          className="space-y-2 rounded-[var(--ef-radius-control)] border border-border bg-muted/30 px-3 py-2"
                         >
-                          Revoke
-                        </Button>
-                      </li>
-                    ))}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <Text as="div" variant="body">
+                                {connection.display_name}
+                              </Text>
+                              <Text as="div" variant="caption" className="font-mono">
+                                {connection.masked_key}
+                              </Text>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {verification ? (
+                                <Badge status={verificationBadgeStatus(verification.status)}>
+                                  {verification.status === "valid"
+                                    ? "Verified"
+                                    : verification.status === "invalid"
+                                      ? "Invalid key"
+                                      : "Check failed"}
+                                </Badge>
+                              ) : null}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                loading={verifyingId === connection.id}
+                                onClick={() => {
+                                  verifyMutation.mutate(connection.id);
+                                }}
+                              >
+                                Verify
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                loading={revokeMutation.isPending}
+                                onClick={() => {
+                                  revokeMutation.mutate(connection.id);
+                                }}
+                              >
+                                Revoke
+                              </Button>
+                            </div>
+                          </div>
+                          {verification?.status === "valid" ? (
+                            <ConnectionModelsList
+                              catalogModels={catalogModels}
+                              otherModels={otherModels}
+                            />
+                          ) : null}
+                          {verification && verification.status !== "valid" ? (
+                            <Text variant="caption" className="block text-destructive">
+                              {verification.message}
+                            </Text>
+                          ) : null}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : null}
               </li>
@@ -223,6 +312,55 @@ export function ProvidersSettingsPage() {
         }}
       />
     </SettingsShell>
+  );
+}
+
+function ConnectionModelsList({
+  catalogModels,
+  otherModels,
+}: {
+  catalogModels: ConnectionModel[];
+  otherModels: ConnectionModel[];
+}) {
+  if (catalogModels.length === 0 && otherModels.length === 0) {
+    return (
+      <Text variant="caption" className="block">
+        Key works, but the provider returned no models.
+      </Text>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {catalogModels.length > 0 ? (
+        <div className="space-y-1">
+          <Text variant="caption" className="block font-medium">
+            Catalog-compatible models
+          </Text>
+          <ul className="flex flex-wrap gap-1.5">
+            {catalogModels.map((model) => (
+              <li key={model.model_id}>
+                <Badge status="completed">{model.display_name}</Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {otherModels.length > 0 ? (
+        <div className="space-y-1">
+          <Text variant="caption" className="block">
+            Other models from provider ({otherModels.length}) — not in EvalForge catalog
+          </Text>
+          <Text variant="caption" className="block font-mono text-muted-foreground">
+            {otherModels
+              .slice(0, 8)
+              .map((model) => model.model_id)
+              .join(", ")}
+            {otherModels.length > 8 ? ` +${String(otherModels.length - 8)} more` : ""}
+          </Text>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

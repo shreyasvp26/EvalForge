@@ -40,6 +40,29 @@ export interface ProviderConnection {
   metadata: Record<string, string>;
 }
 
+export interface ConnectionModel {
+  model_id: string;
+  display_name: string;
+  in_catalog: boolean;
+  adapter_keys: string[];
+  gateway_keys: string[];
+}
+
+export interface VerifyProviderConnectionResult {
+  connection_id: string;
+  provider_key: string;
+  status: string;
+  message: string;
+  checked_at: string;
+  models: ConnectionModel[];
+}
+
+export interface ConnectionModelsResult {
+  connection_id: string;
+  provider_key: string;
+  models: ConnectionModel[];
+}
+
 export interface CreateProviderConnectionInput {
   provider_key: string;
   api_key: string;
@@ -106,6 +129,26 @@ export async function revokeProviderConnection(
   return apiRequest<ProviderConnection>(
     `/v1/provider-connections/${encodeURIComponent(connectionId)}`,
     { method: "DELETE", token },
+  );
+}
+
+export async function verifyProviderConnection(
+  token: string,
+  connectionId: string,
+): Promise<VerifyProviderConnectionResult> {
+  return apiRequest<VerifyProviderConnectionResult>(
+    `/v1/provider-connections/${encodeURIComponent(connectionId)}/verify`,
+    { method: "POST", token },
+  );
+}
+
+export async function listConnectionModels(
+  token: string,
+  connectionId: string,
+): Promise<ConnectionModelsResult> {
+  return apiRequest<ConnectionModelsResult>(
+    `/v1/provider-connections/${encodeURIComponent(connectionId)}/models`,
+    { method: "GET", token },
   );
 }
 

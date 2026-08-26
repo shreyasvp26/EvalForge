@@ -71,9 +71,11 @@ from agent_eval_application.use_cases.project import (
 from agent_eval_application.use_cases.provenance import GetRunProvenance
 from agent_eval_application.use_cases.provider_connections import (
     CreateProviderConnection,
+    ListConnectionModels,
     ListProviderConnections,
     ListProviders,
     RevokeProviderConnection,
+    VerifyProviderConnection,
 )
 from agent_eval_application.use_cases.publish_run import PublishEvaluationRun
 from agent_eval_application.use_cases.run import (
@@ -124,6 +126,7 @@ from agent_eval_infrastructure.auth.github_connection import (
     SqlAlchemyGitHubConnectionStore,
 )
 from agent_eval_infrastructure.github.publisher import HttpGitHubPullRequestPublisher
+from agent_eval_infrastructure.providers import HttpProviderVerifier
 
 from agent_eval_api.auth.oauth.providers.github import GitHubOAuthProvider
 from agent_eval_api.auth.oauth.providers.google import GoogleOAuthProvider
@@ -223,6 +226,8 @@ class ApplicationServices:
     create_provider_connection: CreateProviderConnection
     list_provider_connections: ListProviderConnections
     revoke_provider_connection: RevokeProviderConnection
+    verify_provider_connection: VerifyProviderConnection
+    list_connection_models: ListConnectionModels
 
     # Phase 14 — GitHub publication
     create_github_connection: CreateGitHubConnection
@@ -365,6 +370,7 @@ def build_application_services(
     )
     github = github_connections or build_github_connection_store(infrastructure)
     github_publisher = HttpGitHubPullRequestPublisher()
+    provider_verifier = HttpProviderVerifier()
     create_run = CreateRun(
         uow,
         ids,
@@ -441,6 +447,10 @@ def build_application_services(
         create_provider_connection=CreateProviderConnection(connections),
         list_provider_connections=ListProviderConnections(connections),
         revoke_provider_connection=RevokeProviderConnection(connections),
+        verify_provider_connection=VerifyProviderConnection(
+            connections, provider_verifier
+        ),
+        list_connection_models=ListConnectionModels(connections, provider_verifier),
         create_github_connection=CreateGitHubConnection(github),
         list_github_connections=ListGitHubConnections(github),
         revoke_github_connection=RevokeGitHubConnection(github),

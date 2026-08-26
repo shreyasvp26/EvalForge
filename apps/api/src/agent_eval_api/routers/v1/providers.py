@@ -5,9 +5,12 @@ from __future__ import annotations
 from typing import Annotated
 
 from agent_eval_application.use_cases.provider_connections import (
+    ConnectionModelDTO,
     CreateProviderConnectionCommand,
+    ListConnectionModelsQuery,
     ListProviderConnectionsQuery,
     RevokeProviderConnectionCommand,
+    VerifyProviderConnectionCommand,
     list_models_dto,
 )
 from fastapi import APIRouter, Query, status
@@ -15,10 +18,13 @@ from fastapi import APIRouter, Query, status
 from agent_eval_api.dependencies import ActorDep, ServicesDep
 from agent_eval_api.schemas.common import CollectionResponse
 from agent_eval_api.schemas.provider import (
+    ConnectionModelResponse,
+    ConnectionModelsResponse,
     CreateProviderConnectionRequest,
     ModelCatalogItemResponse,
     ProviderCatalogItemResponse,
     ProviderConnectionResponse,
+    VerifyProviderConnectionResponse,
 )
 
 router = APIRouter(tags=["providers"])
@@ -137,3 +143,71 @@ def revoke_provider_connection(
         RevokeProviderConnectionCommand(actor=actor, connection_id=connection_id)
     )
     return ProviderConnectionResponse.from_domain(connection)
+
+
+def _model_responses(
+    models: tuple[ConnectionModelDTO, ...] | list[ConnectionModelDTO],
+) -> list[ConnectionModelResponse]:
+    return [
+        ConnectionModelResponse(
+            model_id=m.model_id,
+            display_name=m.display_name,
+            in_catalog=m.in_catalog,
+            adapter_keys=list(m.adapter_keys),
+            gateway_keys=list(m.gateway_keys),
+        )
+        for m in models
+    ]
+
+
+@router.post(
+    "/v1/provider-connections/{connection_id}/verify",
+    response_model=VerifyProviderConnectionResponse,
+    summary="Verify provider connection",
+    description=(
+        "Decrypt the stored key and make a minimal provider API call "
+        "(list models). Never returns the secret. Live models are "
+        "annotated with catalog compatibility."
+    ),
+)
+def verify_provider_connection(
+    connection_id: str,
+    actor: ActorDep,
+    services: ServicesDep,
+) -> VerifyProviderConnectionResponse:
+    result = services.verify_provider_connection.execute(
+        VerifyProviderConnectionCommand(actor=actor, connection_id=connection_id)
+    )
+    return VerifyProviderConnectionResponse(
+        connection_id=result.connection_id,
+        provider_key=result.provider_key,
+        status=result.status,
+        message=result.message,
+        checked_at=result.checked_at,
+        models=_model_responses(result.models),
+    )
+
+
+@router.get(
+    "/v1/provider-connections/{connection_id}/models",
+    response_model=ConnectionModelsResponse,
+    summary="List models for a provider connection",
+    description=(
+        "Live model list from the provider using the connection's "
+        "encrypted key. Fails closed when verification is invalid. "
+        "Catalog-compatible models are marked."
+    ),
+)
+def list_connection_models(
+    connection_id: str,
+    actor: ActorDep,
+    services: ServicesDep,
+) -> ConnectionModelsResponse:
+    result = services.list_connection_models.execute(
+        ListConnectionModelsQuery(actor=actor, connection_id=connection_id)
+    )
+    return ConnectionModelsResponse(
+        connection_id=result.connection_id,
+        provider_key=result.provider_key,
+        models=_model_responses(result.models),
+    )

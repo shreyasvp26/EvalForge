@@ -390,6 +390,34 @@ def mock_services() -> MagicMock:
         key_fingerprint=sample_conn.key_fingerprint,
         metadata={},
     )
+    from agent_eval_application.use_cases.provider_connections import (
+        ConnectionModelDTO,
+        ConnectionModelsResult,
+        VerifyConnectionResult,
+    )
+
+    sample_models = (
+        ConnectionModelDTO(
+            model_id="gemini-2.0-flash",
+            display_name="Gemini 2.0 Flash",
+            in_catalog=True,
+            adapter_keys=("gemini_cli",),
+            gateway_keys=("direct",),
+        ),
+    )
+    services.verify_provider_connection.execute.return_value = VerifyConnectionResult(
+        connection_id="conn-1",
+        provider_key="google",
+        status="valid",
+        message="API key accepted",
+        checked_at="2026-08-26T00:00:00+00:00",
+        models=sample_models,
+    )
+    services.list_connection_models.execute.return_value = ConnectionModelsResult(
+        connection_id="conn-1",
+        provider_key="google",
+        models=sample_models,
+    )
     services.list_providers.execute.return_value = [
         ProviderCatalogItemDTO(
             provider_key="google",
