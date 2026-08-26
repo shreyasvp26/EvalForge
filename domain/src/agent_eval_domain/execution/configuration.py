@@ -16,6 +16,15 @@ ALLOWED_EXECUTION_METADATA_KEYS = frozenset(
         "sandbox_engine",
         "sandbox_network_mode",
         "worker_adapter_mode_source",
+        # Phase 12 — provider / model / gateway identity (non-secret)
+        "provider_key",
+        "gateway_key",
+        "requested_model",
+        "actual_model",
+        "routing_mode",
+        "canonical_evaluation",
+        "credential_ref_id",
+        "fallback_used",
     }
 )
 

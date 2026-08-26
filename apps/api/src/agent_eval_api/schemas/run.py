@@ -274,6 +274,14 @@ class RunProvenanceResponse(BaseModel):
     execution_metadata: dict[str, str] = Field(default_factory=dict)
     benchmark_key: str | None = None
     suite_version_id_as_benchmark: str | None = None
+    provider_key: str | None = None
+    gateway_key: str | None = None
+    requested_model: str | None = None
+    actual_model: str | None = None
+    routing_mode: str | None = None
+    canonical_evaluation: bool | None = None
+    credential_ref_id: str | None = None
+    fallback_used: bool | None = None
     reproducibility: ReproducibilityResponse
 
 
@@ -303,6 +311,11 @@ class RunComparisonEntryResponse(BaseModel):
     execution_mode: str | None = None
     benchmark_key: str | None = None
     suite_version_id: str | None = None
+    provider_key: str | None = None
+    gateway_key: str | None = None
+    requested_model: str | None = None
+    routing_mode: str | None = None
+    canonical_evaluation: bool | None = None
 
 
 class RunComparisonDeltaResponse(BaseModel):

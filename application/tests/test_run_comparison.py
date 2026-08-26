@@ -91,6 +91,89 @@ def test_compare_runs_returns_deltas(world):
     assert result.comparability.compatible is True
     assert result.comparability.benchmark_key is not None
     assert result.comparability.mismatches == ()
+    assert "requested_model" in result.comparability.agent_difference_dimensions
+    assert "provider_key" in result.comparability.agent_difference_dimensions
+
+
+def test_compare_runs_surfaces_model_provider_differences(world):
+    """Same benchmark, different models — compatible but explicitly differentiated."""
+    from agent_eval_application.commands.run import RecordExecutionConfigurationCommand
+    from agent_eval_application.use_cases.run import RecordExecutionConfiguration
+
+    run_a = _create_run(world)
+    run_b = _create_run(world)
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run_a.id, sandbox_id="sb-a")
+    )
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run_b.id, sandbox_id="sb-b")
+    )
+    RecordExecutionConfiguration(world["uow"], world["auth"], world["events"]).execute(
+        RecordExecutionConfigurationCommand(
+            actor=world["actor"],
+            run_id=run_a.id,
+            execution_mode="live",
+            metadata={
+                "adapter_key": "gemini_cli",
+                "provider_key": "google",
+                "gateway_key": "direct",
+                "requested_model": "gemini-2.0-flash",
+                "routing_mode": "fixed",
+                "canonical_evaluation": "true",
+            },
+        )
+    )
+    RecordExecutionConfiguration(world["uow"], world["auth"], world["events"]).execute(
+        RecordExecutionConfigurationCommand(
+            actor=world["actor"],
+            run_id=run_b.id,
+            execution_mode="live",
+            metadata={
+                "adapter_key": "gemini_cli",
+                "provider_key": "omniroute",
+                "gateway_key": "omniroute",
+                "requested_model": "gemini-1.5-pro",
+                "routing_mode": "fixed",
+                "canonical_evaluation": "true",
+            },
+        )
+    )
+    _complete_run_after_start(world, run_a.id, passed=True)
+    _complete_run_after_start(world, run_b.id, passed=True)
+
+    result = CompareRuns(world["uow"], world["auth"]).execute(
+        CompareRunsCommand(
+            actor=world["actor"],
+            run_ids=(run_a.id, run_b.id),
+        )
+    )
+    assert result.comparability.compatible is True
+    diffs = "\n".join(result.comparability.expected_agent_differences)
+    assert "requested_model" in diffs
+    assert "provider_key" in diffs
+    assert result.runs[0].requested_model == "gemini-2.0-flash"
+    assert result.runs[1].requested_model == "gemini-1.5-pro"
+    # Must not be classified as identical executions.
+    assert result.runs[0].requested_model != result.runs[1].requested_model
+
+
+def _complete_run_after_start(world, run_id: str, *, passed: bool) -> None:
+    StartGrading(world["uow"], world["auth"], world["events"]).execute(
+        StartGradingCommand(actor=world["actor"], run_id=run_id)
+    )
+    RecordScore(world["uow"], world["ids"], world["auth"], world["events"]).execute(
+        RecordScoreCommand(
+            actor=world["actor"],
+            run_id=run_id,
+            grader_id=world["grader_id"],
+            grader_version_id=world["grader_version_id"],
+            passed=passed,
+            numeric=1.0 if passed else 0.0,
+        )
+    )
+    CompleteRun(world["uow"], world["auth"], world["events"]).execute(
+        CompleteRunCommand(actor=world["actor"], run_id=run_id)
+    )
 
 
 def test_compare_runs_marks_incompatible_when_case_differs(world):

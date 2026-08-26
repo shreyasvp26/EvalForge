@@ -19,6 +19,11 @@ from agent_eval_adapters.sdk.adapter import Adapter
 from agent_eval_adapters.sdk.models import RunMetadata
 from agent_eval_application.commands.run import RecordExecutionConfigurationCommand
 from agent_eval_application.common.actor import Actor
+from agent_eval_application.provider_runtime import (
+    ProviderRuntimeRequest,
+    enrich_metadata_with_runtime,
+    resolve_provider_runtime,
+)
 from agent_eval_application.queries.queries import GetRunQuery
 from agent_eval_application.use_cases.agent import ListAdapters
 from agent_eval_application.use_cases.case import ListCasesByProject
@@ -38,6 +43,7 @@ from agent_eval_application.use_cases.run import (
     StartGrading,
     StartRun,
 )
+from agent_eval_domain.common.errors import InvariantViolation
 from agent_eval_domain.common.ids import RunId
 from agent_eval_sandbox.docker.engine import DockerPyEngine
 from agent_eval_sandbox.docker.fake import FakeDockerEngine
@@ -299,19 +305,47 @@ def build_production_lifecycle_factory(
                 str(exc),
                 cause=cause,
             ) from exc
+        base_metadata = {
+            "adapter_key": key,
+            "adapter_name": name,
+            "adapter_version_id": version_id,
+            "sandbox_engine": sandbox_engine_label,
+            "worker_adapter_mode_source": "WORKER_ADAPTER_MODE",
+        }
+        try:
+            runtime = resolve_provider_runtime(
+                ProviderRuntimeRequest(
+                    adapter_key=key,
+                    provider_key=os.environ.get("EVALFORGE_PROVIDER"),
+                    gateway_key=os.environ.get("EVALFORGE_GATEWAY"),
+                    model_id=os.environ.get("EVALFORGE_MODEL")
+                    or os.environ.get("CODING_AGENT_MODEL")
+                    or os.environ.get("GEMINI_MODEL"),
+                    routing_mode=os.environ.get("EVALFORGE_ROUTING_MODE"),
+                    credential_ref_id=os.environ.get("EVALFORGE_CREDENTIAL_REF_ID"),
+                    allow_auto_routing=(
+                        os.environ.get("EVALFORGE_ALLOW_AUTO_ROUTING", "")
+                        .strip()
+                        .lower()
+                        in {"1", "true", "yes"}
+                    ),
+                )
+            )
+            metadata = enrich_metadata_with_runtime(base_metadata, runtime)
+        except InvariantViolation as exc:
+            # Provider/model misconfiguration must fail closed — never execute
+            # with a silently substituted model or fabricate a successful path.
+            raise RecoverableExecutionError(
+                str(exc),
+                cause=FailureCause.ADAPTER_FAILURE,
+            ) from exc
         try:
             record_execution_configuration.execute(
                 RecordExecutionConfigurationCommand(
                     actor=system_actor,
                     run_id=run_id.value,
                     execution_mode=effective_adapter_mode,
-                    metadata={
-                        "adapter_key": key,
-                        "adapter_name": name,
-                        "adapter_version_id": version_id,
-                        "sandbox_engine": sandbox_engine_label,
-                        "worker_adapter_mode_source": "WORKER_ADAPTER_MODE",
-                    },
+                    metadata=metadata,
                 )
             )
         except Exception:  # noqa: BLE001 — config persistence must not block execution

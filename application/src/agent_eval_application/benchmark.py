@@ -70,10 +70,17 @@ BENCHMARK_COMPARABILITY_DIMENSIONS: tuple[str, ...] = (
     "commit_sha",
 )
 
-# Dimensions expected to differ when comparing agents on the same benchmark.
+# Dimensions expected to differ when comparing agents/models on the same benchmark.
+# Model/provider/gateway differences are intentional comparison axes — never treated
+# as identical executions when they diverge.
 AGENT_COMPARISON_DIMENSIONS: tuple[str, ...] = (
     "agent_version_id",
     "adapter_version_id",
     "adapter_key",
     "execution_mode",
+    "provider_key",
+    "gateway_key",
+    "requested_model",
+    "routing_mode",
+    "canonical_evaluation",
 )
