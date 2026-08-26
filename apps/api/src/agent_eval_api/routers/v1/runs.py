@@ -163,6 +163,11 @@ def compare_runs(
                 execution_mode=entry.execution_mode,
                 benchmark_key=entry.benchmark_key,
                 suite_version_id=entry.suite_version_id,
+                provider_key=entry.provider_key,
+                gateway_key=entry.gateway_key,
+                requested_model=entry.requested_model,
+                routing_mode=entry.routing_mode,
+                canonical_evaluation=entry.canonical_evaluation,
             )
             for entry in result.runs
         ],
@@ -324,6 +329,14 @@ def get_run_provenance(
         execution_metadata=dict(dto.execution_metadata),
         benchmark_key=dto.benchmark_key,
         suite_version_id_as_benchmark=dto.suite_version_id_as_benchmark,
+        provider_key=dto.provider_key,
+        gateway_key=dto.gateway_key,
+        requested_model=dto.requested_model,
+        actual_model=dto.actual_model,
+        routing_mode=dto.routing_mode,
+        canonical_evaluation=dto.canonical_evaluation,
+        credential_ref_id=dto.credential_ref_id,
+        fallback_used=dto.fallback_used,
         reproducibility=ReproducibilityResponse(
             can_reproduce=dto.reproducibility.can_reproduce,
             missing=list(dto.reproducibility.missing),

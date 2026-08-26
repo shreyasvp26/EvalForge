@@ -128,6 +128,19 @@ class GetRunProvenance:
                 repository_url=repository_url,
                 commit_sha=commit_sha,
             )
+            meta = dict(dto.execution_metadata)
+            canonical_raw = meta.get("canonical_evaluation")
+            canonical: bool | None
+            if canonical_raw is None:
+                canonical = None
+            else:
+                canonical = canonical_raw.strip().lower() in {"1", "true", "yes"}
+            fallback_raw = meta.get("fallback_used")
+            fallback: bool | None
+            if fallback_raw is None:
+                fallback = None
+            else:
+                fallback = fallback_raw.strip().lower() in {"1", "true", "yes"}
             return RunProvenanceDTO(
                 run_id=dto.id,
                 status=dto.status,
@@ -163,9 +176,17 @@ class GetRunProvenance:
                 event_count=len(run.execution_events),
                 artifact_count=len(run.artifacts),
                 execution_mode=dto.execution_mode,
-                execution_metadata=dict(dto.execution_metadata),
+                execution_metadata=meta,
                 benchmark_key=identity.benchmark_key,
                 suite_version_id_as_benchmark=dto.pins.suite_version_id,
+                provider_key=meta.get("provider_key"),
+                gateway_key=meta.get("gateway_key"),
+                requested_model=meta.get("requested_model"),
+                actual_model=meta.get("actual_model"),
+                routing_mode=meta.get("routing_mode"),
+                canonical_evaluation=canonical,
+                credential_ref_id=meta.get("credential_ref_id"),
+                fallback_used=fallback,
                 reproducibility=_build_reproducibility(
                     dto,
                     repository_url=repository_url,

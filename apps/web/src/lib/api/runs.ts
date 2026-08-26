@@ -279,6 +279,14 @@ export interface RunProvenance {
   platform_policy_summaries?: Record<string, Record<string, string>>;
   benchmark_key?: string | null;
   suite_version_id_as_benchmark?: string | null;
+  provider_key?: string | null;
+  gateway_key?: string | null;
+  requested_model?: string | null;
+  actual_model?: string | null;
+  routing_mode?: string | null;
+  canonical_evaluation?: boolean | null;
+  credential_ref_id?: string | null;
+  fallback_used?: boolean | null;
   reproducibility: Reproducibility;
 }
 
@@ -300,6 +308,11 @@ export interface RunComparisonEntry {
   execution_mode?: string | null;
   benchmark_key?: string | null;
   suite_version_id?: string | null;
+  provider_key?: string | null;
+  gateway_key?: string | null;
+  requested_model?: string | null;
+  routing_mode?: string | null;
+  canonical_evaluation?: boolean | null;
 }
 
 export interface RunComparisonDelta {

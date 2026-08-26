@@ -27,6 +27,11 @@ class RunComparisonEntryDTO:
     execution_mode: str | None = None
     benchmark_key: str | None = None
     suite_version_id: str | None = None
+    provider_key: str | None = None
+    gateway_key: str | None = None
+    requested_model: str | None = None
+    routing_mode: str | None = None
+    canonical_evaluation: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)

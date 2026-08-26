@@ -132,12 +132,37 @@ def _comparability(
                 f"{entry.run_id}: execution_mode "
                 f"{baseline.execution_mode!r} → {entry.execution_mode!r}"
             )
+        if entry.provider_key != baseline.provider_key:
+            expected_diffs.append(
+                f"{entry.run_id}: provider_key "
+                f"{baseline.provider_key!r} → {entry.provider_key!r}"
+            )
+        if entry.gateway_key != baseline.gateway_key:
+            expected_diffs.append(
+                f"{entry.run_id}: gateway_key "
+                f"{baseline.gateway_key!r} → {entry.gateway_key!r}"
+            )
+        if entry.requested_model != baseline.requested_model:
+            expected_diffs.append(
+                f"{entry.run_id}: requested_model "
+                f"{baseline.requested_model!r} → {entry.requested_model!r}"
+            )
+        if entry.routing_mode != baseline.routing_mode:
+            expected_diffs.append(
+                f"{entry.run_id}: routing_mode "
+                f"{baseline.routing_mode!r} → {entry.routing_mode!r}"
+            )
+        if entry.canonical_evaluation != baseline.canonical_evaluation:
+            expected_diffs.append(
+                f"{entry.run_id}: canonical_evaluation "
+                f"{baseline.canonical_evaluation!r} → {entry.canonical_evaluation!r}"
+            )
 
     compatible = not mismatches
     notes = (
         "Runs share benchmark dimensions (case, SHA, prompt, graders, platform); "
-        "agent/adapter/execution_mode differences are expected for cross-agent "
-        "comparison."
+        "agent/adapter/execution_mode/provider/model/routing differences are "
+        "expected for cross-agent or cross-model comparison."
         if compatible
         else "Runs are not comparable as the same benchmark — mismatches listed. "
         "Do not treat score deltas as fair agent comparison."
@@ -213,6 +238,13 @@ class CompareRuns:
                     repository_url=repository_url,
                     commit_sha=commit_sha,
                 )
+                meta = dict(dto.execution_metadata)
+                canonical_raw = meta.get("canonical_evaluation")
+                canonical: bool | None
+                if canonical_raw is None:
+                    canonical = None
+                else:
+                    canonical = canonical_raw.strip().lower() in {"1", "true", "yes"}
                 entries.append(
                     RunComparisonEntryDTO(
                         run_id=dto.id,
@@ -232,6 +264,11 @@ class CompareRuns:
                         execution_mode=dto.execution_mode,
                         benchmark_key=identity.benchmark_key,
                         suite_version_id=dto.pins.suite_version_id,
+                        provider_key=meta.get("provider_key"),
+                        gateway_key=meta.get("gateway_key"),
+                        requested_model=meta.get("requested_model"),
+                        routing_mode=meta.get("routing_mode"),
+                        canonical_evaluation=canonical,
                     )
                 )
 

@@ -64,3 +64,12 @@ class RunProvenanceDTO:
     platform_policy_summaries: dict[str, dict[str, str]] = field(default_factory=dict)
     benchmark_key: str | None = None
     suite_version_id_as_benchmark: str | None = None
+    # Phase 12 — provider / model / gateway identity (never secrets)
+    provider_key: str | None = None
+    gateway_key: str | None = None
+    requested_model: str | None = None
+    actual_model: str | None = None
+    routing_mode: str | None = None
+    canonical_evaluation: bool | None = None
+    credential_ref_id: str | None = None
+    fallback_used: bool | None = None
