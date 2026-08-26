@@ -47,6 +47,7 @@ from agent_eval_api.schemas.run import (
     ExecutionEventResponse,
     FailingGraderReasonResponse,
     ReproducibilityResponse,
+    RunComparabilityResponse,
     RunComparisonDeltaResponse,
     RunComparisonEntryResponse,
     RunComparisonResponse,
@@ -157,6 +158,9 @@ def compare_runs(
                     reason=entry.score_aggregate.reason,
                 ),
                 duration_ms=entry.duration_ms,
+                execution_mode=entry.execution_mode,
+                benchmark_key=entry.benchmark_key,
+                suite_version_id=entry.suite_version_id,
             )
             for entry in result.runs
         ],
@@ -170,6 +174,19 @@ def compare_runs(
             )
             for delta in result.deltas
         ],
+        comparability=RunComparabilityResponse(
+            compatible=result.comparability.compatible,
+            shared_dimensions=list(result.comparability.shared_dimensions),
+            agent_difference_dimensions=list(
+                result.comparability.agent_difference_dimensions
+            ),
+            mismatches=list(result.comparability.mismatches),
+            expected_agent_differences=list(
+                result.comparability.expected_agent_differences
+            ),
+            benchmark_key=result.comparability.benchmark_key,
+            notes=result.comparability.notes,
+        ),
     )
 
 
@@ -237,6 +254,9 @@ def get_run_provenance(
         adapter_name=dto.adapter_name,
         adapter_version_label=dto.adapter_version_label,
         adapter_key=dto.adapter_key,
+        platform_name=dto.platform_name,
+        platform_version_label=dto.platform_version_label,
+        platform_policy_summaries=dto.platform_policy_summaries,
         grader_summaries=[dict(row) for row in dto.grader_summaries],
         score_aggregate=ScoreAggregateResponse(
             passed=dto.score_aggregate.passed,
@@ -260,6 +280,9 @@ def get_run_provenance(
         event_count=dto.event_count,
         artifact_count=dto.artifact_count,
         execution_mode=dto.execution_mode,
+        execution_metadata=dict(dto.execution_metadata),
+        benchmark_key=dto.benchmark_key,
+        suite_version_id_as_benchmark=dto.suite_version_id_as_benchmark,
         reproducibility=ReproducibilityResponse(
             can_reproduce=dto.reproducibility.can_reproduce,
             missing=list(dto.reproducibility.missing),

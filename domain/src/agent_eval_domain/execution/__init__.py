@@ -1,5 +1,10 @@
 """Execution bounded context."""
 
+from agent_eval_domain.execution.configuration import (
+    ExecutionConfiguration,
+    ExecutionMode,
+    sanitize_execution_metadata,
+)
 from agent_eval_domain.execution.entities import (
     Artifact,
     ArtifactKind,
@@ -31,9 +36,11 @@ __all__ = [
     "Artifact",
     "ArtifactKind",
     "EvaluationRun",
+    "ExecutionConfiguration",
     "ExecutionCost",
     "ExecutionEngine",
     "ExecutionEvent",
+    "ExecutionMode",
     "FailureCategory",
     "FileEditAction",
     "MessageAction",
@@ -51,4 +58,5 @@ __all__ = [
     "ToolCallAction",
     "action_kind_of",
     "is_terminal",
+    "sanitize_execution_metadata",
 ]

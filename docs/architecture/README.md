@@ -13,7 +13,8 @@ Architecture documents are the **source of truth** for EvalForge system design.
 | [execution-engine-architecture.md](./execution-engine-architecture.md) | Run orchestration |
 | [phase-4-execution-contract-audit.md](./phase-4-execution-contract-audit.md) | Phase 4 real-evaluation contract (audit) |
 | [how-evalforge-evaluates-coding-agents.md](./how-evalforge-evaluates-coding-agents.md) | Operator recipe: Case → sandbox → grade |
-| [adaptar-architecture.md](./adaptar-architecture.md) | Agent adapters |
-| [grader-architecture.md](./grader-architecture.md) | Graders |
+| [phase-7-evaluation-operations.md](./phase-7-evaluation-operations.md) | SSE, diagnosis, compare, failure categories |
+| [phase-8-benchmark-integrity.md](./phase-8-benchmark-integrity.md) | Benchmark identity, platform catalog, adapter matrix |
+| [phase-8-benchmark-integrity-audit.md](./phase-8-benchmark-integrity-audit.md) | Phase 8 pre-implementation audit |
 
 Engineering conventions for implementing against these docs live in [../development.md](../development.md).

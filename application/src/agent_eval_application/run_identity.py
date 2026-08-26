@@ -8,13 +8,31 @@ from agent_eval_application.dto.run import RunDTO
 from agent_eval_application.ports.unit_of_work import UnitOfWork
 from agent_eval_application.use_cases.base import with_domain_errors
 
-# Mirror worker adapter registry keys without importing the worker package.
+# Canonical adapter keys. Recognition ≠ production support.
+KNOWN_ADAPTER_KEYS: frozenset[str] = frozenset(
+    {
+        "claude_code",
+        "cursor",
+        "codex",
+        "gemini_cli",
+        "aider",
+    }
+)
+
+# Authoritative support matrix (must match worker AdapterRegistry).
+SUPPORTED_LIVE_ADAPTERS: frozenset[str] = frozenset({"gemini_cli"})
+SUPPORTED_DETERMINISTIC_ADAPTERS: frozenset[str] = frozenset({"claude_code"})
+
 _ADAPTER_ALIASES: dict[str, str] = {
     "claude": "claude_code",
     "claude_code": "claude_code",
     "claude-code": "claude_code",
+    "claudecode": "claude_code",
     "cursor": "cursor",
+    "cursor_agent": "cursor",
+    "cursor-agent": "cursor",
     "codex": "codex",
+    "openai_codex": "codex",
     "gemini": "gemini_cli",
     "gemini_cli": "gemini_cli",
     "gemini-cli": "gemini_cli",
@@ -23,7 +41,14 @@ _ADAPTER_ALIASES: dict[str, str] = {
 
 
 def normalize_adapter_key(name: str) -> str | None:
+    """Map Adapter.name / label tokens to a known key, or None if unknown.
+
+    A known key may still be unsupported for live/deterministic execution —
+    the worker registry is authoritative for executability.
+    """
     raw = name.strip().lower().replace(" ", "_").replace("-", "_")
+    if not raw:
+        return None
     if raw in _ADAPTER_ALIASES:
         return _ADAPTER_ALIASES[raw]
     for token, key in (

@@ -30,6 +30,7 @@ from agent_eval_application.commands.run import (
     CreateRunCommand,
     FailRunCommand,
     RecordArtifactCommand,
+    RecordExecutionConfigurationCommand,
     RecordExecutionEventCommand,
     RecordScoreCommand,
     StartGradingCommand,
@@ -64,6 +65,7 @@ from agent_eval_application.use_cases.run import (
     CreateRun,
     FailRun,
     RecordArtifact,
+    RecordExecutionConfiguration,
     RecordExecutionEvent,
     RecordScore,
     StartGrading,
@@ -77,6 +79,7 @@ from fakes import (
     RecordingEventDispatcher,
     RecordingRunQueue,
     SharedStore,
+    add_published_platform,
 )
 
 
@@ -90,6 +93,7 @@ def world():
     events = RecordingEventDispatcher()
     queue = RecordingRunQueue()
     actor = Actor(id="user-1")
+    platform_version = add_published_platform(store)
 
     project = CreateProject(uow, ids, auth, events).execute(
         CreateProjectCommand(actor=actor, name="P")
@@ -174,6 +178,7 @@ def world():
         "adapter_version_id": adv.id,
         "grader_id": grader.id,
         "grader_version_id": gv.id,
+        "platform_version_id": platform_version.id.value,
     }
 
 
@@ -196,7 +201,7 @@ def _create_run(world, *, idempotency_key: str | None = None):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-1.0.0",
+            platform_version_id=world["platform_version_id"],
             idempotency_key=idempotency_key,
         )
     )
@@ -268,6 +273,36 @@ def test_fail_run_is_platform_failure(world):
     assert failed.status == "failed"
     assert failed.failure_reason == "Sandbox provision failed"
     assert failed.failure_category == "sandbox_failure"
+
+
+def test_record_execution_configuration_persists_safe_metadata(world):
+    run = _create_run(world)
+    StartRun(world["uow"], world["auth"], world["events"]).execute(
+        StartRunCommand(actor=world["actor"], run_id=run.id, sandbox_id="sb-1")
+    )
+    updated = RecordExecutionConfiguration(
+        world["uow"], world["auth"], world["events"]
+    ).execute(
+        RecordExecutionConfigurationCommand(
+            actor=world["actor"],
+            run_id=run.id,
+            execution_mode="live",
+            metadata={
+                "adapter_key": "gemini_cli",
+                "adapter_name": "Gemini CLI",
+                "api_key": "sk-should-not-persist",
+                "sandbox_engine": "docker",
+            },
+        )
+    )
+    assert updated.execution_mode == "live"
+    assert updated.execution_metadata == {
+        "adapter_key": "gemini_cli",
+        "adapter_name": "Gemini CLI",
+        "sandbox_engine": "docker",
+    }
+    assert "api_key" not in updated.execution_metadata
+    assert "sk-should-not-persist" not in str(updated.execution_metadata)
 
 
 def test_cancel_queued_run(world):

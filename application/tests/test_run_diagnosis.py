@@ -43,7 +43,7 @@ def _create_run(world):
             agent_version_id=world["agent_version_id"],
             adapter_version_id=world["adapter_version_id"],
             grader_version_refs=((world["grader_id"], world["grader_version_id"]),),
-            platform_version_id="platform-1.0.0",
+            platform_version_id=world["platform_version_id"],
         )
     )
 

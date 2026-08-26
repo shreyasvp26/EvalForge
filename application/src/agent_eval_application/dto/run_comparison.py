@@ -24,6 +24,9 @@ class RunComparisonEntryDTO:
     telemetry: RunTelemetryDTO
     score_aggregate: ScoreAggregate
     duration_ms: int | None
+    execution_mode: str | None = None
+    benchmark_key: str | None = None
+    suite_version_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +39,21 @@ class RunComparisonDeltaDTO:
 
 
 @dataclass(frozen=True, slots=True)
+class RunComparabilityDTO:
+    """Whether compared runs share the same benchmark definition."""
+
+    compatible: bool
+    shared_dimensions: tuple[str, ...]
+    agent_difference_dimensions: tuple[str, ...]
+    mismatches: tuple[str, ...]
+    expected_agent_differences: tuple[str, ...]
+    benchmark_key: str | None
+    notes: str
+
+
+@dataclass(frozen=True, slots=True)
 class RunComparisonResultDTO:
     baseline_run_id: str
     runs: tuple[RunComparisonEntryDTO, ...]
     deltas: tuple[RunComparisonDeltaDTO, ...]
+    comparability: RunComparabilityDTO

@@ -12,6 +12,8 @@ from agent_eval_domain.common.ids import (
     CaseId,
     CaseVersionId,
     GraderId,
+    PlatformId,
+    PlatformVersionId,
     ProjectId,
     RunId,
     SuiteId,
@@ -22,6 +24,7 @@ from agent_eval_domain.evaluation_management.project import Project
 from agent_eval_domain.evaluation_management.suite import EvaluationSuite, SuiteVersion
 from agent_eval_domain.execution.run import EvaluationRun
 from agent_eval_domain.grading.grader import Grader
+from agent_eval_domain.platform.platform import Platform, PlatformVersion
 
 
 class ProjectRepository(Protocol):
@@ -76,6 +79,16 @@ class GraderRepository(Protocol):
     def save(self, grader: Grader) -> None: ...
 
     def list_all(self) -> list[Grader]: ...
+
+
+class PlatformRepository(Protocol):
+    def get(self, platform_id: PlatformId) -> Platform: ...
+
+    def get_version(self, version_id: PlatformVersionId) -> PlatformVersion: ...
+
+    def save(self, platform: Platform) -> None: ...
+
+    def list_all(self) -> list[Platform]: ...
 
 
 class RunRepository(Protocol):

@@ -125,6 +125,11 @@ class SandboxId(EntityId):
 
 
 @dataclass(frozen=True, slots=True)
+class PlatformId(EntityId):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
 class PlatformVersionId(EntityId):
     """Platform Version recorded on every Run (seventh versioning axis)."""
 

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from agent_eval_domain.common.ids import RunId
+from agent_eval_domain.common.errors import NotFoundError
+from agent_eval_domain.common.ids import PlatformVersionId, RunId
 
+from agent_eval_application.benchmark import benchmark_identity_from_run
 from agent_eval_application.common.validation import require_non_empty
 from agent_eval_application.dto.provenance import ReproducibilityDTO, RunProvenanceDTO
 from agent_eval_application.dto.run import RunDTO
@@ -80,6 +82,26 @@ class GetRunProvenance:
             adapter_name, adapter_version_label, adapter_key = resolve_adapter_labels(
                 uow, dto
             )
+            platform_name = None
+            platform_version_label = None
+            platform_policy_summaries: dict[str, dict[str, str]] = {}
+            try:
+                platform_version = uow.platforms.get_version(
+                    PlatformVersionId(dto.pins.platform_version_id)
+                )
+                platform_version_label = platform_version.label
+                platform = uow.platforms.get(platform_version.platform_id)
+                platform_name = platform.name
+                platform_policy_summaries = {
+                    "sandbox": dict(platform_version.sandbox_policy),
+                    "execution": dict(platform_version.execution_policy),
+                    "timeout": dict(platform_version.timeout_policy),
+                    "environment": dict(platform_version.environment_policy),
+                    "grading": dict(platform_version.grading_policy),
+                }
+            except NotFoundError:
+                # Historical runs may predate the catalog migration.
+                pass
 
             grader_summaries: list[dict[str, object]] = []
             for grader in uow.graders.list_all():
@@ -101,6 +123,11 @@ class GetRunProvenance:
             )
 
             aggregate = aggregate_scores(dto.scores)
+            identity = benchmark_identity_from_run(
+                dto,
+                repository_url=repository_url,
+                commit_sha=commit_sha,
+            )
             return RunProvenanceDTO(
                 run_id=dto.id,
                 status=dto.status,
@@ -124,6 +151,9 @@ class GetRunProvenance:
                 adapter_name=adapter_name,
                 adapter_version_label=adapter_version_label,
                 adapter_key=adapter_key,
+                platform_name=platform_name,
+                platform_version_label=platform_version_label,
+                platform_policy_summaries=platform_policy_summaries,
                 grader_summaries=tuple(grader_summaries),
                 score_aggregate=aggregate,
                 expected_grader_count=dto.expected_grader_count,
@@ -132,7 +162,10 @@ class GetRunProvenance:
                 telemetry=dto.telemetry,
                 event_count=len(run.execution_events),
                 artifact_count=len(run.artifacts),
-                execution_mode=None,
+                execution_mode=dto.execution_mode,
+                execution_metadata=dict(dto.execution_metadata),
+                benchmark_key=identity.benchmark_key,
+                suite_version_id_as_benchmark=dto.pins.suite_version_id,
                 reproducibility=_build_reproducibility(
                     dto,
                     repository_url=repository_url,

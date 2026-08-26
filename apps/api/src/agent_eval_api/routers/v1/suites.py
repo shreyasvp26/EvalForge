@@ -159,7 +159,7 @@ def deprecate_suite(
     "/{suite_id}/versions/{version_id}/execute",
     response_model=SuiteExecutionResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Execute suite — create and enqueue one Run per case",
+    summary="Execute suite as a benchmark — create and enqueue one Run per case",
 )
 def execute_suite_version(
     suite_id: str,

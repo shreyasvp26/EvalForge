@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from agent_eval_application.dto.run import RunTelemetryDTO
@@ -47,7 +47,6 @@ class RunProvenanceDTO:
     adapter_name: str | None
     adapter_version_label: str | None
     adapter_key: str | None
-
     grader_summaries: tuple[dict[str, object], ...]
     score_aggregate: ScoreAggregate
     expected_grader_count: int
@@ -58,4 +57,10 @@ class RunProvenanceDTO:
     event_count: int
     artifact_count: int
     execution_mode: str | None
+    execution_metadata: dict[str, str]
     reproducibility: ReproducibilityDTO
+    platform_name: str | None = None
+    platform_version_label: str | None = None
+    platform_policy_summaries: dict[str, dict[str, str]] = field(default_factory=dict)
+    benchmark_key: str | None = None
+    suite_version_id_as_benchmark: str | None = None
