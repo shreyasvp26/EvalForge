@@ -19,6 +19,31 @@ function pct(value: number | null): string {
   return `${String(Math.round(value * 1000) / 10)}%`;
 }
 
+function caseGlyph(status: string, passed: boolean | null): string {
+  if (status === "completed") {
+    if (passed === true) return "✓";
+    if (passed === false) return "✗";
+    return "•";
+  }
+  if (status === "failed" || status === "cancelled") return "!";
+  if (status === "running" || status === "grading" || status === "claimed") return "●";
+  return "○";
+}
+
+function caseResultLabel(status: string, passed: boolean | null): string {
+  if (status === "completed") {
+    if (passed === true) return "PASS";
+    if (passed === false) return "FAIL";
+    return "COMPLETED";
+  }
+  if (status === "failed") return "EXEC FAIL";
+  if (status === "cancelled") return "CANCELLED";
+  if (status === "running" || status === "grading" || status === "claimed") {
+    return "RUNNING";
+  }
+  return "QUEUED";
+}
+
 export function BenchmarkExecutionPage({
   projectId,
   suiteId,
@@ -86,59 +111,116 @@ export function BenchmarkExecutionPage({
   const results = resultsQuery.data;
   if (!results) return null;
   const inFlight = results.queued_or_running > 0;
+  const decided = results.passed + results.evaluation_failed;
+  const progressDone = results.completed + results.execution_failed + results.cancelled;
+  const providerBlocked = results.cases.filter(
+    (row) =>
+      row.failure_category === "provider" ||
+      row.failure_category === "PROVIDER" ||
+      (row.failure_reason ?? "").toLowerCase().includes("quota") ||
+      (row.failure_reason ?? "").toLowerCase().includes("rate limit"),
+  ).length;
 
   return (
     <PageLayout>
       <PageHeader
         eyebrow="Benchmark execution"
         title={inFlight ? "Running…" : "Results"}
-        description={`Execution group ${executionGroupId}`}
+        description={`How did this agent perform on this benchmark?`}
         actions={
-          <Button asChild variant="outline">
-            <Link href={`/projects/${projectId}/benchmarks/${suiteId}`}>Back to benchmark</Link>
-          </Button>
+          <Cluster gap={2}>
+            {inFlight ? <Badge status="queued">Live polling</Badge> : null}
+            <Button asChild variant="outline">
+              <Link href={`/projects/${projectId}/benchmarks/${suiteId}`}>Back</Link>
+            </Button>
+          </Cluster>
         }
       />
 
-      <Section className="mt-8">
-        <Cluster gap={3} className="flex-wrap">
-          <Badge status="success">{results.passed} passed</Badge>
-          <Badge status="warning">{results.evaluation_failed} eval failed</Badge>
-          <Badge status="danger">{results.execution_failed} exec failed</Badge>
-          <Badge status="neutral">pass rate {pct(results.pass_rate)}</Badge>
-          <Badge status="neutral">
-            {results.completed}/{results.total_cases} completed
-          </Badge>
-          {inFlight ? <Badge status="queued">in progress</Badge> : null}
+      <Section className="mt-8" title="Overview">
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <Text as="div" variant="caption">
+              Progress
+            </Text>
+            <Text as="div" variant="body">
+              {String(progressDone)} / {String(results.total_cases)} finished
+              {inFlight ? ` · ${String(results.queued_or_running)} in flight` : ""}
+            </Text>
+          </div>
+          <div>
+            <Text as="div" variant="caption">
+              Overall (eval pass rate)
+            </Text>
+            <Text as="div" variant="body">
+              {pct(results.pass_rate)}
+              {decided > 0
+                ? ` · ${String(results.passed)}/${String(decided)} decided`
+                : " · no decided grades yet"}
+            </Text>
+          </div>
+          <div>
+            <Text as="div" variant="caption">
+              Execution group
+            </Text>
+            <Text as="div" variant="body" className="break-all">
+              {results.execution_group_id ?? executionGroupId}
+            </Text>
+          </div>
+        </dl>
+        <Cluster gap={3} className="mt-4 flex-wrap">
+          <Badge status="success">{String(results.passed)} passed</Badge>
+          <Badge status="warning">{String(results.evaluation_failed)} eval failed</Badge>
+          <Badge status="danger">{String(results.execution_failed)} exec failed</Badge>
+          {providerBlocked > 0 ? (
+            <Badge status="danger">{String(providerBlocked)} provider-blocked</Badge>
+          ) : null}
+          {results.cancelled > 0 ? (
+            <Badge status="neutral">{String(results.cancelled)} cancelled</Badge>
+          ) : null}
         </Cluster>
+        <Text variant="secondary" className="mt-3">
+          Evaluation failures count against agent performance. Execution and provider failures do
+          not become ordinary agent scores. Token/cost data is omitted when the provider does not
+          report usage.
+        </Text>
       </Section>
 
       <Section className="mt-8" title="Cases">
         <ul className="divide-y divide-border">
-          {results.cases.map((row) => (
-            <li
-              key={row.run_id}
-              className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <Text as="div" variant="body" className="font-medium">
-                  {row.case_version_id}
-                </Text>
-                <Text as="div" variant="caption">
-                  {row.status}
-                  {row.aggregate.passed === true
-                    ? " · PASS"
-                    : row.aggregate.passed === false
-                      ? " · FAIL"
-                      : ""}
-                  {row.failure_category ? ` · ${row.failure_category}` : ""}
-                </Text>
-              </div>
-              <Button asChild size="sm" variant="outline">
-                <Link href={`/runs/${row.run_id}`}>Open run</Link>
-              </Button>
-            </li>
-          ))}
+          {results.cases.map((row) => {
+            const label = caseResultLabel(row.status, row.aggregate.passed);
+            const glyph = caseGlyph(row.status, row.aggregate.passed);
+            return (
+              <li
+                key={row.run_id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <Text as="div" variant="body" className="font-medium">
+                    {glyph} {row.case_name ?? row.case_version_id}
+                  </Text>
+                  <Text as="div" variant="caption">
+                    {[
+                      row.category,
+                      row.difficulty,
+                      label,
+                      row.aggregate.overall_score != null
+                        ? `score ${String(row.aggregate.overall_score)}`
+                        : null,
+                      row.failure_category,
+                      row.failure_reason,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/runs/${row.run_id}`}>Open run</Link>
+                </Button>
+              </li>
+            );
+          })}
         </ul>
       </Section>
     </PageLayout>

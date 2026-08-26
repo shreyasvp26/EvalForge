@@ -284,6 +284,23 @@ class AggregateSuiteResults:
                     objective_failed_count += 1
                 if agg.overall_score is not None:
                     score_values.append(agg.overall_score)
+
+                case_name: str | None = None
+                case_id: str | None = None
+                category: str | None = None
+                difficulty: str | None = None
+                try:
+                    case_version = uow.cases.get_version(
+                        CaseVersionId(dto.pins.case_version_id)
+                    )
+                    case = uow.cases.get(case_version.case_id)
+                    case_id = case.id.value
+                    case_name = case.name
+                    category = case.category or None
+                    difficulty = case.difficulty or None
+                except Exception:  # noqa: BLE001 — best-effort labels
+                    pass
+
                 case_results.append(
                     SuiteCaseResultDTO(
                         case_version_id=dto.pins.case_version_id,
@@ -292,6 +309,10 @@ class AggregateSuiteResults:
                         aggregate=agg,
                         failure_reason=dto.failure_reason,
                         failure_category=dto.failure_category,
+                        case_id=case_id,
+                        case_name=case_name,
+                        category=category,
+                        difficulty=difficulty,
                     )
                 )
 

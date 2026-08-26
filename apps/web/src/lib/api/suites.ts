@@ -192,6 +192,10 @@ export interface SuiteAggregate {
     };
     failure_reason: string | null;
     failure_category: string | null;
+    case_id?: string | null;
+    case_name?: string | null;
+    category?: string | null;
+    difficulty?: string | null;
   }[];
 }
 
