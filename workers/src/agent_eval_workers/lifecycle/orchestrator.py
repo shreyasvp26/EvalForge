@@ -31,6 +31,8 @@ class LifecycleOrchestrator:
     events: EventPipelinePort
     grading: GradingSchedulerPort
     status: RunStatusPort
+    publisher: object | None = None
+    """Optional EvaluationPublisher — publish-on-PASS before sandbox destroy."""
 
     @property
     def phase(self) -> OrchestrationPhase:
@@ -68,6 +70,12 @@ class LifecycleOrchestrator:
             self.grading.schedule(run_id)
         elif trigger is LifecycleTrigger.GRADING_FINISHED:
             self.status.project_completed(run_id)
+            # Publish while sandbox is still alive; never rewrite evaluation.
+            if self.publisher is not None:
+                try:
+                    self.publisher.publish_if_eligible(run_id)
+                except Exception:  # noqa: BLE001 — publication must not fail the run
+                    pass
             # Always tear down the sandbox after a terminal success — never leak
             # containers across completed Runs.
             self.sandbox.destroy(run_id)
