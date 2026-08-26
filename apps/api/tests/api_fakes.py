@@ -356,6 +356,60 @@ def mock_services() -> MagicMock:
     services.build_benchmark_matrix.execute.return_value = sample_benchmark_matrix()
     services.diagnose_run_failure.execute.return_value = sample_diagnosis()
 
+    from agent_eval_application.use_cases.provider_connections import (
+        ProviderCatalogItemDTO,
+    )
+    from agent_eval_domain.execution.provider_connection import (
+        ProviderConnection,
+        ProviderConnectionStatus,
+    )
+    from agent_eval_domain.execution.provider_runtime import ProviderKey
+
+    sample_conn = ProviderConnection(
+        id="conn-1",
+        user_id="actor-1",
+        provider_key=ProviderKey.GOOGLE,
+        credential_ref_id="user:actor-1:conn:conn-1",
+        display_name="Google",
+        status=ProviderConnectionStatus.ACTIVE,
+        created_at=datetime(2026, 1, 1, tzinfo=UTC),
+        key_fingerprint="abcd1234efgh",
+        metadata={},
+    )
+    services.create_provider_connection.execute.return_value = sample_conn
+    services.list_provider_connections.execute.return_value = [sample_conn]
+    services.revoke_provider_connection.execute.return_value = ProviderConnection(
+        id=sample_conn.id,
+        user_id=sample_conn.user_id,
+        provider_key=sample_conn.provider_key,
+        credential_ref_id=sample_conn.credential_ref_id,
+        display_name=sample_conn.display_name,
+        status=ProviderConnectionStatus.REVOKED,
+        created_at=sample_conn.created_at,
+        key_fingerprint=sample_conn.key_fingerprint,
+        metadata={},
+    )
+    services.list_providers.execute.return_value = [
+        ProviderCatalogItemDTO(
+            provider_key="google",
+            display_name="Google",
+            status="live_capable",
+            supported_adapters=("gemini_cli",),
+            supported_gateways=("direct",),
+            notes="Live via gemini_cli",
+            configured=True,
+            live_capable=True,
+            models=(
+                {
+                    "model_id": "gemini-2.0-flash",
+                    "display_name": "Gemini 2.0 Flash",
+                    "adapter_keys": ["gemini_cli"],
+                    "gateway_keys": ["direct"],
+                },
+            ),
+        )
+    ]
+
     # Remaining use cases return Magics; individual tests override as needed.
     return services
 
@@ -371,6 +425,7 @@ class FakeContainer:
         self.identity = MagicMock()
         self.oauth_identities = MagicMock()
         self.oauth = MagicMock()
+        self.provider_connections = MagicMock()
         self.infrastructure = MagicMock()
         self.infrastructure.redis = None
         self.infrastructure.run_queue = MagicMock()
