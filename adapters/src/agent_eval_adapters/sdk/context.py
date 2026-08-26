@@ -41,6 +41,8 @@ class ExecutionContext:
     correlation_id: str
     config: ExecutionConfig = field(default_factory=ExecutionConfig)
     prompt: str = ""
+    model_id: str | None = None
+    """Exact model pin for adapters that support CLI/model selection (Phase 13)."""
     logger: AdapterLogger | None = None
     cancellation: CancellationPort | None = None
 
@@ -51,6 +53,9 @@ class ExecutionContext:
             "environment",
             MappingProxyType(dict(self.environment)),
         )
+        if self.model_id is not None:
+            cleaned = str(self.model_id).strip()
+            object.__setattr__(self, "model_id", cleaned or None)
 
     def is_cancelled(self) -> bool:
         if self.cancellation is None:

@@ -68,6 +68,7 @@ RunMetadataFactory = Callable[[RunId], RunMetadata]
 PromptFactory = Callable[[RunId], str]
 AdapterFactoryResolver = Callable[[RunId], AdapterFactory]
 WorkingDirectoryFactory = Callable[[RunId], str]
+ModelIdFactory = Callable[[RunId], str | None]
 
 
 class _ArtifactStore(Protocol):
@@ -138,6 +139,7 @@ class SdkAdapterBridge:
     run_metadata_factory: RunMetadataFactory = field(default=default_run_metadata)
     prompt: str = "solve the case"
     prompt_factory: PromptFactory | None = None
+    model_id_factory: ModelIdFactory | None = None
     working_directory: str = "/workspace"
     working_directory_factory: WorkingDirectoryFactory | None = None
     environment: dict[str, str] = field(default_factory=dict)
@@ -159,6 +161,11 @@ class SdkAdapterBridge:
         if self.working_directory_factory is not None:
             return self.working_directory_factory(run_id)
         return self.working_directory
+
+    def _resolve_model_id(self, run_id: RunId) -> str | None:
+        if self.model_id_factory is not None:
+            return self.model_id_factory(run_id)
+        return None
 
     def _resolve_adapter(self, run_id: RunId) -> Adapter:
         if self.adapter_factory_resolver is not None:
@@ -187,6 +194,7 @@ class SdkAdapterBridge:
                 config=ExecutionConfig(),
                 prompt=self._resolve_prompt(run_id),
                 cancellation=cancel,
+                model_id=self._resolve_model_id(run_id),
             )
             emitter = EventEmitter(sink=sink)
             translator = DefaultTranslator()

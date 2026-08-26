@@ -67,6 +67,7 @@ from agent_eval_workers.execution_engine.errors import RecoverableExecutionError
 from agent_eval_workers.execution_engine.lifecycle_driver import LifecycleDriver
 from agent_eval_workers.integration.adapter_bridge import SdkAdapterBridge
 from agent_eval_workers.integration.adapter_registry import (
+    GEMINI_CLI,
     AdapterResolutionError,
     PinnedAdapterResolver,
     resolve_adapter_mode,
@@ -291,6 +292,19 @@ def build_production_lifecycle_factory(
             case_version_id=dto.pins.case_version_id,
         )
 
+    def model_id_for_run(run_id: RunId) -> str | None:
+        dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
+        runtime_request = dict(getattr(dto, "runtime_request", None) or {})
+        model = (runtime_request.get("requested_model") or "").strip()
+        if model:
+            return model
+        return (
+            os.environ.get("EVALFORGE_MODEL")
+            or os.environ.get("CODING_AGENT_MODEL")
+            or os.environ.get("GEMINI_MODEL")
+            or None
+        )
+
     def resolve_adapter_factory(run_id: RunId) -> AdapterFactory:
         try:
             key, name, version_id = pinned_adapter_resolver.resolve_key(run_id)
@@ -312,17 +326,27 @@ def build_production_lifecycle_factory(
             "sandbox_engine": sandbox_engine_label,
             "worker_adapter_mode_source": "WORKER_ADAPTER_MODE",
         }
+        run_dto = get_run.execute(GetRunQuery(actor=system_actor, run_id=run_id.value))
+        runtime_request = dict(getattr(run_dto, "runtime_request", None) or {})
+        requested_model = (runtime_request.get("requested_model") or "").strip() or (
+            os.environ.get("EVALFORGE_MODEL")
+            or os.environ.get("CODING_AGENT_MODEL")
+            or os.environ.get("GEMINI_MODEL")
+            or None
+        )
         try:
             runtime = resolve_provider_runtime(
                 ProviderRuntimeRequest(
                     adapter_key=key,
-                    provider_key=os.environ.get("EVALFORGE_PROVIDER"),
-                    gateway_key=os.environ.get("EVALFORGE_GATEWAY"),
-                    model_id=os.environ.get("EVALFORGE_MODEL")
-                    or os.environ.get("CODING_AGENT_MODEL")
-                    or os.environ.get("GEMINI_MODEL"),
-                    routing_mode=os.environ.get("EVALFORGE_ROUTING_MODE"),
-                    credential_ref_id=os.environ.get("EVALFORGE_CREDENTIAL_REF_ID"),
+                    provider_key=runtime_request.get("provider_key")
+                    or os.environ.get("EVALFORGE_PROVIDER"),
+                    gateway_key=runtime_request.get("gateway_key")
+                    or os.environ.get("EVALFORGE_GATEWAY"),
+                    model_id=requested_model,
+                    routing_mode=runtime_request.get("routing_mode")
+                    or os.environ.get("EVALFORGE_ROUTING_MODE"),
+                    credential_ref_id=runtime_request.get("credential_ref_id")
+                    or os.environ.get("EVALFORGE_CREDENTIAL_REF_ID"),
                     allow_auto_routing=(
                         os.environ.get("EVALFORGE_ALLOW_AUTO_ROUTING", "")
                         .strip()
@@ -332,6 +356,10 @@ def build_production_lifecycle_factory(
                 )
             )
             metadata = enrich_metadata_with_runtime(base_metadata, runtime)
+            if runtime_request.get("provider_connection_id"):
+                metadata["provider_connection_id"] = runtime_request[
+                    "provider_connection_id"
+                ]
         except InvariantViolation as exc:
             # Provider/model misconfiguration must fail closed — never execute
             # with a silently substituted model or fabricate a successful path.
@@ -353,6 +381,22 @@ def build_production_lifecycle_factory(
                 "execution_configuration_persist_failed",
                 run_id=run_id.value,
             )
+
+        # Pin exact Gemini model when the run requested one (canonical path).
+        if key == GEMINI_CLI and effective_adapter_mode == "live" and requested_model:
+            from agent_eval_adapters.gemini import GeminiAdapter
+
+            model_pin = requested_model
+
+            def _gemini_factory(
+                pinned_model: str = model_pin,
+            ) -> Adapter:
+                return GeminiAdapter(
+                    model_id=pinned_model,
+                    require_exact_model=True,
+                )
+
+            return _gemini_factory
         return factory
 
     # Injected factory overrides pin resolution (tests / explicit composition).
@@ -382,6 +426,7 @@ def build_production_lifecycle_factory(
         object_storage=object_storage,
         environment=sandbox_environment_from_allowlist(),
         run_metadata_factory=run_metadata_factory,
+        model_id_factory=model_id_for_run,
         prompt_factory=prompt_resolver.resolve,
         working_directory_factory=lambda rid: repo_preparer.workspaces.get(
             rid.value, "/workspace"
